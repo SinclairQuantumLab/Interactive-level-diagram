@@ -1,0 +1,125 @@
+:root {
+  --bg-top: #f4efe6;
+  --bg-bottom: #d6eadc;
+  --panel: rgba(250, 247, 241, 0.8);
+  --panel-border: rgba(63, 57, 43, 0.12);
+  --text-main: #17231c;
+  --text-muted: #53635a;
+  --accent: #7a4e2f;
+  --shadow: rgba(24, 36, 27, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  overflow: hidden;
+  font-family: "Aptos", "Trebuchet MS", sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(122, 78, 47, 0.14), transparent 32%),
+    linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+}
+
+.hero-copy {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 2;
+  max-width: min(450px, calc(100vw - 48px));
+  padding: 20px 22px;
+  border: 1px solid var(--panel-border);
+  border-radius: 22px;
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 18px 50px var(--shadow);
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 0.96;
+}
+
+.description {
+  margin: 14px 0 0;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.readout-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.readout {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(23, 35, 28, 0.07);
+}
+
+.readout span {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.readout strong {
+  font-size: 1.35rem;
+}
+
+#tree-svg {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+.ground {
+  fill: url(#ground-gradient);
+}
+
+.branch {
+  stroke-linecap: round;
+}
+
+.leaf {
+  fill: rgba(73, 127, 82, 0.28);
+}
+
+@media (max-width: 700px) {
+  .hero-copy {
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    max-width: none;
+    padding: 16px 18px;
+  }
+}

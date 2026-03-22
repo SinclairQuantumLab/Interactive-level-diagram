@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D3 + SVG Fractal Tree</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero-copy">
+      <p class="eyebrow">SVG + D3 Warmup</p>
+      <h1>Each branch is an SVG element driven by data.</h1>
+      <p class="description">
+        This version rebuilds the tree as a list of branch objects, then D3 binds those objects
+        to SVG lines. Move upward to deepen the recursion and move sideways to widen the canopy.
+      </p>
+      <div class="readout-row">
+        <div class="readout">
+          <span>Depth</span>
+          <strong id="depth-value">8</strong>
+        </div>
+        <div class="readout">
+          <span>Branches</span>
+          <strong id="branch-value">255</strong>
+        </div>
+      </div>
+    </section>
+
+    <svg id="tree-svg" aria-label="Interactive fractal tree rendered with SVG"></svg>
+  </main>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+# Atomic species data only.
+# Keep app layout, UI copy, storage, and rendering rules in the app code.
+
+meta:
+  id: rb87-neutral
+  title: Rubidium-87 Neutral Atom
+
+species:
+  species: Rb
+  atomic_mass_number: 87
+  ionization_number: 0
+  nuclear_spin: 1.5
+  notes:
+    - "Ground-state configuration: [Kr]5$s^1$"
+    - "Natural abundance in sample: enriched"
+
+# Each state uses:
+# - id: stable internal key
+# - notation: display notation, which may use TeX-like math wrapped in $...$
+# - energy: fine-state centroid energy with unit written in the value
+
+states:
+  - id: 5S1/2
+    j: 0.5
+    energy: 0.0(?) THz\cite{NIST25}
+    notation: $5s\,{}^{2}S_{1/2}$
+    hyperfine_constants:
+      a: 3417.341305452(?) MHz\cite{Ste21}
+
+  - id: 5P1/2
+    j: 0.5
+    energy: 377.107463226(98) THz\cite{Mar08}
+    notation: $5p\,{}^{2}P_{1/2}$
+    hyperfine_constants:
+      a: 406.2(?) MHz\cite{Ste21}
+
+  - id: 5P3/2
+    j: 1.5
+    energy: 384.230484469(6) THz\cite{Ye96}
+    notation: $5p\,{}^{2}P_{3/2}$
+    hyperfine_constants:
+      a: 84.72(?) MHz\cite{Ste21}
+      b: 12.5(?) MHz\cite{Ste21}
+
+  - id: 5D3/2
+    j: 1.5
+    energy: 770.482811(?) THz\cite{Ter19}
+    notation: $5d\,{}^{2}D_{3/2}$
+    notes:
+      - Fine-state centroid inferred from absolute 5S1/2->5D3/2 hyperfine-frequency data.\cite{Ter19}
+    hyperfine_constants:
+      a: 7.4(?) MHz\cite{NIST25}
+      b: 2.2(?) MHz\cite{NIST25}
+
+  - id: 5D5/2
+    j: 2.5
+    energy: 770.571668(?) THz\cite{Ber00}
+    notation: $5d\,{}^{2}D_{5/2}$
+    notes:
+      - Fine-state centroid inferred from the absolute 5S1/2(F=2)->5D5/2(F=4) two-photon frequency.\cite{Ber00}
+    hyperfine_constants:
+      a: 7.47(?) MHz\cite{NIST25}
+      b: -1.1(?) MHz\cite{NIST25}
+
+  - id: 6S1/2
+    j: 0.5
+    energy: 603.557466(?) THz\cite{NIST25}
+    notation: $6s\,{}^{2}S_{1/2}$
+    hyperfine_constants:
+      a: 239.18(?) MHz\cite{Ste21}
+
+  - id: 6P1/2
+    j: 0.5
+    energy: 710.960242(?) THz\cite{NIST25}
+    notation: $6p\,{}^{2}P_{1/2}$
+    hyperfine_constants:
+      a: 132.56(?) MHz\cite{NIST25}
+
+  - id: 6P3/2
+    j: 1.5
+    energy: 713.283934(?) THz\cite{NIST25}
+    notation: $6p\,{}^{2}P_{3/2}$
+    hyperfine_constants:
+      a: 27.68(?) MHz\cite{NIST25}
+      b: 3.96(?) MHz\cite{NIST25}
+
+# Transitions are defined as undirected state pairs.
+# Endpoint notation:
+# - Fine state: "5P3/2"
+# - Hyperfine level: "5P3/2[F=3]"
+# - Zeeman sublevel: "5P3/2[F=3,mF=2]"
+# Optional literature values such as frequency may be given directly.
+# Optional transition label fields may be chosen with:
+#   show: [wavelength, frequency, type, strength, notes]
+# or individual notes such as:
+#   show: [wavelength, "note:0"]
+
+transitions:
+  - between: ["5S1/2[F=1]", "5S1/2[F=2]"]
+    type: M1
+    frequency: 6.8346826109043(23) GHz\cite{BIPM22}
+    show: [frequency]
+    notes:
+      - Official CCTF/CIPM recommended frequency for the unperturbed 87Rb ground-state hyperfine standard.\cite{BIPM22}
+
+  - between: ["5S1/2[F=1,mF=0]", "5S1/2[F=2,mF=0]"]
+    type: M1
+    frequency: 6.8346826109043(23) GHz\cite{BIPM22}
+    show: [frequency]
+    notes:
+      - Magnetically insensitive clock transition used in rubidium frequency standards.\cite{BIPM22}
+
+  - between: [5S1/2, 5P1/2]
+    type: E1
+    strength: 2.992(3) ea0\cite{Ste21}
+    frequency: 377107463.226(98) MHz\cite{Mar08}
+    notes:
+      - Direct fine-centroid frequency from comb spectroscopy of laser-cooled 87Rb.\cite{Mar08}
+      - Frequently used for optical pumping and Raman schemes.
+
+  - between: ["5S1/2[F=2]", "5P1/2[F=1]"]
+    type: E1
+    frequency: 377104389.803(79) MHz\cite{Mar08}
+    notes:
+      - Directly measured D1 hyperfine component from comb spectroscopy.\cite{Mar08}
+
+  - between: ["5S1/2[F=2]", "5P1/2[F=2]"]
+    type: E1
+    frequency: 377105206.462(79) MHz\cite{Mar08}
+    notes:
+      - Directly measured D1 hyperfine component from comb spectroscopy.\cite{Mar08}
+
+  - between: [5S1/2, 5P3/2]
+    type: E1
+    strength: 4.227(5) ea0\cite{Ste21}
+    frequency: 384230484.469(6) MHz\cite{Ye96}
+    notes:
+      - Fine-centroid frequency inferred from the measured D2 crossover resonance and 5P3/2 hyperfine constants.\cite{Ye96}
+      - Common laser-cooling transition in rubidium experiments.
+
+  - between: ["5S1/2[F=1]", "5P3/2[F=2]"]
+    type: E1
+    notes:
+      - Canonical D2 repump line used in 87Rb magneto-optical trapping.
+
+  - between: ["5S1/2[F=2]", "5P3/2[F=3]"]
+    type: E1
+    strength: 7/10\cite{Ste21}
+    frequency: 384228115.346(16) MHz\cite{Bal16}
+    notes:
+      - Directly measured cycling-transition frequency for the standard 87Rb cooling branch.\cite{Bal16}
+      - Relative hyperfine transition strength factor.
+
+  - between: ["5S1/2[F=2,mF=2]", "5P3/2[F=3,mF=3]"]
+    type: E1
+    strength: 2.989(3) ea0\cite{Ste21}
+    notes:
+      - Cycling-stretched transition example. Appears when the referenced Zeeman branches are expanded.
+
+  - between: [5S1/2, 6P3/2]
+    type: E1
+    notes:
+      - Absolute 5S->6P3/2 frequencies were measured with <=20 kHz uncertainty.\cite{Gla20}
+      - Near-420 nm line used for blue and UV spectroscopy.
+
+  - between: [5S1/2, 6P1/2]
+    type: E1
+    notes:
+      - Absolute 5S->6P1/2 frequencies were verified against literature with uncertainty better than 20 MHz.\cite{Gla20}
+
+  - between: [5P1/2, 6S1/2]
+    type: E1
+    notes:
+      - 1324 nm leg of the classic rubidium diamond four-wave-mixing scheme.\cite{Bec08}
+
+  - between: [5P3/2, 5D5/2]
+    type: E1
+    strength: 1.81(2) ea0\cite{Ham23}
+    notes:
+      - Upper leg of the familiar 780 nm + 776 nm ladder to 5D5/2 used in coherent excitation and cascade-light generation.\cite{Mar04}
