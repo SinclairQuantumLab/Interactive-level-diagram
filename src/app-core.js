@@ -52,7 +52,7 @@ const controlStack = document.querySelector(".control-stack");
 const DEFAULT_APP_CONFIG = {
   ui: {
     appTitle: "Interactive atomic level diagram",
-    appVersion: "20260322.1",
+    appVersion: "20260323.1",
   },
   canvas: {
     width: 1440,
@@ -168,28 +168,15 @@ function loadAppConfig() {
 }
 
 const APP_CONFIG = loadAppConfig();
+const RUNTIME_APP_VERSION_OVERRIDE = typeof window.__APP_RUNTIME_VERSION_OVERRIDE__ === "string"
+  ? window.__APP_RUNTIME_VERSION_OVERRIDE__.trim()
+  : "";
 
-function isElectronRuntime() {
-  if (window.diagramHost?.isElectron) {
-    return true;
-  }
-
-  try {
-    const params = new URLSearchParams(window.location.search);
-
-    if (params.get("runtime") === "electron") {
-      return true;
-    }
-  } catch {
-    return false;
-  }
-
-  return navigator.userAgent.includes("Electron");
-}
-
-function hasElectronDiagramBridge() {
-  return typeof window.diagramHost?.listDiagrams === "function"
-    && typeof window.diagramHost?.readDiagram === "function";
+if (RUNTIME_APP_VERSION_OVERRIDE) {
+  APP_CONFIG.ui = {
+    ...(APP_CONFIG.ui || {}),
+    appVersion: RUNTIME_APP_VERSION_OVERRIDE,
+  };
 }
 
 function createBrowserDiagramSourceInfo(overrides = {}) {
@@ -482,10 +469,6 @@ async function ensureDiagramsFolderPermission(handle) {
 }
 
 async function pickDiagramsFolder() {
-  if (isElectronRuntime()) {
-    return;
-  }
-
   if (!window.showDirectoryPicker) {
     if (typeof setStatus === "function") {
       setStatus("This browser does not support picking a local diagrams folder.");
@@ -519,25 +502,7 @@ async function pickDiagramsFolder() {
   }
 }
 
-async function readDiagramText(fileName) {
-  if (window.diagramHost?.readDiagram) {
-    return window.diagramHost.readDiagram(fileName);
-  }
-
-  return null;
-}
-
 async function readCompanionBibText(fileName, folderHandle = diagramsFolderHandle) {
-  if (window.diagramHost?.readTextFile) {
-    const baseName = getCompanionBibFileName(fileName);
-
-    try {
-      return await window.diagramHost.readTextFile(baseName);
-    } catch {
-      return null;
-    }
-  }
-
   if (!folderHandle) {
     return null;
   }
@@ -1064,47 +1029,6 @@ function storeSelectedDiagramPath(path) {
 }
 
 async function loadDiagramCatalog() {
-  if (hasElectronDiagramBridge()) {
-    try {
-      const fileNames = await window.diagramHost.listDiagrams();
-      const entries = [];
-
-      for (const fileName of fileNames) {
-        try {
-          const rawTomlText = await readDiagramText(fileName);
-          const rawBibText = await readCompanionBibText(fileName);
-          const parsed = parseDiagramConfig(rawTomlText);
-          const normalized = normalizeConfig(parsed, rawBibText ? parseBibtex(rawBibText) : []);
-          entries.push({
-            fileName,
-            title: normalized.meta.title || fileName,
-            text: rawTomlText,
-            bibliographyText: rawBibText,
-          });
-        } catch {
-          entries.push({
-            fileName,
-            title: `${fileName} (invalid YAML)`,
-            text: null,
-            bibliographyText: null,
-          });
-        }
-      }
-
-      return {
-        folderHandle: null,
-        entries,
-        browserSourceInfo: createBrowserDiagramSourceInfo(),
-      };
-    } catch {
-      return {
-        folderHandle: null,
-        entries: [],
-        browserSourceInfo: createBrowserDiagramSourceInfo(),
-      };
-    }
-  }
-
   const folderHandle = await getStoredDiagramsFolderHandle();
   const browserSourceInfo = createBrowserDiagramSourceInfo({
     hasStoredHandle: Boolean(folderHandle),
@@ -1381,13 +1305,9 @@ function normalizeMeasurementPrecisionEntry(precision) {
 }
 
 function normalizeMeasurementEntry(entry) {
-  const selections = (
-    Array.isArray(entry?.between)
-      ? normalizeMeasurementBetweenEntry(entry.between)
-      : (Array.isArray(entry?.selections)
-        ? entry.selections.map(normalizeMeasureSelection).filter(Boolean)
-        : [])
-  );
+  const selections = Array.isArray(entry?.between)
+    ? normalizeMeasurementBetweenEntry(entry.between)
+    : [];
 
   if (selections.length !== 2) {
     return null;
@@ -1449,9 +1369,7 @@ function serializeHiddenTransitionEntry(transitionId) {
     };
   }
 
-  return {
-    between: [],
-  };
+  return null;
 }
 
 function serializePinnedPanelEntry(panel) {
@@ -1793,12 +1711,6 @@ function syncDiagramSourceUi() {
     return;
   }
 
-  if (isElectronRuntime()) {
-    chooseDiagramToggleButton.textContent = "Choose Diagram";
-    chooseDiagramToggleButton.setAttribute("aria-label", "Choose a diagram from the local diagrams folder");
-    return;
-  }
-
   if (diagramsFolderHandle) {
     chooseDiagramToggleButton.textContent = "Choose Diagram";
     chooseDiagramToggleButton.setAttribute("aria-label", "Choose a diagram from the selected folder");
@@ -1829,33 +1741,27 @@ function renderDiagramPicker() {
     diagramPickerPath.hidden = true;
   }
 
-  if (!isElectronRuntime()) {
-    const pickerState = getBrowserDiagramPickerUiState();
+  const pickerState = getBrowserDiagramPickerUiState();
 
-    if (diagramPickerHint) {
-      diagramPickerHint.textContent = pickerState.hint;
-    }
+  if (diagramPickerHint) {
+    diagramPickerHint.textContent = pickerState.hint;
+  }
 
-    if (diagramPickerPath && pickerState.path) {
-      diagramPickerPath.textContent = pickerState.path;
-      diagramPickerPath.hidden = false;
-    }
+  if (diagramPickerPath && pickerState.path) {
+    diagramPickerPath.textContent = pickerState.path;
+    diagramPickerPath.hidden = false;
+  }
 
-    if (diagramPickerActions && pickerState.actionLabel) {
-      const pickButton = document.createElement("button");
-      pickButton.type = "button";
-      pickButton.className = "diagram-picker-action";
-      pickButton.textContent = pickerState.actionLabel;
-      pickButton.disabled = !browserDiagramSourceInfo.supported;
-      pickButton.addEventListener("click", () => {
-        pickDiagramsFolder();
-      });
-      diagramPickerActions.append(pickButton);
-    }
-  } else if (diagramPickerHint) {
-    diagramPickerHint.textContent = hasElectronDiagramBridge()
-      ? "Diagrams are being read from the local diagrams folder."
-      : "Electron could not access the local diagrams folder.";
+  if (diagramPickerActions && pickerState.actionLabel) {
+    const pickButton = document.createElement("button");
+    pickButton.type = "button";
+    pickButton.className = "diagram-picker-action";
+    pickButton.textContent = pickerState.actionLabel;
+    pickButton.disabled = !browserDiagramSourceInfo.supported;
+    pickButton.addEventListener("click", () => {
+      pickDiagramsFolder();
+    });
+    diagramPickerActions.append(pickButton);
   }
 
   if (diagramCatalog.entries.length === 0) {
@@ -1863,11 +1769,7 @@ function renderDiagramPicker() {
     li.className = "diagram-picker-empty";
     li.textContent = diagramsFolderHandle
       ? "No readable .yaml diagrams were found in the selected folder."
-      : (isElectronRuntime()
-        ? (hasElectronDiagramBridge()
-          ? "No readable .yaml diagrams were found in the local diagrams folder."
-          : "Electron could not start the local diagram bridge.")
-        : "Choose the local diagrams folder to list available YAML diagrams.");
+      : "Choose the local diagrams folder to list available YAML diagrams.";
     diagramPickerList.append(li);
     return;
   }
@@ -1925,17 +1827,11 @@ function renderHomePanel() {
     speciesName.hidden = false;
     speciesName.textContent = diagramCatalog.entries.length > 0
       ? "Pick a diagram from the project list."
-      : (isElectronRuntime()
-        ? (hasElectronDiagramBridge()
-          ? "No diagrams are available in the local diagrams folder."
-          : "Electron could not access the local diagrams folder.")
-        : `Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder inside this app folder to begin.`);
+      : `Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder inside this app folder to begin.`;
     renderSpeciesProperties({ notes: [] });
     syncDiagramUiAvailability();
     renderDiagramPicker();
-    if (!isElectronRuntime()) {
-      openDiagramPicker();
-    }
+    openDiagramPicker();
     return;
   }
 

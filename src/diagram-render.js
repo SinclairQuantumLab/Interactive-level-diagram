@@ -1622,7 +1622,7 @@ function handleMeasureSelection(type, id) {
   }
 
   const measurement = normalizeMeasurementEntry({
-    selections: [currentMeasureSelection[0], selection],
+    between: [currentMeasureSelection[0].id, selection.id],
   });
 
   if (!measurement) {
