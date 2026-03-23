@@ -1,6 +1,8 @@
+const LAYOUT_EXPORT_VERSION = 3;
+
 function buildSerializableState() {
   return {
-    version: 3,
+    version: LAYOUT_EXPORT_VERSION,
     appVersion: APP_CONFIG.ui.appVersion || "",
     expandedFine: Array.from(expandedFine),
     expandedHyperfine: Array.from(expandedHyperfine),
@@ -12,7 +14,9 @@ function buildSerializableState() {
     measureSelection: currentMeasureSelection,
     measurements: currentMeasurements.map(serializeMeasurementEntry).filter(Boolean),
     hiddenStates: Array.from(hiddenStateKeys),
-    hiddenTransitions: Array.from(hiddenTransitionIds).map(serializeHiddenTransitionEntry),
+    hiddenTransitions: Array.from(hiddenTransitionIds)
+      .map(serializeHiddenTransitionEntry)
+      .filter(Boolean),
     controls: {
       hyperfineScaleByFineState: currentHyperfineScaleByFineState,
       transitionLabels: serializeTransitionControlEntries(),
@@ -1073,11 +1077,6 @@ function openExternalUrl(url) {
     return;
   }
 
-  if (typeof window.diagramHost?.openExternal === "function") {
-    window.diagramHost.openExternal(url);
-    return;
-  }
-
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
@@ -1235,29 +1234,15 @@ function renderReferencesPanel() {
 }
 
 function buildMeasurementEntry(layout, measurement) {
-  const normalized = normalizeMeasurementEntry(measurement);
-
-  if (!normalized || !layout?.visibleEndpointNodeMap) {
-    return null;
-  }
-
-  const [selectionOne, selectionTwo] = normalized.selections;
-  const endpointOne = layout.visibleEndpointNodeMap.get(createEndpointNodeKey(selectionOne.type, selectionOne.id));
-  const endpointTwo = layout.visibleEndpointNodeMap.get(createEndpointNodeKey(selectionTwo.type, selectionTwo.id));
-
-  if (!endpointOne || !endpointTwo) {
-    return null;
-  }
-
-  return {
+  void layout;
+  void measurement;
+  return null;
+  /*
     id: normalized.id,
     title: `${endpointOne.labelPlain} ↔ ${endpointTwo.labelPlain}`,
     value: buildMeasureValueLines(endpointOne, endpointTwo).join("\n"),
   };
-}
-
-function renderMeasurementsPanel(layout = currentLayout) {
-  void layout;
+  */
 }
 
 function closeHelpPanel() {
@@ -1696,7 +1681,7 @@ function applyStateObject(stateObject, options = {}) {
         sceneY: Number.isFinite(panel.sceneY) ? panel.sceneY : 0,
         widthScreen: Number.isFinite(panel.widthScreen)
           ? panel.widthScreen
-          : (Number.isFinite(panel.widthScene) ? panel.widthScene * getSceneScreenScale() : null),
+          : null,
         showTransitionLabelSelectors: Boolean(panel.showTransitionLabelSelectors),
         showMeasurementLabelSelectors: Boolean(panel.showMeasurementLabelSelectors),
         editMeasurementNotes: Boolean(panel.editMeasurementNotes),
@@ -1792,9 +1777,7 @@ function applyStateObject(stateObject, options = {}) {
     : defaultBFieldEnabled;
   currentBFieldVisualScale = Number.isFinite(controls.bFieldVisualScale)
     ? clamp(controls.bFieldVisualScale, bFieldVisualScaleSliderRange.min, bFieldVisualScaleSliderRange.max)
-    : (Number.isFinite(controls.bFieldStrength)
-      ? clamp(controls.bFieldStrength, bFieldVisualScaleSliderRange.min, bFieldVisualScaleSliderRange.max)
-      : defaultBFieldVisualScale);
+    : defaultBFieldVisualScale;
   currentBFieldGaussMin = Number.isFinite(controls.bFieldGaussMin)
     ? controls.bFieldGaussMin
     : defaultBFieldGaussMin;
