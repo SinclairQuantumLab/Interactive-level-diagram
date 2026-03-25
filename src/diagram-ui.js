@@ -317,8 +317,21 @@ function buildMetadataFragment(rows, options = {}) {
 }
 
 function normalizeMetadataRow(row) {
+  if (row?.type === "section") {
+    return {
+      type: "section",
+      title: row?.title || "",
+      label: "",
+      value: "",
+      references: [],
+      selector: null,
+      editor: null,
+    };
+  }
+
   if (Array.isArray(row)) {
     return {
+      type: "entry",
       label: row[0],
       value: row[1],
       references: Array.isArray(row[2]) ? row[2] : [],
@@ -328,6 +341,7 @@ function normalizeMetadataRow(row) {
   }
 
   return {
+    type: "entry",
     label: row?.label || "",
     value: row?.value ?? "",
     references: Array.isArray(row?.references) ? row.references : [],
@@ -387,8 +401,30 @@ function getMeasurementEntryById(measurementId) {
   return currentMeasurements.find((entry) => normalizeMeasurementEntry(entry)?.id === measurementId) || null;
 }
 
-function resolveMeasurementLabelFields(measurementId, fallback = ["frequency"]) {
-  const measurement = getMeasurementEntryById(String(measurementId || "").trim());
+function getMeasurementNodeById(measurementId) {
+  const normalizedMeasurementId = String(measurementId || "").trim();
+
+  if (!normalizedMeasurementId || !currentLayout?.measurementNodeMap) {
+    return null;
+  }
+
+  return currentLayout.measurementNodeMap.get(normalizedMeasurementId) || null;
+}
+
+function getSelectedMeasurementLabelFieldsForNode(node, fallback = []) {
+  if (!node) {
+    return Array.isArray(fallback) ? [...fallback] : [];
+  }
+
+  return Array.isArray(node.labelFields)
+    ? [...node.labelFields]
+    : [];
+}
+
+function resolveMeasurementLabelFields(measurementId, fallback = []) {
+  const measurement = normalizeMeasurementEntry(
+    getMeasurementEntryById(String(measurementId || "").trim()),
+  );
 
   if (!measurement) {
     return Array.isArray(fallback) ? [...fallback] : [];
@@ -437,30 +473,44 @@ function updateMeasurementEntry(measurementId, updater, { rerenderPanels = false
 }
 
 function updateMeasurementLabelFieldSelection(measurementId, fieldKey, enabled) {
-  const normalizedFieldKey = String(fieldKey || "").trim();
+  const normalizedFieldKey = String(fieldKey || "").trim().toLowerCase();
+  const measurementNode = getMeasurementNodeById(measurementId);
+  const canonicalFieldKey = measurementNode
+    ? getMeasurementCanonicalFieldKey(measurementNode, normalizedFieldKey)
+    : normalizedFieldKey;
 
-  if (!normalizedFieldKey) {
+  if (!canonicalFieldKey) {
     return;
   }
 
   updateMeasurementEntry(measurementId, (entry) => {
-    const nextFieldSet = new Set(resolveMeasurementLabelFields(entry.id, ["frequency"]));
+    const nextFieldSet = new Set(
+      measurementNode
+        ? getSelectedMeasurementLabelFieldsForNode(measurementNode, [])
+        : resolveMeasurementLabelFields(entry.id, []),
+    );
 
     if (enabled) {
-      nextFieldSet.add(normalizedFieldKey);
+      nextFieldSet.add(canonicalFieldKey);
     } else {
-      nextFieldSet.delete(normalizedFieldKey);
+      nextFieldSet.delete(canonicalFieldKey);
     }
 
     entry.labelFields = [...nextFieldSet];
     return entry;
+  }, {
+    rerenderPanels: true,
   });
 }
 
 function updateMeasurementLabelPrecision(measurementId, key, rawValue) {
-  const normalizedKey = String(key || "").trim();
+  const normalizedKey = String(key || "").trim().toLowerCase();
+  const measurementNode = getMeasurementNodeById(measurementId);
+  const canonicalKey = measurementNode
+    ? getMeasurementCanonicalFieldKey(measurementNode, normalizedKey)
+    : normalizedKey;
 
-  if (!normalizedKey) {
+  if (!canonicalKey) {
     return;
   }
 
@@ -470,10 +520,18 @@ function updateMeasurementLabelPrecision(measurementId, key, rawValue) {
     : null;
 
   updateMeasurementEntry(measurementId, (entry) => {
-    entry.precision = {
-      ...(entry.precision || { wavelength: null, frequency: null }),
-      [normalizedKey]: normalizedValue,
+    const nextPrecision = {
+      ...(entry.precision || {}),
     };
+    const precisionLookupKeys = measurementNode
+      ? getMeasurementPrecisionLookupKeys(measurementNode, canonicalKey)
+      : [canonicalKey];
+
+    precisionLookupKeys.forEach((precisionKey) => {
+      delete nextPrecision[precisionKey];
+    });
+    nextPrecision[canonicalKey] = normalizedValue;
+    entry.precision = nextPrecision;
     return entry;
   });
 }
@@ -496,7 +554,7 @@ function insertMeasurementNote(measurementId, insertIndex) {
     const normalizedIndex = clamp(Number.isFinite(insertIndex) ? insertIndex : notes.length, 0, notes.length);
     notes.splice(normalizedIndex, 0, "");
     entry.notes = notes;
-    entry.labelFields = resolveMeasurementLabelFields(entry.id, ["frequency"])
+    entry.labelFields = resolveMeasurementLabelFields(entry.id, [])
       .map((fieldKey) => {
         const noteMatch = String(fieldKey || "").trim().match(/^note:(\d+)$/);
 
@@ -518,7 +576,7 @@ function removeMeasurementNote(measurementId, noteIndex) {
     const notes = Array.isArray(entry.notes) ? [...entry.notes] : [];
     notes.splice(noteIndex, 1);
     entry.notes = notes;
-    entry.labelFields = resolveMeasurementLabelFields(entry.id, ["frequency"])
+    entry.labelFields = resolveMeasurementLabelFields(entry.id, [])
       .flatMap((fieldKey) => {
         const noteMatch = String(fieldKey || "").trim().match(/^note:(\d+)$/);
 
@@ -575,8 +633,13 @@ function isMetadataSelectorEnabled(selector) {
   }
 
   if (selector?.measurementId && selector?.fieldKey) {
-    return resolveMeasurementLabelFields(selector.measurementId, ["frequency"])
-      .includes(selector.fieldKey);
+    const measurementNode = getMeasurementNodeById(selector.measurementId);
+    const activeFields = new Set(getSelectedMeasurementLabelFieldsForNode(measurementNode, []));
+    const candidateFieldKey = measurementNode
+      ? getMeasurementCanonicalFieldKey(measurementNode, selector.fieldKey)
+      : String(selector.fieldKey || "").trim().toLowerCase();
+
+    return activeFields.has(candidateFieldKey);
   }
 
   return false;
@@ -683,50 +746,57 @@ function buildTransitionLabelPrecisionControls(node) {
   return controlCard;
 }
 
-function buildMeasurementLabelPrecisionControls(node) {
-  const controlCard = document.createElement("div");
-  controlCard.className = "inspector-control-card";
+function getVisibleMeasurementSectionFormatFields(node, sectionId) {
+  const activeFields = new Set(getSelectedMeasurementLabelFieldsForNode(node, []));
+  const section = getMeasurementSectionDefinitions(node).sections
+    .find((candidate) => candidate.id === sectionId);
 
-  const controlHeader = document.createElement("div");
-  controlHeader.className = "hyperfine-scale-header";
+  if (!section) {
+    return [];
+  }
 
-  const controlTitle = document.createElement("strong");
-  controlTitle.textContent = "Label decimals";
+  return section.fields.filter((field) => activeFields.has(field.key));
+}
 
-  const controlValue = document.createElement("span");
-  controlValue.textContent = "Blank = full";
+function buildMeasurementSectionFormatEditorFragment(editor) {
+  const node = getMeasurementNodeById(editor?.measurementId);
 
-  const fields = document.createElement("div");
-  fields.className = "precision-input-grid";
+  if (!node) {
+    return null;
+  }
 
-  const precision = node.precision || { wavelength: null, frequency: null };
+  const visibleFields = getVisibleMeasurementSectionFormatFields(node, editor?.sectionId);
 
-  [
-    ["wavelength", "Wavelength"],
-    ["frequency", "Frequency"],
-  ].forEach(([key, labelText]) => {
-    const label = document.createElement("label");
-    label.className = "precision-input";
+  if (visibleFields.length === 0) {
+    return null;
+  }
 
-    const span = document.createElement("span");
-    span.textContent = labelText;
+  const wrapper = document.createElement("div");
+  wrapper.className = "precision-input-grid";
 
-    const input = document.createElement("input");
-    input.type = "number";
-    input.min = "0";
-    input.max = "12";
-    input.step = "1";
-    input.placeholder = "full";
-    input.value = Number.isFinite(precision[key]) ? String(precision[key]) : "";
-    input.addEventListener("change", () => updateMeasurementLabelPrecision(node.id, key, input.value));
+  visibleFields.forEach((field) => {
+    const precisionInputRow = document.createElement("label");
+    precisionInputRow.className = "precision-input";
 
-    label.append(span, input);
-    fields.append(label);
+    const precisionLabel = document.createElement("span");
+    precisionLabel.textContent = field.label;
+
+    const precisionInput = document.createElement("input");
+    precisionInput.type = "number";
+    precisionInput.min = "0";
+    precisionInput.max = "12";
+    precisionInput.step = "1";
+    precisionInput.placeholder = "full";
+    precisionInput.value = Number.isFinite(getMeasurementFieldPrecisionValue(node, field.key))
+      ? String(getMeasurementFieldPrecisionValue(node, field.key))
+      : "";
+    precisionInput.addEventListener("change", () => updateMeasurementLabelPrecision(node.id, field.key, precisionInput.value));
+
+    precisionInputRow.append(precisionLabel, precisionInput);
+    wrapper.append(precisionInputRow);
   });
 
-  controlHeader.append(controlTitle, controlValue);
-  controlCard.append(controlHeader, fields);
-  return controlCard;
+  return wrapper;
 }
 
 function buildMeasurementNoteEditorFragment(editor) {
@@ -844,10 +914,26 @@ function buildMetadataValueFragment(value, referenceKeys) {
 function buildMetadataEntryFragment(row, options = {}) {
   const normalized = normalizeMetadataRow(row);
   const fragment = document.createDocumentFragment();
+
+  if (normalized.type === "section") {
+    const heading = document.createElement("div");
+    heading.className = "metadata-section-heading";
+    setMixedTextContent(heading, normalized.title);
+    fragment.append(heading);
+    return fragment;
+  }
+
   const dt = document.createElement("dt");
   const dd = document.createElement("dd");
   const showSelectors = Boolean(options.showSelectors);
   const showEditors = Boolean(options.showEditors);
+  const formatEditor = normalized.editor?.type === "measurement-format"
+    ? buildMeasurementSectionFormatEditorFragment(normalized.editor)
+    : null;
+
+  if (normalized.editor?.type === "measurement-format" && !formatEditor) {
+    return fragment;
+  }
 
   if (normalized.label && typeof normalized.label === "object" && normalized.label.type === "subscript-token") {
     setSubscriptTokenContent(dt, normalized.label.base, normalized.label.subscript, normalized.label.suffix || "");
@@ -860,6 +946,12 @@ function buildMetadataEntryFragment(row, options = {}) {
     && (normalized.selector?.transitionId || normalized.selector?.measurementId);
   const shouldShowEditor = showEditors
     && normalized.editor?.type === "measurement-note";
+
+  if (formatEditor) {
+    dd.append(formatEditor);
+    fragment.append(dt, dd);
+    return fragment;
+  }
 
   if (shouldShowSelector || shouldShowEditor) {
     const valueRow = document.createElement("div");
@@ -1513,13 +1605,11 @@ function buildPinnedPanelContent(panel, layout) {
     subtitle.textContent = "";
     metadata.append(buildMetadataFragment(getMeasurementDetail(node, {
       includeEmptyNoteRow: Boolean(panel.editMeasurementNotes),
+      includeLabelFormatControls: Boolean(panel.showMeasurementLabelSelectors),
     }), {
       showSelectors: Boolean(panel.showMeasurementLabelSelectors),
       showEditors: Boolean(panel.editMeasurementNotes),
     }));
-    if (panel.showMeasurementLabelSelectors) {
-      controls.append(buildMeasurementLabelPrecisionControls(node));
-    }
     headerActions.append(createMeasurementEditToggleButton(panel));
     headerActions.append(createMeasurementVisibilityToggleButton(panel));
   }

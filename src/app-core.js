@@ -533,8 +533,8 @@ function normalizeTransitionEndpointRef(referenceText) {
   return String(referenceText || "").trim();
 }
 
-function createTransitionPairId(statePair) {
-  const normalizedPair = (Array.isArray(statePair) ? statePair : [])
+function createTransitionPairId(between) {
+  const normalizedPair = (Array.isArray(between) ? between : [])
     .map(normalizeTransitionEndpointRef)
     .filter(Boolean)
     .sort((left, right) => left.localeCompare(right));
@@ -960,9 +960,9 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
     }),
     bibliography,
     transitions: (Array.isArray(rawConfig.transitions) ? rawConfig.transitions : []).map((transition, index) => {
-      const statePair = (Array.isArray(transition.between) ? transition.between : [])
+      const between = (Array.isArray(transition.between) ? transition.between : [])
         .map(normalizeTransitionEndpointRef);
-      const transitionId = createTransitionPairId(statePair) || `transition-${index + 1}`;
+      const transitionId = createTransitionPairId(between) || `transition-${index + 1}`;
       const frequencyMeasurement = parseTransitionMeasurement(
         transitionId,
         "frequency",
@@ -973,7 +973,7 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
 
       return {
         id: transitionId,
-        statePair,
+        between,
         transitionType: typeof transition.type === "string" && transition.type.trim() ? transition.type.trim() : "",
         strengthText: typeof transition.strength === "string" && transition.strength.trim() ? transition.strength.trim() : "",
         labelFields: Array.isArray(transition.show)
@@ -1286,28 +1286,56 @@ function normalizeMeasurementBetweenEntry(stateIds) {
     .filter(Boolean);
 }
 
-function normalizeMeasurementLabelFieldList(fields, fallback = ["frequency"]) {
+const MEASUREMENT_SECTION_FIELD_KEY_PATTERN = /^(?:total|fine|hyperfine|zeeman):(?:frequency|wavelength)$/;
+const MEASUREMENT_NOTE_FIELD_KEY_PATTERN = /^note:\d+$/;
+
+function isSupportedMeasurementLabelFieldKey(fieldKey) {
+  const normalizedFieldKey = String(fieldKey || "").trim().toLowerCase();
+  return MEASUREMENT_SECTION_FIELD_KEY_PATTERN.test(normalizedFieldKey)
+    || normalizedFieldKey === "notes"
+    || MEASUREMENT_NOTE_FIELD_KEY_PATTERN.test(normalizedFieldKey);
+}
+
+function normalizeMeasurementLabelFieldList(fields, fallback = []) {
   if (Array.isArray(fields)) {
     return fields
-      .map((field) => String(field || "").trim())
-      .filter(Boolean);
+      .map((field) => String(field || "").trim().toLowerCase())
+      .filter((field) => isSupportedMeasurementLabelFieldKey(field));
   }
 
   return Array.isArray(fallback) ? [...fallback] : [];
 }
 
+const MEASUREMENT_FREQUENCY_UNITS = ["mHz", "Hz", "kHz", "MHz", "GHz", "THz", "PHz"];
+
+function normalizeMeasurementFrequencyUnit(unitLabel) {
+  const normalizedUnit = String(unitLabel || "").trim();
+  return MEASUREMENT_FREQUENCY_UNITS.includes(normalizedUnit)
+    ? normalizedUnit
+    : "THz";
+}
+
 function normalizeMeasurementPrecisionEntry(precision) {
-  const normalized = precision && typeof precision === "object" ? precision : {};
-  return {
-    wavelength: Number.isFinite(normalized.wavelength) ? clamp(Math.round(normalized.wavelength), 0, 12) : null,
-    frequency: Number.isFinite(normalized.frequency) ? clamp(Math.round(normalized.frequency), 0, 12) : null,
-  };
+  const normalized = {};
+  const source = precision && typeof precision === "object" ? precision : {};
+
+  Object.entries(source).forEach(([key, value]) => {
+    const normalizedKey = String(key || "").trim().toLowerCase();
+
+    if (!MEASUREMENT_SECTION_FIELD_KEY_PATTERN.test(normalizedKey)) {
+      return;
+    }
+
+    normalized[normalizedKey] = Number.isFinite(value)
+      ? clamp(Math.round(value), 0, 12)
+      : null;
+  });
+
+  return normalized;
 }
 
 function normalizeMeasurementEntry(entry) {
-  const selections = Array.isArray(entry?.between)
-    ? normalizeMeasurementBetweenEntry(entry.between)
-    : [];
+  const selections = normalizeMeasurementBetweenEntry(entry?.between);
 
   if (selections.length !== 2) {
     return null;
@@ -1316,8 +1344,8 @@ function normalizeMeasurementEntry(entry) {
   const orderedSelections = [...selections].sort((left, right) => createMeasureSelectionKey(left).localeCompare(createMeasureSelectionKey(right)));
   return {
     id: createMeasurePairId(orderedSelections[0], orderedSelections[1]),
-    selections: orderedSelections,
-    labelFields: normalizeMeasurementLabelFieldList(entry?.show ?? entry?.labelFields, ["frequency"]),
+    between: orderedSelections.map((selection) => selection.id),
+    labelFields: normalizeMeasurementLabelFieldList(entry?.show ?? entry?.labelFields, []),
     precision: normalizeMeasurementPrecisionEntry(entry?.precision),
     notes: Array.isArray(entry?.notes)
       ? entry.notes.map((note) => String(note ?? "")).filter((note) => note.trim() || note === "")
@@ -1361,11 +1389,11 @@ function normalizeHiddenTransitionId(value) {
 }
 
 function serializeHiddenTransitionEntry(transitionId) {
-  const statePair = splitTransitionPairId(transitionId);
+  const between = splitTransitionPairId(transitionId);
 
-  if (statePair.length === 2) {
+  if (between.length === 2) {
     return {
-      between: statePair,
+      between,
     };
   }
 
@@ -1439,11 +1467,10 @@ function serializeMeasurementEntry(measurement) {
   }
 
   return {
-    between: normalized.selections.map((selection) => selection.id),
+    between: [...normalized.between],
     show: Array.isArray(normalized.labelFields) ? [...normalized.labelFields] : [],
     precision: {
-      wavelength: Number.isFinite(normalized.precision?.wavelength) ? normalized.precision.wavelength : null,
-      frequency: Number.isFinite(normalized.precision?.frequency) ? normalized.precision.frequency : null,
+      ...normalized.precision,
     },
     notes: Array.isArray(normalized.notes) ? [...normalized.notes] : [],
   };

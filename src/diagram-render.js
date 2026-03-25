@@ -873,7 +873,7 @@ function buildMeasurementNodes(endpointNodeMap, layout) {
     .map((measurement) => normalizeMeasurementEntry(measurement))
     .filter(Boolean)
     .map((measurement) => {
-      const [selectionOne, selectionTwo] = measurement.selections;
+      const [selectionOne, selectionTwo] = normalizeMeasurementBetweenEntry(measurement.between);
 
       if (areMeasureSelectionsEqual(selectionOne, selectionTwo)) {
         return null;
@@ -909,14 +909,15 @@ function buildMeasurementNodes(endpointNodeMap, layout) {
         midY: (y1 + y2) / 2,
         vectorGeometry,
         notes: Array.isArray(measurement.notes) ? [...measurement.notes] : [],
-        labelFields: Array.isArray(measurement.labelFields) ? [...measurement.labelFields] : ["frequency"],
-        precision: measurement.precision || { wavelength: null, frequency: null },
-        valueLines: buildMeasureValueLines(endpointOne, endpointTwo),
+        labelFields: [],
+        precision: measurement.precision || {},
         isHidden: isEndpointEffectivelyHidden(endpointOne) || isEndpointEffectivelyHidden(endpointTwo),
       };
 
       node.frequencyMeasurement = getMeasurementTotalFrequency(node);
       node.wavelengthMeasurement = getMeasurementWavelength(node);
+      node.labelFields = normalizeMeasurementSelectedFieldKeys(node, measurement.labelFields, []);
+      node.valueLines = buildMeasurementDifferenceLines(node);
       node.lines = getMeasurementLabelLines(node);
 
       return {
@@ -1101,7 +1102,7 @@ function buildTransitionNodes(fineStateMap, hyperfineNodeMap, zeemanNodeMap, iss
   const potentialEndpointKeys = createPotentialStateReferenceKeySet(fineStates);
   const normalizedTransitions = (Array.isArray(config.transitions) ? config.transitions : [])
     .map((transition) => {
-      if (!Array.isArray(transition.statePair) || transition.statePair.length !== 2) {
+      if (!Array.isArray(transition.between) || transition.between.length !== 2) {
         issues.push({
           key: `transition:${transition.id}:pair`,
           title: "Invalid transition",
@@ -1110,8 +1111,8 @@ function buildTransitionNodes(fineStateMap, hyperfineNodeMap, zeemanNodeMap, iss
         return null;
       }
 
-      const endpointRefOne = parseStateReference(transition.statePair[0]);
-      const endpointRefTwo = parseStateReference(transition.statePair[1]);
+      const endpointRefOne = parseStateReference(transition.between[0]);
+      const endpointRefTwo = parseStateReference(transition.between[1]);
 
       if (!endpointRefOne || !endpointRefTwo) {
         issues.push({
@@ -1129,7 +1130,7 @@ function buildTransitionNodes(fineStateMap, hyperfineNodeMap, zeemanNodeMap, iss
         issues.push({
           key: `transition:${transition.id}:missing:${endpointOneKey}`,
           title: "Unknown state reference",
-          message: `Transition "${transition.id}" refers to "${transition.statePair[0]}", but no such state bar exists in this diagram.`,
+          message: `Transition "${transition.id}" refers to "${transition.between[0]}", but no such state bar exists in this diagram.`,
         });
         return null;
       }
@@ -1138,7 +1139,7 @@ function buildTransitionNodes(fineStateMap, hyperfineNodeMap, zeemanNodeMap, iss
         issues.push({
           key: `transition:${transition.id}:missing:${endpointTwoKey}`,
           title: "Unknown state reference",
-          message: `Transition "${transition.id}" refers to "${transition.statePair[1]}", but no such state bar exists in this diagram.`,
+          message: `Transition "${transition.id}" refers to "${transition.between[1]}", but no such state bar exists in this diagram.`,
         });
         return null;
       }
@@ -1621,8 +1622,15 @@ function handleMeasureSelection(type, id) {
     return;
   }
 
+  const firstSelection = currentMeasureSelection[0];
+  const endpointOne = currentLayout?.visibleEndpointNodeMap?.get(createEndpointNodeKey(firstSelection.type, firstSelection.id)) || null;
+  const endpointTwo = currentLayout?.visibleEndpointNodeMap?.get(createEndpointNodeKey(selection.type, selection.id)) || null;
+  const defaultLabelFields = endpointOne && endpointTwo
+    ? getDefaultMeasurementLabelFieldKeys({ endpointOne, endpointTwo })
+    : [];
   const measurement = normalizeMeasurementEntry({
-    between: [currentMeasureSelection[0].id, selection.id],
+    between: [firstSelection.id, selection.id],
+    show: defaultLabelFields,
   });
 
   if (!measurement) {

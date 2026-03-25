@@ -599,6 +599,12 @@ h1 {
   color: var(--text-main);
 }
 
+.hyperfine-scale-header .inspector-section-heading {
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .hyperfine-scale-header span {
   font-size: 0.88rem;
   color: var(--text-muted);
@@ -1511,6 +1517,24 @@ h1 {
   gap: 8px;
 }
 
+.metadata-section-heading {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--panel-border);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.metadata-section-heading:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
 .metadata-value-lines {
   display: grid;
   gap: 2px;
@@ -1538,6 +1562,11 @@ h1 {
   align-items: center;
   gap: 10px;
   color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.precision-input span {
+  font-weight: 600;
 }
 
 .precision-input input {

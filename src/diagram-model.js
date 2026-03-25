@@ -233,18 +233,22 @@ function combineMeasurementValues(measurements, unitLabel = "") {
 }
 
 function differenceMeasurementValues(leftMeasurement, rightMeasurement, unitLabel = "") {
-  const resolvedUnitLabel = unitLabel || leftMeasurement?.unitLabel || rightMeasurement?.unitLabel || "";
-  const left = leftMeasurement || createZeroMeasurementValue(resolvedUnitLabel);
-  const right = rightMeasurement || createZeroMeasurementValue(resolvedUnitLabel);
-  const difference = combineMeasurementValues([
-    scaleMeasurementValue(left, 1),
-    scaleMeasurementValue(right, -1),
-  ], resolvedUnitLabel);
+  const difference = signedDifferenceMeasurementValues(leftMeasurement, rightMeasurement, unitLabel);
 
   return {
     ...difference,
     nominalValue: Math.abs(difference.nominalValue),
   };
+}
+
+function signedDifferenceMeasurementValues(leftMeasurement, rightMeasurement, unitLabel = "") {
+  const resolvedUnitLabel = unitLabel || leftMeasurement?.unitLabel || rightMeasurement?.unitLabel || "";
+  const left = leftMeasurement || createZeroMeasurementValue(resolvedUnitLabel);
+  const right = rightMeasurement || createZeroMeasurementValue(resolvedUnitLabel);
+  return combineMeasurementValues([
+    scaleMeasurementValue(left, 1),
+    scaleMeasurementValue(right, -1),
+  ], resolvedUnitLabel);
 }
 
 function deriveShortFormDecimals(uncertaintyValue, significantDigits = 2) {
@@ -292,6 +296,483 @@ function formatMeasurementValue(measurement, fallbackDecimals = null) {
     : `(+${scaledUpper},-${scaledLower})`;
 
   return `${nominalText}${uncertaintyText} ${unitLabel}`.trim();
+}
+
+function getFrequencyUnitScale(unitLabel) {
+  if (typeof unitLabel !== "string" || !unitLabel.endsWith("Hz")) {
+    return Number.NaN;
+  }
+
+  const prefix = unitLabel.slice(0, -2);
+  const scale = HZ_UNIT_PREFIX_SCALE[prefix];
+  return Number.isFinite(scale) ? scale : Number.NaN;
+}
+
+function chooseBestFrequencyUnitFromHz(valueHz) {
+  const magnitudeHz = Math.abs(valueHz);
+
+  if (!Number.isFinite(magnitudeHz) || magnitudeHz <= 0) {
+    return "Hz";
+  }
+
+  for (let index = MEASUREMENT_FREQUENCY_UNITS.length - 1; index >= 0; index -= 1) {
+    const candidateUnit = MEASUREMENT_FREQUENCY_UNITS[index];
+    const candidateScale = getFrequencyUnitScale(candidateUnit);
+
+    if (!Number.isFinite(candidateScale) || candidateScale <= 0) {
+      continue;
+    }
+
+    if (magnitudeHz >= candidateScale) {
+      return candidateUnit;
+    }
+  }
+
+  return MEASUREMENT_FREQUENCY_UNITS[0] || "Hz";
+}
+
+function getMeasurementFrequencyMagnitudeHz(frequencyMeasurement) {
+  const sourceUnitLabel = typeof frequencyMeasurement?.unitLabel === "string" && frequencyMeasurement.unitLabel.trim()
+    ? frequencyMeasurement.unitLabel.trim()
+    : "THz";
+  const sourceScale = getFrequencyUnitScale(sourceUnitLabel);
+
+  if (!Number.isFinite(sourceScale)) {
+    return {
+      nominalHz: Number.NaN,
+      upperUncertaintyHz: Number.NaN,
+    };
+  }
+
+  return {
+    nominalHz: Number.isFinite(frequencyMeasurement?.nominalValue)
+      ? Math.abs(frequencyMeasurement.nominalValue) * sourceScale
+      : Number.NaN,
+    upperUncertaintyHz: frequencyMeasurement?.uncertaintyMode === "known"
+      ? Math.max(frequencyMeasurement.lowerUncertainty, frequencyMeasurement.upperUncertainty) * sourceScale
+      : Number.NaN,
+  };
+}
+
+function chooseAutoMeasurementFrequencyUnit(frequencyMeasurement) {
+  const { nominalHz, upperUncertaintyHz } = getMeasurementFrequencyMagnitudeHz(frequencyMeasurement);
+  const baseMagnitudeHz = nominalHz > 0
+    ? nominalHz
+    : (upperUncertaintyHz > 0 ? upperUncertaintyHz : 1);
+  const usualUnitLabel = chooseBestFrequencyUnitFromHz(baseMagnitudeHz);
+
+  if (frequencyMeasurement?.uncertaintyMode !== "known" || !(nominalHz > 0)) {
+    return usualUnitLabel;
+  }
+
+  const usualScale = getFrequencyUnitScale(usualUnitLabel);
+
+  if (!Number.isFinite(usualScale) || usualScale <= 0) {
+    return usualUnitLabel;
+  }
+
+  const nominalInUsualUnit = nominalHz / usualScale;
+  const uncertaintyInUsualUnit = upperUncertaintyHz / usualScale;
+
+  if (!(Number.isFinite(nominalInUsualUnit) && nominalInUsualUnit > 0 && Number.isFinite(uncertaintyInUsualUnit))) {
+    return usualUnitLabel;
+  }
+
+  const leadingDigitPlaceValue = 10 ** Math.floor(Math.log10(nominalInUsualUnit));
+  const usualUnitIndex = MEASUREMENT_FREQUENCY_UNITS.indexOf(usualUnitLabel);
+
+  if (uncertaintyInUsualUnit >= leadingDigitPlaceValue
+    && usualUnitIndex >= 0
+    && usualUnitIndex < MEASUREMENT_FREQUENCY_UNITS.length - 1) {
+    return MEASUREMENT_FREQUENCY_UNITS[usualUnitIndex + 1];
+  }
+
+  return usualUnitLabel;
+}
+
+function convertFrequencyMeasurementToUnit(frequencyMeasurement, unitLabel = null) {
+  const targetUnitLabel = unitLabel
+    ? normalizeMeasurementFrequencyUnit(unitLabel)
+    : chooseAutoMeasurementFrequencyUnit(frequencyMeasurement);
+  const sourceUnitLabel = typeof frequencyMeasurement?.unitLabel === "string" && frequencyMeasurement.unitLabel.trim()
+    ? frequencyMeasurement.unitLabel.trim()
+    : "THz";
+  const sourceScale = getFrequencyUnitScale(sourceUnitLabel);
+  const targetScale = getFrequencyUnitScale(targetUnitLabel);
+
+  if (!Number.isFinite(sourceScale) || !Number.isFinite(targetScale)) {
+    return createUnknownMeasurementValue(Number.NaN, targetUnitLabel);
+  }
+
+  if (!frequencyMeasurement || !Number.isFinite(frequencyMeasurement.nominalValue)) {
+    return createUnknownMeasurementValue(Number.NaN, targetUnitLabel);
+  }
+
+  const factor = sourceScale / targetScale;
+  const convertedNominalValue = frequencyMeasurement.nominalValue * factor;
+
+  if (frequencyMeasurement.uncertaintyMode === "exact") {
+    return createExactMeasurementValue(convertedNominalValue, targetUnitLabel);
+  }
+
+  if (frequencyMeasurement.uncertaintyMode !== "known") {
+    return createUnknownMeasurementValue(convertedNominalValue, targetUnitLabel);
+  }
+
+  return createMeasurementValue({
+    numericValue: convertedNominalValue,
+    unitLabel: targetUnitLabel,
+    uncertaintyMode: "known",
+    lowerUncertainty: Math.abs(frequencyMeasurement.lowerUncertainty * factor),
+    upperUncertainty: Math.abs(frequencyMeasurement.upperUncertainty * factor),
+  });
+}
+
+function formatBestFrequencyMeasurementValue(frequencyMeasurement) {
+  return formatMeasurementValue(convertFrequencyMeasurementToUnit(frequencyMeasurement));
+}
+
+function formatBestFrequencyMeasurementWithPrecision(frequencyMeasurement, decimals = null) {
+  const convertedMeasurement = convertFrequencyMeasurementToUnit(frequencyMeasurement);
+  return formatLimitedValueWithUnit(
+    convertedMeasurement?.nominalValue,
+    convertedMeasurement?.unitLabel || "Hz",
+    decimals,
+  );
+}
+
+const MEASUREMENT_COMPONENT_CONFIG = [
+  {
+    key: "fine",
+    title: "Fine",
+    breakdownLabel: "fine",
+    threshold: 1e-9,
+    unitLabel: "THz",
+  },
+  {
+    key: "hyperfine",
+    title: "HF",
+    breakdownLabel: "HF",
+    threshold: 1e-6,
+    unitLabel: "MHz",
+  },
+  {
+    key: "zeeman",
+    title: "Zeeman",
+    breakdownLabel: "Zeeman",
+    threshold: 1e-6,
+    unitLabel: "MHz",
+  },
+];
+
+function getMeasurementEndpointSortKey(endpoint) {
+  return `${endpoint?.type || ""}:${endpoint?.id || ""}`;
+}
+
+function orderMeasurementEndpointsByEnergy(endpointOne, endpointTwo) {
+  const energyOne = endpointOne?.energyTHz;
+  const energyTwo = endpointTwo?.energyTHz;
+
+  if (Number.isFinite(energyOne) && Number.isFinite(energyTwo)) {
+    if (energyOne > energyTwo) {
+      return [endpointOne, endpointTwo];
+    }
+
+    if (energyTwo > energyOne) {
+      return [endpointTwo, endpointOne];
+    }
+  }
+
+  return getMeasurementEndpointSortKey(endpointOne).localeCompare(getMeasurementEndpointSortKey(endpointTwo)) <= 0
+    ? [endpointOne, endpointTwo]
+    : [endpointTwo, endpointOne];
+}
+
+function getSignedMeasurementComponentDifference(endpointOne, endpointTwo, componentKey, unitLabel = "") {
+  const [upperEndpoint, lowerEndpoint] = orderMeasurementEndpointsByEnergy(endpointOne, endpointTwo);
+  const upperComponents = upperEndpoint?.measurementComponents || {};
+  const lowerComponents = lowerEndpoint?.measurementComponents || {};
+  return signedDifferenceMeasurementValues(
+    upperComponents[componentKey],
+    lowerComponents[componentKey],
+    unitLabel,
+  );
+}
+
+function getMeasurementSectionFieldKey(sectionId, fieldKind) {
+  return `${sectionId}:${fieldKind}`;
+}
+
+function getPreferredMeasurementFallbackKey(endpointOne, endpointTwo) {
+  if (endpointOne?.type === "zeeman" || endpointTwo?.type === "zeeman") {
+    return "zeeman";
+  }
+
+  if (endpointOne?.type === "hyperfine" || endpointTwo?.type === "hyperfine") {
+    return "hyperfine";
+  }
+
+  return "fine";
+}
+
+function createMeasurementSectionField(sectionId, fieldKind, label, measurement) {
+  return {
+    key: getMeasurementSectionFieldKey(sectionId, fieldKind),
+    kind: fieldKind,
+    label,
+    measurement,
+  };
+}
+
+function createMeasurementComponentSectionFields(sectionId, measurement) {
+  const fields = [];
+
+  if (sectionId === "fine") {
+    fields.push(createMeasurementSectionField(
+      sectionId,
+      "wavelength",
+      "Wavelength",
+      convertFrequencyMeasurementToWavelengthMeasurement(measurement),
+    ));
+  }
+
+  fields.push(createMeasurementSectionField(sectionId, "frequency", "Frequency", measurement));
+  return fields;
+}
+
+function getMeasurementRelevantComponentSections(node) {
+  if (!node?.endpointOne || !node?.endpointTwo) {
+    return [];
+  }
+
+  const sections = MEASUREMENT_COMPONENT_CONFIG
+    .map((component) => {
+      const measurement = getSignedMeasurementComponentDifference(
+        node.endpointOne,
+        node.endpointTwo,
+        component.key,
+        component.unitLabel,
+      );
+      const isRelevant = Math.abs(measurement.nominalValue) >= component.threshold
+        || (component.key === "zeeman" && shouldForceExplicitZeemanDifference(node.endpointOne, node.endpointTwo));
+
+      if (!isRelevant) {
+        return null;
+      }
+
+      return {
+        ...component,
+        id: component.key,
+        fields: createMeasurementComponentSectionFields(component.key, measurement),
+        measurement,
+      };
+    })
+    .filter(Boolean);
+
+  if (sections.length > 0) {
+    return sections;
+  }
+
+  const fallbackKey = getPreferredMeasurementFallbackKey(node.endpointOne, node.endpointTwo);
+  const fallbackComponent = MEASUREMENT_COMPONENT_CONFIG.find((component) => component.key === fallbackKey)
+    || MEASUREMENT_COMPONENT_CONFIG[0];
+  const measurement = getSignedMeasurementComponentDifference(
+    node.endpointOne,
+    node.endpointTwo,
+    fallbackComponent.key,
+    fallbackComponent.unitLabel,
+  );
+
+  return [{
+    ...fallbackComponent,
+    id: fallbackComponent.key,
+    fields: createMeasurementComponentSectionFields(fallbackComponent.key, measurement),
+    measurement,
+  }];
+}
+
+function getMeasurementSectionDefinitions(node) {
+  const componentSections = getMeasurementRelevantComponentSections(node);
+  const hasCompositeBreakdown = componentSections.length > 1;
+
+  if (hasCompositeBreakdown) {
+    return {
+      hasCompositeBreakdown,
+      componentSections,
+      sections: [
+        {
+          id: "total",
+          title: "Total",
+          showTitle: true,
+          fields: [
+            createMeasurementSectionField(
+              "total",
+              "wavelength",
+              "Wavelength",
+              node?.wavelengthMeasurement || getMeasurementWavelength(node),
+            ),
+            createMeasurementSectionField(
+              "total",
+              "frequency",
+              "Frequency",
+              node?.frequencyMeasurement || getMeasurementTotalFrequency(node),
+            ),
+          ],
+        },
+        ...componentSections.map((section) => ({
+          ...section,
+          showTitle: true,
+        })),
+      ],
+    };
+  }
+
+  return {
+    hasCompositeBreakdown,
+    componentSections,
+    sections: componentSections.map((section) => ({
+      ...section,
+      showTitle: false,
+      fields: [...section.fields],
+    })),
+  };
+}
+
+function getDefaultMeasurementLabelFieldKeys(node) {
+  return getMeasurementSectionDefinitions(node).sections
+    .filter((section) => section.id !== "total")
+    .flatMap((section) => {
+      if (section.id === "fine") {
+        const wavelengthField = section.fields.find((field) => field.kind === "wavelength");
+        return wavelengthField ? [wavelengthField.key] : [];
+      }
+
+      return section.fields.map((field) => field.key);
+    });
+}
+
+function getMeasurementFieldEntriesByKey(node) {
+  const entries = new Map();
+
+  getMeasurementSectionDefinitions(node).sections.forEach((section) => {
+    section.fields.forEach((field) => {
+      entries.set(field.key, {
+        section,
+        field,
+      });
+    });
+  });
+
+  return entries;
+}
+
+function getMeasurementCanonicalFieldKey(node, fieldKey) {
+  const normalizedFieldKey = String(fieldKey || "").trim().toLowerCase();
+
+  if (!normalizedFieldKey || normalizedFieldKey === "value") {
+    return null;
+  }
+
+  if (normalizedFieldKey === "notes" || /^note:\d+$/.test(normalizedFieldKey)) {
+    return normalizedFieldKey;
+  }
+
+  const fieldEntriesByKey = getMeasurementFieldEntriesByKey(node);
+
+  if (fieldEntriesByKey.has(normalizedFieldKey)) {
+    return normalizedFieldKey;
+  }
+
+  return null;
+}
+
+function normalizeMeasurementSelectedFieldKeys(node, sourceFields = null, fallback = []) {
+  const configuredFields = Array.isArray(sourceFields)
+    ? sourceFields
+    : (Array.isArray(node?.labelFields) ? node.labelFields : fallback);
+  const normalizedFields = [];
+  const seenFields = new Set();
+
+  configuredFields.forEach((fieldKey) => {
+    const canonicalFieldKey = getMeasurementCanonicalFieldKey(node, fieldKey);
+
+    if (!canonicalFieldKey || seenFields.has(canonicalFieldKey)) {
+      return;
+    }
+
+    seenFields.add(canonicalFieldKey);
+    normalizedFields.push(canonicalFieldKey);
+  });
+
+  return normalizedFields;
+}
+
+function getMeasurementSectionField(node, fieldKey) {
+  const canonicalFieldKey = getMeasurementCanonicalFieldKey(node, fieldKey);
+
+  if (!canonicalFieldKey) {
+    return {
+      section: null,
+      field: null,
+    };
+  }
+
+  const entry = getMeasurementFieldEntriesByKey(node).get(canonicalFieldKey) || null;
+  return entry || {
+    section: null,
+    field: null,
+  };
+}
+
+function getMeasurementPrecisionLookupKeys(node, fieldKey) {
+  const canonicalFieldKey = getMeasurementCanonicalFieldKey(node, fieldKey);
+
+  return canonicalFieldKey ? [canonicalFieldKey] : [];
+}
+
+function getMeasurementFieldPrecisionValue(node, fieldKey) {
+  const precision = node?.precision || {};
+  const lookupKeys = getMeasurementPrecisionLookupKeys(node, fieldKey);
+
+  for (const key of lookupKeys) {
+    if (Number.isFinite(precision[key])) {
+      return precision[key];
+    }
+  }
+
+  return null;
+}
+
+function formatMeasurementSectionFieldValue(node, field, { usePrecision = true } = {}) {
+  if (!node || !field) {
+    return "";
+  }
+
+  const precisionValue = usePrecision ? getMeasurementFieldPrecisionValue(node, field.key) : null;
+
+  if (field.kind === "wavelength") {
+    if (Number.isFinite(precisionValue)) {
+      return formatLimitedValueWithUnit(field.measurement?.nominalValue, field.measurement?.unitLabel || "nm", precisionValue);
+    }
+
+    return formatMeasurementValue(field.measurement, 5);
+  }
+
+  if (Number.isFinite(precisionValue)) {
+    return formatBestFrequencyMeasurementWithPrecision(field.measurement, precisionValue);
+  }
+
+  return formatBestFrequencyMeasurementValue(field.measurement);
+}
+
+function appendMeasurementSectionLabelSuffix(valueText, section) {
+  const normalizedValueText = String(valueText || "").trim();
+
+  if (!normalizedValueText || !section || section.id === "total" || !section.breakdownLabel) {
+    return normalizedValueText;
+  }
+
+  return `${normalizedValueText} (${section.breakdownLabel})`;
 }
 
 function enumerateFLevels(nuclearSpin, j) {
@@ -513,6 +994,13 @@ function createDetailRow(label, value, references = [], options = {}) {
     references: uniqueReferenceKeys(references),
     selector: options.selector || null,
     editor: options.editor || null,
+  };
+}
+
+function createDetailSectionRow(title) {
+  return {
+    type: "section",
+    title: String(title || ""),
   };
 }
 
@@ -959,55 +1447,33 @@ function shouldForceExplicitZeemanDifference(endpointOne, endpointTwo) {
     || endpointOne.reference?.F !== endpointTwo.reference?.F;
 }
 
-function buildMeasureValueLines(endpointOne, endpointTwo) {
-  if (!endpointOne || !endpointTwo) {
+function buildMeasurementDifferenceLines(node, { usePrecision = true } = {}) {
+  if (!node?.endpointOne || !node?.endpointTwo) {
     return [];
   }
 
-  const componentsOne = endpointOne.measurementComponents || {};
-  const componentsTwo = endpointTwo.measurementComponents || {};
-
-  if (shouldUseRepresentativeMeasurementOnly(endpointOne, endpointTwo)) {
-    const key = getRepresentativeMeasurementKey(endpointOne.type);
-    const diff = differenceMeasurementValues(componentsOne[key], componentsTwo[key], key === "fine" ? "THz" : "MHz");
-    return [formatMeasurementValue(diff, key === "fine" ? 5 : 3)];
-  }
-
-  const componentOrder = [
-    { key: "fine", label: "fine", threshold: 1e-9, fallbackDecimals: 5, unitLabel: "THz" },
-    { key: "hyperfine", label: "HF", threshold: 1e-6, fallbackDecimals: 3, unitLabel: "MHz" },
-    { key: "zeeman", label: "Zeeman", threshold: 1e-6, fallbackDecimals: 3, unitLabel: "MHz" },
-  ];
-  const lines = [];
-
-  componentOrder.forEach((component) => {
-    const diff = differenceMeasurementValues(
-      componentsOne[component.key],
-      componentsTwo[component.key],
-      component.unitLabel,
-    );
-
-    if (Math.abs(diff.nominalValue) < component.threshold) {
-      return;
-    }
-
-    const prefix = lines.length === 0 ? "" : "+ ";
-    lines.push(`${prefix}${formatMeasurementValue(diff, component.fallbackDecimals)} (${component.label})`);
+  const sectionInfo = getMeasurementSectionDefinitions(node);
+  const lines = sectionInfo.componentSections.map((section, index) => {
+    const frequencyFieldKey = getMeasurementSectionFieldKey(section.key, "frequency");
+    const precisionValue = usePrecision ? getMeasurementFieldPrecisionValue(node, frequencyFieldKey) : null;
+    const valueText = Number.isFinite(precisionValue)
+      ? formatBestFrequencyMeasurementWithPrecision(section.measurement, precisionValue)
+      : formatBestFrequencyMeasurementValue(section.measurement);
+    const prefix = index > 0 && !String(valueText || "").startsWith("-") ? "+ " : "";
+    return `${prefix}${valueText} (${section.breakdownLabel})`;
   });
 
-  if (shouldForceExplicitZeemanDifference(endpointOne, endpointTwo)
-    && !lines.some((line) => /\(Zeeman\)\s*$/.test(line))) {
-    const zeemanDiff = differenceMeasurementValues(
-      componentsOne.zeeman,
-      componentsTwo.zeeman,
-      "MHz",
-    );
-
-    const prefix = lines.length === 0 ? "" : "+ ";
-    lines.push(`${prefix}${formatMeasurementValue(zeemanDiff, 3)} (Zeeman)`);
-  }
-
   return lines.length > 0 ? lines : ["0"];
+}
+
+function buildMeasureValueLines(endpointOne, endpointTwo) {
+  return buildMeasurementDifferenceLines({
+    endpointOne,
+    endpointTwo,
+    precision: {},
+  }, {
+    usePrecision: false,
+  });
 }
 
 function getMeasurementTotalFrequency(node) {
@@ -1062,27 +1528,111 @@ function getMeasurementWavelength(node) {
   return convertFrequencyMeasurementToWavelengthMeasurement(getMeasurementTotalFrequency(node));
 }
 
-function getMeasurementDetail(node, options = {}) {
-  const references = mergeReferenceKeys(
-    getReferenceKeysForField(getFineStateById(node.endpointOne?.reference?.fineStateId), "energy"),
-    getReferenceKeysForField(getFineStateById(node.endpointTwo?.reference?.fineStateId), "energy"),
-    extractInlineCitationKeys(getFineStateById(node.endpointOne?.reference?.fineStateId)?.energyText),
-    extractInlineCitationKeys(getFineStateById(node.endpointTwo?.reference?.fineStateId)?.energyText),
+function getMeasurementEndpointHyperfineNode(endpoint) {
+  if (!endpoint || !currentLayout) {
+    return null;
+  }
+
+  if (endpoint.type === "hyperfine") {
+    return currentLayout.hyperfineNodeMap?.get(endpoint.id) || null;
+  }
+
+  if (endpoint.type === "zeeman") {
+    const zeemanNode = currentLayout.zeemanNodeMap?.get(endpoint.id) || null;
+    return zeemanNode
+      ? currentLayout.hyperfineNodeMap?.get(zeemanNode.parentHyperfineId) || null
+      : null;
+  }
+
+  return null;
+}
+
+function getMeasurementEndpointZeemanNode(endpoint) {
+  if (!endpoint || endpoint.type !== "zeeman" || !currentLayout) {
+    return null;
+  }
+
+  return currentLayout.zeemanNodeMap?.get(endpoint.id) || null;
+}
+
+function getMeasurementFineReferences(node) {
+  return mergeReferenceKeys(
+    getReferenceKeysForField(getFineStateById(node?.endpointOne?.reference?.fineStateId), "energy"),
+    getReferenceKeysForField(getFineStateById(node?.endpointTwo?.reference?.fineStateId), "energy"),
+    extractInlineCitationKeys(getFineStateById(node?.endpointOne?.reference?.fineStateId)?.energyText),
+    extractInlineCitationKeys(getFineStateById(node?.endpointTwo?.reference?.fineStateId)?.energyText),
   );
-  const rows = [
-    createDetailRow("Wavelength", formatMeasurementValue(node.wavelengthMeasurement, 5), references, {
-      selector: {
-        measurementId: node.id,
-        fieldKey: "wavelength",
-      },
-    }),
-    createDetailRow("Frequency", formatMeasurementValue(node.frequencyMeasurement, 5), references, {
-      selector: {
-        measurementId: node.id,
-        fieldKey: "frequency",
-      },
-    }),
-  ];
+}
+
+function getMeasurementHyperfineReferences(node) {
+  return mergeReferenceKeys(
+    getReferenceKeysForField(getMeasurementEndpointHyperfineNode(node?.endpointOne), "constants"),
+    getReferenceKeysForField(getMeasurementEndpointHyperfineNode(node?.endpointTwo), "constants"),
+  );
+}
+
+function getMeasurementZeemanReferences(node) {
+  return mergeReferenceKeys(
+    getReferenceKeysForField(getMeasurementEndpointZeemanNode(node?.endpointOne), "constants"),
+    getReferenceKeysForField(getMeasurementEndpointZeemanNode(node?.endpointTwo), "constants"),
+  );
+}
+
+function getMeasurementSectionReferences(node, sectionId) {
+  if (sectionId === "fine") {
+    return getMeasurementFineReferences(node);
+  }
+
+  if (sectionId === "hyperfine") {
+    return getMeasurementHyperfineReferences(node);
+  }
+
+  if (sectionId === "zeeman") {
+    return getMeasurementZeemanReferences(node);
+  }
+
+  return mergeReferenceKeys(
+    getMeasurementFineReferences(node),
+    getMeasurementHyperfineReferences(node),
+    getMeasurementZeemanReferences(node),
+  );
+}
+
+function getMeasurementDetail(node, options = {}) {
+  const sectionInfo = getMeasurementSectionDefinitions(node);
+  const rows = [];
+
+  sectionInfo.sections.forEach((section) => {
+    if (section.showTitle && section.title) {
+      rows.push(createDetailSectionRow(section.title));
+    }
+
+    const references = getMeasurementSectionReferences(node, section.id);
+
+    section.fields.forEach((field) => {
+      rows.push(createDetailRow(
+        field.label,
+        formatMeasurementSectionFieldValue(node, field, { usePrecision: false }),
+        references,
+        {
+          selector: {
+            measurementId: node.id,
+            fieldKey: field.key,
+          },
+        },
+      ));
+    });
+
+    if (options.includeLabelFormatControls) {
+      rows.push(createDetailRow("Label format", "", [], {
+        editor: {
+          type: "measurement-format",
+          measurementId: node.id,
+          sectionId: section.id,
+        },
+      }));
+    }
+  });
 
   const notes = Array.isArray(node.notes)
     ? node.notes.filter((note) => typeof note === "string")
@@ -1120,32 +1670,21 @@ function getMeasurementDetail(node, options = {}) {
   return rows;
 }
 
-function getMeasurementLabelValue(node, fieldKey) {
+function getMeasurementLabelValue(node, fieldKey, options = {}) {
   const normalizedFieldKey = String(fieldKey || "").trim().toLowerCase();
-  const precision = node?.precision || {};
+  const usePrecision = options.usePrecision !== false;
 
   if (!normalizedFieldKey) {
     return "";
   }
 
-  if (normalizedFieldKey === "value") {
-    return Array.isArray(node?.valueLines) ? node.valueLines : [];
-  }
+  const { section, field } = getMeasurementSectionField(node, normalizedFieldKey);
 
-  if (normalizedFieldKey === "wavelength") {
-    if (Number.isFinite(precision.wavelength)) {
-      return formatLimitedValueWithUnit(node?.wavelengthMeasurement?.nominalValue, "nm", precision.wavelength);
-    }
-
-    return formatMeasurementValue(node?.wavelengthMeasurement, 5);
-  }
-
-  if (normalizedFieldKey === "frequency") {
-    if (Number.isFinite(precision.frequency)) {
-      return formatLimitedValueWithUnit(node?.frequencyMeasurement?.nominalValue, "THz", precision.frequency);
-    }
-
-    return formatMeasurementValue(node?.frequencyMeasurement, 5);
+  if (field) {
+    return appendMeasurementSectionLabelSuffix(
+      formatMeasurementSectionFieldValue(node, field, { usePrecision }),
+      section,
+    );
   }
 
   if (normalizedFieldKey === "notes") {
@@ -1165,9 +1704,7 @@ function getMeasurementLabelValue(node, fieldKey) {
 }
 
 function getMeasurementLabelLines(node) {
-  const configuredFields = Array.isArray(node?.labelFields)
-    ? [...node.labelFields]
-    : ["frequency"];
+  const configuredFields = normalizeMeasurementSelectedFieldKeys(node);
   const lines = [];
 
   configuredFields.forEach((fieldKey) => {
