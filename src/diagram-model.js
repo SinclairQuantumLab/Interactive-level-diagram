@@ -765,10 +765,26 @@ function formatMeasurementSectionFieldValue(node, field, { usePrecision = true }
   return formatBestFrequencyMeasurementValue(field.measurement);
 }
 
-function appendMeasurementSectionLabelSuffix(valueText, section) {
+function shouldOmitMeasurementSectionLabelSuffix(node, section) {
+  if (!node?.endpointOne || !node?.endpointTwo || !section?.id) {
+    return false;
+  }
+
+  if (!shouldUseRepresentativeMeasurementOnly(node.endpointOne, node.endpointTwo)) {
+    return false;
+  }
+
+  return section.id === getRepresentativeMeasurementKey(node.endpointOne.type);
+}
+
+function appendMeasurementSectionLabelSuffix(valueText, section, node = null) {
   const normalizedValueText = String(valueText || "").trim();
 
-  if (!normalizedValueText || !section || section.id === "total" || !section.breakdownLabel) {
+  if (!normalizedValueText
+    || !section
+    || section.id === "total"
+    || !section.breakdownLabel
+    || shouldOmitMeasurementSectionLabelSuffix(node, section)) {
     return normalizedValueText;
   }
 
@@ -1684,6 +1700,7 @@ function getMeasurementLabelValue(node, fieldKey, options = {}) {
     return appendMeasurementSectionLabelSuffix(
       formatMeasurementSectionFieldValue(node, field, { usePrecision }),
       section,
+      node,
     );
   }
 
