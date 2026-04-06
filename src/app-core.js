@@ -124,6 +124,7 @@ const DEFAULT_APP_CONFIG = {
 
 const BROWSER_DIAGRAMS_FOLDER_NAME = "diagrams";
 const DIAGRAMS_FOLDER_PICKER_ID = "interactive-level-diagram-folder";
+const HOSTED_DIAGRAM_MANIFEST_PATH = `${BROWSER_DIAGRAMS_FOLDER_NAME}/manifest.json`;
 
 function isPlainConfigObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
@@ -186,6 +187,9 @@ function createBrowserDiagramSourceInfo(overrides = {}) {
     permissionGranted: false,
     folderName: "",
     expectedFolderName: BROWSER_DIAGRAMS_FOLDER_NAME,
+    hostedCatalogAvailable: false,
+    hostedManifestPath: HOSTED_DIAGRAM_MANIFEST_PATH,
+    activeSource: "none",
     ...overrides,
   };
 }
@@ -455,6 +459,23 @@ async function storeDiagramsFolderHandle(handle) {
   return true;
 }
 
+async function clearStoredDiagramsFolderHandle() {
+  try {
+    const db = await openHandleDb();
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction(APP_CONFIG.storage.diagramsFolderStore, "readwrite");
+      const store = transaction.objectStore(APP_CONFIG.storage.diagramsFolderStore);
+      const request = store.delete(APP_CONFIG.storage.diagramsFolderKey);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch {
+    return false;
+  }
+
+  return true;
+}
+
 async function ensureDiagramsFolderPermission(handle) {
   if (!handle) {
     return false;
@@ -502,6 +523,16 @@ async function pickDiagramsFolder() {
   }
 }
 
+async function useHostedDiagrams() {
+  await clearStoredDiagramsFolderHandle();
+
+  if (typeof setStatus === "function") {
+    setStatus(`Using bundled ${BROWSER_DIAGRAMS_FOLDER_NAME}/ files from this site. Reloading diagrams.`);
+  }
+
+  window.location.reload();
+}
+
 async function readCompanionBibText(fileName, folderHandle = diagramsFolderHandle) {
   if (!folderHandle) {
     return null;
@@ -516,6 +547,147 @@ async function readCompanionBibText(fileName, folderHandle = diagramsFolderHandl
   } catch {
     return null;
   }
+}
+
+function canFetchHostedDiagramCatalog() {
+  return typeof window.fetch === "function"
+    && window.location.protocol !== "file:";
+}
+
+async function fetchTextResource(resourceUrl, { optional = false } = {}) {
+  try {
+    const response = await window.fetch(resourceUrl, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      if (optional) {
+        return null;
+      }
+
+      throw new Error(`Failed to fetch ${resourceUrl}: ${response.status}`);
+    }
+
+    return await response.text();
+  } catch (error) {
+    if (optional) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+function normalizeHostedManifestFileList(manifestData) {
+  if (Array.isArray(manifestData)) {
+    return manifestData
+      .map((fileName) => String(fileName || "").trim())
+      .filter(isDiagramConfigFileName);
+  }
+
+  if (manifestData && typeof manifestData === "object" && Array.isArray(manifestData.files)) {
+    return manifestData.files
+      .map((fileName) => String(fileName || "").trim())
+      .filter(isDiagramConfigFileName);
+  }
+
+  return [];
+}
+
+function buildDiagramCatalogEntry(fileName, rawYamlText, rawBibText = null) {
+  try {
+    const parsed = parseDiagramConfig(rawYamlText);
+    const normalized = normalizeConfig(parsed, rawBibText ? parseBibtex(rawBibText) : []);
+    return {
+      fileName,
+      title: normalized.meta.title || fileName,
+      text: rawYamlText,
+      bibliographyText: rawBibText,
+    };
+  } catch {
+    return {
+      fileName,
+      title: `${fileName} (invalid YAML)`,
+      text: null,
+      bibliographyText: null,
+    };
+  }
+}
+
+function sortDiagramCatalogEntries(entries) {
+  return [...entries].sort((left, right) => left.fileName.localeCompare(right.fileName));
+}
+
+async function loadHostedDiagramCatalog() {
+  if (!canFetchHostedDiagramCatalog()) {
+    return {
+      available: false,
+      entries: [],
+    };
+  }
+
+  try {
+    const manifestUrl = new URL(HOSTED_DIAGRAM_MANIFEST_PATH, window.location.href);
+    const manifestText = await fetchTextResource(manifestUrl.toString());
+    const manifestData = JSON.parse(manifestText);
+    const fileNames = normalizeHostedManifestFileList(manifestData);
+    const entries = [];
+
+    for (const fileName of fileNames) {
+      const diagramUrl = new URL(fileName, manifestUrl);
+      const rawYamlText = await fetchTextResource(diagramUrl.toString(), { optional: true });
+
+      if (!rawYamlText) {
+        entries.push({
+          fileName,
+          title: `${fileName} (unreadable)`,
+          text: null,
+          bibliographyText: null,
+        });
+        continue;
+      }
+
+      const bibUrl = new URL(getCompanionBibFileName(fileName), manifestUrl);
+      const rawBibText = await fetchTextResource(bibUrl.toString(), { optional: true });
+      entries.push(buildDiagramCatalogEntry(fileName, rawYamlText, rawBibText));
+    }
+
+    return {
+      available: true,
+      entries: sortDiagramCatalogEntries(entries),
+    };
+  } catch {
+    return {
+      available: false,
+      entries: [],
+    };
+  }
+}
+
+async function loadFolderDiagramCatalog(folderHandle) {
+  const entries = [];
+
+  for await (const entry of folderHandle.values()) {
+    if (entry.kind !== "file" || !isDiagramConfigFileName(entry.name)) {
+      continue;
+    }
+
+    try {
+      const file = await entry.getFile();
+      const rawYamlText = await file.text();
+      const rawBibText = await readCompanionBibText(entry.name, folderHandle);
+      entries.push(buildDiagramCatalogEntry(entry.name, rawYamlText, rawBibText));
+    } catch {
+      entries.push({
+        fileName: entry.name,
+        title: `${entry.name} (invalid YAML)`,
+        text: null,
+        bibliographyText: null,
+      });
+    }
+  }
+
+  return sortDiagramCatalogEntries(entries);
 }
 
 function createConfigId(species) {
@@ -1036,49 +1208,38 @@ async function loadDiagramCatalog() {
   });
   const hasPermission = await ensureDiagramsFolderPermission(folderHandle);
   browserSourceInfo.permissionGranted = hasPermission;
+  const hostedCatalog = await loadHostedDiagramCatalog();
+  browserSourceInfo.hostedCatalogAvailable = hostedCatalog.available;
 
-  if (!folderHandle || !hasPermission) {
+  if (folderHandle && hasPermission) {
     return {
-      folderHandle: null,
-      entries: [],
-      browserSourceInfo,
+      folderHandle,
+      entries: await loadFolderDiagramCatalog(folderHandle),
+      browserSourceInfo: createBrowserDiagramSourceInfo({
+        ...browserSourceInfo,
+        activeSource: "folder",
+      }),
     };
   }
 
-  const entries = [];
-
-  for await (const entry of folderHandle.values()) {
-    if (entry.kind !== "file" || !isDiagramConfigFileName(entry.name)) {
-      continue;
-    }
-
-    try {
-      const file = await entry.getFile();
-      const rawTomlText = await file.text();
-      const rawBibText = await readCompanionBibText(entry.name, folderHandle);
-      const parsed = parseDiagramConfig(rawTomlText);
-      const normalized = normalizeConfig(parsed, rawBibText ? parseBibtex(rawBibText) : []);
-      entries.push({
-        fileName: entry.name,
-        title: normalized.meta.title || entry.name,
-        text: rawTomlText,
-        bibliographyText: rawBibText,
-      });
-    } catch {
-      entries.push({
-        fileName: entry.name,
-        title: `${entry.name} (invalid YAML)`,
-        text: null,
-        bibliographyText: null,
-      });
-    }
+  if (hostedCatalog.available) {
+    return {
+      folderHandle: null,
+      entries: hostedCatalog.entries,
+      browserSourceInfo: createBrowserDiagramSourceInfo({
+        ...browserSourceInfo,
+        activeSource: "hosted",
+      }),
+    };
   }
 
-  entries.sort((a, b) => a.fileName.localeCompare(b.fileName));
   return {
-    folderHandle,
-    entries,
-    browserSourceInfo,
+    folderHandle: null,
+    entries: [],
+    browserSourceInfo: createBrowserDiagramSourceInfo({
+      ...browserSourceInfo,
+      activeSource: "none",
+    }),
   };
 }
 
@@ -1089,16 +1250,18 @@ function resolveSelectedDiagramPath(diagramCatalog) {
     return storedPath;
   }
 
-  return diagramCatalog.entries[0]?.fileName || null;
+  return diagramCatalog.entries.find((entry) => typeof entry.text === "string")?.fileName
+    || diagramCatalog.entries[0]?.fileName
+    || null;
 }
 
 function loadInitialConfig(diagramCatalog) {
   const selectedDiagramPath = resolveSelectedDiagramPath(diagramCatalog);
   const selectedDiagram = diagramCatalog.entries.find((entry) => entry.fileName === selectedDiagramPath) || null;
-  const rawTomlText = selectedDiagram?.text || null;
+  const rawYamlText = selectedDiagram?.text || null;
   const rawBibText = selectedDiagram?.bibliographyText || null;
 
-  if (!rawTomlText) {
+  if (!rawYamlText) {
     return {
       config: createEmptyConfig(),
       hasLoadedDiagramSource: false,
@@ -1108,7 +1271,7 @@ function loadInitialConfig(diagramCatalog) {
 
   try {
     return {
-      config: normalizeConfig(parseDiagramConfig(rawTomlText), rawBibText ? parseBibtex(rawBibText) : []),
+      config: normalizeConfig(parseDiagramConfig(rawYamlText), rawBibText ? parseBibtex(rawBibText) : []),
       hasLoadedDiagramSource: true,
       selectedDiagramPath,
     };
@@ -1689,39 +1852,101 @@ function getBrowserDiagramPickerUiState() {
   const folderName = browserDiagramSourceInfo.folderName || diagramsFolderHandle?.name || "";
   const expectedFolderPath = inferExpectedBrowserDiagramsFolderPath();
   const usesExpectedFolderName = folderName.toLowerCase() === BROWSER_DIAGRAMS_FOLDER_NAME;
+  const pickerActions = [];
+
+  const addAction = (key, label, disabled = false) => {
+    pickerActions.push({
+      key,
+      label,
+      disabled,
+    });
+  };
+
+  if (browserDiagramSourceInfo.activeSource === "folder") {
+    addAction("pick-folder", "Choose another folder", !browserDiagramSourceInfo.supported);
+
+    if (browserDiagramSourceInfo.hostedCatalogAvailable) {
+      addAction("use-hosted", "Use built-in diagrams");
+    }
+
+    return {
+      hint: usesExpectedFolderName
+        ? `Using "${folderName}" for local diagram YAML files.`
+        : `Using "${folderName}" for local diagram YAML files instead of this site's built-in catalog.`,
+      path: `Expected local folder: ${expectedFolderPath}`,
+      actions: pickerActions,
+    };
+  }
+
+  if (browserDiagramSourceInfo.activeSource === "hosted") {
+    if (browserDiagramSourceInfo.supported) {
+      addAction("pick-folder", `Choose local ${BROWSER_DIAGRAMS_FOLDER_NAME}/ folder`);
+    }
+
+    return {
+      hint: `Using the built-in diagrams bundled with this site. You can still pick a local "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder to override them in this browser.`,
+      path: `Bundled catalog: ${browserDiagramSourceInfo.hostedManifestPath}`,
+      actions: pickerActions,
+    };
+  }
 
   if (!browserDiagramSourceInfo.supported) {
     return {
-      hint: "This browser cannot access local folders directly. Use a Chromium-based browser to pick the diagrams folder.",
-      path: "",
-      actionLabel: "",
+      hint: browserDiagramSourceInfo.hostedCatalogAvailable
+        ? "This browser cannot access local folders directly, but the built-in site catalog is still available."
+        : "This browser cannot access local folders directly, and this page did not provide a built-in diagram catalog.",
+      path: browserDiagramSourceInfo.hostedCatalogAvailable
+        ? `Bundled catalog: ${browserDiagramSourceInfo.hostedManifestPath}`
+        : "",
+      actions: pickerActions,
     };
   }
 
   if (!browserDiagramSourceInfo.hasStoredHandle) {
+    addAction("pick-folder", `Pick ${BROWSER_DIAGRAMS_FOLDER_NAME}/ folder`);
     return {
-      hint: `Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder inside this app folder to list available YAML diagrams.`,
+      hint: browserDiagramSourceInfo.hostedCatalogAvailable
+        ? `This site can use its built-in diagram catalog, or you can pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder on your computer to override it in this browser.`
+        : `Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder inside this app folder to list available YAML diagrams.`,
       path: `Expected folder: ${expectedFolderPath}`,
-      actionLabel: `Pick ${BROWSER_DIAGRAMS_FOLDER_NAME}/ folder`,
+      actions: pickerActions,
     };
   }
 
   if (!browserDiagramSourceInfo.permissionGranted) {
+    addAction("pick-folder", `Reconnect ${BROWSER_DIAGRAMS_FOLDER_NAME}/ folder`);
+
+    if (browserDiagramSourceInfo.hostedCatalogAvailable) {
+      addAction("use-hosted", "Use built-in diagrams");
+    }
+
     return {
       hint: `This browser no longer has access to the previously chosen folder${folderName ? ` "${folderName}"` : ""}. Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder again.`,
       path: `Expected folder: ${expectedFolderPath}`,
-      actionLabel: `Reconnect ${BROWSER_DIAGRAMS_FOLDER_NAME}/ folder`,
+      actions: pickerActions,
     };
   }
 
   if (diagramCatalog.entries.length === 0) {
+    addAction("pick-folder", "Choose another folder", !browserDiagramSourceInfo.supported);
+
+    if (browserDiagramSourceInfo.hostedCatalogAvailable) {
+      addAction("use-hosted", "Use built-in diagrams");
+    }
+
     return {
       hint: usesExpectedFolderName
         ? `No readable .yaml diagrams were found in "${folderName}". Add diagram YAML files there or choose another folder.`
         : `You selected "${folderName}". The usual folder for this app is "${BROWSER_DIAGRAMS_FOLDER_NAME}". If this is the wrong folder, choose it again.`,
       path: `Expected folder: ${expectedFolderPath}`,
-      actionLabel: "Choose another folder",
+      actions: pickerActions,
     };
+  }
+
+  addAction("pick-folder", "Choose another folder", !browserDiagramSourceInfo.supported);
+
+  if (browserDiagramSourceInfo.hostedCatalogAvailable) {
+    addAction("use-hosted", "Use built-in diagrams");
   }
 
   return {
@@ -1729,7 +1954,7 @@ function getBrowserDiagramPickerUiState() {
       ? `Using "${folderName}" for diagram YAML files.`
       : `Using "${folderName}". If needed, switch back to the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder for this app.`,
     path: `Expected folder: ${expectedFolderPath}`,
-    actionLabel: "Choose another folder",
+    actions: pickerActions,
   };
 }
 
@@ -1738,9 +1963,9 @@ function syncDiagramSourceUi() {
     return;
   }
 
-  if (diagramsFolderHandle) {
+  if (diagramCatalog.entries.length > 0 || diagramsFolderHandle) {
     chooseDiagramToggleButton.textContent = "Choose Diagram";
-    chooseDiagramToggleButton.setAttribute("aria-label", "Choose a diagram from the selected folder");
+    chooseDiagramToggleButton.setAttribute("aria-label", "Choose a diagram from the available catalog");
     return;
   }
 
@@ -1779,24 +2004,35 @@ function renderDiagramPicker() {
     diagramPickerPath.hidden = false;
   }
 
-  if (diagramPickerActions && pickerState.actionLabel) {
-    const pickButton = document.createElement("button");
-    pickButton.type = "button";
-    pickButton.className = "diagram-picker-action";
-    pickButton.textContent = pickerState.actionLabel;
-    pickButton.disabled = !browserDiagramSourceInfo.supported;
-    pickButton.addEventListener("click", () => {
-      pickDiagramsFolder();
+  if (diagramPickerActions && Array.isArray(pickerState.actions)) {
+    pickerState.actions.forEach((action) => {
+      const actionButton = document.createElement("button");
+      actionButton.type = "button";
+      actionButton.className = "diagram-picker-action";
+      actionButton.textContent = action.label;
+      actionButton.disabled = Boolean(action.disabled);
+      actionButton.addEventListener("click", () => {
+        if (action.key === "pick-folder") {
+          pickDiagramsFolder();
+          return;
+        }
+
+        if (action.key === "use-hosted") {
+          useHostedDiagrams();
+        }
+      });
+      diagramPickerActions.append(actionButton);
     });
-    diagramPickerActions.append(pickButton);
   }
 
   if (diagramCatalog.entries.length === 0) {
     const li = document.createElement("li");
     li.className = "diagram-picker-empty";
-    li.textContent = diagramsFolderHandle
-      ? "No readable .yaml diagrams were found in the selected folder."
-      : "Choose the local diagrams folder to list available YAML diagrams.";
+    li.textContent = browserDiagramSourceInfo.activeSource === "hosted"
+      ? "No readable bundled .yaml diagrams were found on this site."
+      : (diagramsFolderHandle
+        ? "No readable .yaml diagrams were found in the selected folder."
+        : "No diagrams are currently available.");
     diagramPickerList.append(li);
     return;
   }
@@ -1854,7 +2090,9 @@ function renderHomePanel() {
     speciesName.hidden = false;
     speciesName.textContent = diagramCatalog.entries.length > 0
       ? "Pick a diagram from the project list."
-      : `Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder inside this app folder to begin.`;
+      : (browserDiagramSourceInfo.hostedCatalogAvailable
+        ? `No readable built-in diagrams were found for this site. Choose a local "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder to continue.`
+        : `Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder inside this app folder to begin.`);
     renderSpeciesProperties({ notes: [] });
     syncDiagramUiAvailability();
     renderDiagramPicker();
