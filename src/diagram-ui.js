@@ -1,3 +1,14 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Copyright (c) 2026 Joonseok Hur
+ *
+ * Originally developed by Joonseok Hur in the Josiah Sinclair group,
+ * University of Wisconsin-Madison.
+ */
+
 const LAYOUT_EXPORT_VERSION = 3;
 
 function buildSerializableState() {
