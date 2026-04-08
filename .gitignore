@@ -2,3 +2,6 @@ node_modules/
 run/
 dist/
 src/generated-app-version.js
+AGENTS.md
+.codex/
+.git-safety/
