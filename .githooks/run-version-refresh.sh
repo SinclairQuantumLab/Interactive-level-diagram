@@ -3,7 +3,7 @@
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 cd "$repo_root" || exit 0
 
-branch_name="$(git branch --show-current 2>/dev/null)"
+branch_name="${CI_COMMIT_REF_NAME:-$(git branch --show-current 2>/dev/null)}"
 [ -n "$branch_name" ] || branch_name="detached"
 
 head_date="$(git show -s --format=%cd --date=format-local:%Y%m%d HEAD 2>/dev/null)"
