@@ -1,0 +1,17 @@
+stages:
+  - deploy
+
+deploy-pages:
+  stage: deploy
+  image: alpine:3.20
+  script:
+    - mkdir -p public
+    - cp index.html public/
+    - cp -r src public/src
+    - cp -r diagrams public/diagrams
+  artifacts:
+    paths:
+      - public
+  pages: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
