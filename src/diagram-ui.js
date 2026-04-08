@@ -5,8 +5,7 @@
  *
  * Copyright (c) 2026 Joonseok Hur
  *
- * Originally developed by Joonseok Hur in the Josiah Sinclair group,
- * University of Wisconsin-Madison.
+ * Developed in the Josiah Sinclair group, UW-Madison.
  */
 
 const LAYOUT_EXPORT_VERSION = 3;

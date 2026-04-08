@@ -268,6 +268,13 @@ h1 {
   line-height: 1.4;
 }
 
+.hero-attribution {
+  margin: 10px 0 0;
+  color: var(--text-faint);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
 .species-notation sup {
   margin-right: 0.14em;
   font-size: 0.46em;
@@ -1160,37 +1167,6 @@ h1 {
   pointer-events: none;
 }
 
-.diagram-attribution {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  z-index: 9;
-  display: grid;
-  gap: 2px;
-  max-width: min(640px, calc(100vw - 220px));
-  padding: 10px 16px;
-  border: 1px solid var(--panel-border);
-  border-radius: 18px;
-  background: rgba(255, 252, 247, 0.78);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 14px 28px rgba(22, 27, 23, 0.12);
-  color: var(--text-muted);
-  text-align: center;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-[data-theme="dark"] .diagram-attribution {
-  background: rgba(24, 34, 43, 0.82);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24);
-}
-
-.diagram-attribution p {
-  margin: 0;
-  font-size: 0.76rem;
-  line-height: 1.35;
-}
-
 .action-toast {
   width: min(440px, calc(100vw - 48px));
   display: grid;
@@ -1707,11 +1683,4 @@ h1 {
     transform: translateY(0);
   }
 
-  .diagram-attribution {
-    left: 14px;
-    right: 14px;
-    bottom: 14px;
-    max-width: none;
-    transform: none;
-  }
 }

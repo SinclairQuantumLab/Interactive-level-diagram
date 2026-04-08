@@ -42,6 +42,26 @@ states:
       a: 84.72(?) MHz\cite{Ste21}
       b: 12.5(?) MHz\cite{Ste21}
 
+  - id: 4D3/2
+    j: 1.5
+    energy: 580.267758990(?) THz\cite{NIST25}
+    notation: $4d\,{}^{2}D_{3/2}$
+    notes:
+      - Infrared excited state coupled from 5P1/2 near 1475.6 nm and from 5P3/2 near 1529.3 nm.\cite{NIST25}
+    hyperfine_constants:
+      a: 24.75(12) MHz\cite{Moon09}
+      b: 2.19(11) MHz\cite{Moon09}
+
+  - id: 4D5/2
+    j: 2.5
+    energy: 580.254388246(?) THz\cite{NIST25}
+    notation: $4d\,{}^{2}D_{5/2}$
+    notes:
+      - Infrared excited state coupled from 5P3/2 near 1529.4 nm and widely used in ladder excitation studies.\cite{NIST25,Wan14}
+    hyperfine_constants:
+      a: -16.801(5) MHz\cite{Wan14}
+      b: 3.645(30) MHz\cite{Wan14}
+
   - id: 5D3/2
     j: 1.5
     energy: 770.482811(?) THz\cite{Ter19}
@@ -156,6 +176,24 @@ transitions:
     strength: 2.989(3) ea0\cite{Ste21}
     notes:
       - Cycling-stretched transition example. Appears when the referenced Zeeman branches are expanded.
+
+  - between: [5P1/2, 4D3/2]
+    type: E1
+    frequency: 203160325.034(?) MHz\cite{NIST25}
+    notes:
+      - Approximate fine-centroid infrared ladder line near 1475.6 nm, derived from the adopted NIST term energies.\cite{NIST25}
+
+  - between: [5P3/2, 4D3/2]
+    type: E1
+    frequency: 196037406.128(?) MHz\cite{NIST25}
+    notes:
+      - Approximate fine-centroid telecom-band ladder line near 1529.26 nm, derived from the adopted NIST term energies.\cite{NIST25}
+
+  - between: [5P3/2, 4D5/2]
+    type: E1
+    frequency: 196024035.384(?) MHz\cite{NIST25}
+    notes:
+      - Approximate fine-centroid telecom-band ladder line near 1529.37 nm, derived from the adopted NIST term energies.\cite{NIST25}
 
   - between: [5S1/2, 6P3/2]
     type: E1
