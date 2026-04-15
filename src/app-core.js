@@ -82,7 +82,7 @@ const controlStack = document.querySelector(".control-stack");
 const DEFAULT_APP_CONFIG = {
   ui: {
     appTitle: "Interactive atomic level diagram",
-    appVersion: "20260323.1",
+    appVersion: "",
   },
   canvas: {
     width: 1440,
