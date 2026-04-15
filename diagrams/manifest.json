@@ -1,6 +1,8 @@
 {
   "files": [
-    "rb87-neutral.yaml"
+    "rb87-neutral.yaml",
+    "rb87-dline-steck-rich.yaml",
+    "yb171-ion-thesis-rich.yaml"
   ]
 }
 

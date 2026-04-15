@@ -529,8 +529,12 @@ function applyColumnPositions(positionedFineStates) {
   const grouped = d3.group(positionedFineStates, (state) => state.columnId);
   const columnX = new Map();
   let currentX = layoutConfig.baseFineX;
+  const orderedColumns = [
+    ...columnOrder,
+    ...[...grouped.keys()].filter((columnId) => !columnOrder.includes(columnId)),
+  ];
 
-  columnOrder.forEach((columnId) => {
+  orderedColumns.forEach((columnId) => {
     const states = grouped.get(columnId) || [];
 
     if (states.length === 0) {
@@ -1129,7 +1133,7 @@ function buildTransitionNodes(fineStateMap, hyperfineNodeMap, zeemanNodeMap, iss
         issues.push({
           key: `transition:${transition.id}:syntax`,
           title: "Invalid state reference",
-          message: `Transition "${transition.id}" contains an endpoint that could not be parsed. Use forms like "5P3/2", "5P3/2[F=3]", or "5P3/2[F=3,mF=2]".`,
+          message: `Transition "${transition.id}" contains an endpoint that could not be parsed. Use forms like "5P3/2", "3D[3/2]1/2", "5P3/2[F=3]", or "3D[3/2]1/2[F=1,mF=0]".`,
         });
         return null;
       }
@@ -1469,7 +1473,7 @@ const zoomBehavior = d3.zoom()
     currentZoomTransform = event.transform;
     scene.attr("transform", currentZoomTransform);
     renderFineLabelOverlay(currentLayout, 0);
-    renderPinnedPanels();
+    positionPinnedPanels();
   })
   .on("end", () => {
     if (suppressZoomPersistence) {

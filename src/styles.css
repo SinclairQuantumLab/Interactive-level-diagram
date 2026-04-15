@@ -1636,6 +1636,15 @@ h1 {
   pointer-events: auto;
 }
 
+.inspector.is-resizable {
+  min-width: 260px;
+  min-height: 156px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  resize: both;
+}
+
 .inspector.reference-inspector {
   z-index: 2;
 }

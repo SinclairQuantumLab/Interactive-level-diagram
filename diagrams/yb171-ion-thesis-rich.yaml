@@ -1,0 +1,578 @@
+# Thesis-centered 171Yb+ reference diagram.
+# Extra config fields used here:
+# - state.properties / transition.properties:
+#     - section: metadata section heading
+#     - label: display label
+#       value: display value (may include inline \cite{...})
+
+meta:
+  id: yb171-ion-thesis-rich
+  title: Ytterbium-171 Ion Reference
+
+species:
+  species: Yb
+  atomic_mass_number: 171
+  ionization_number: 1
+  nuclear_spin: 0.5
+  notes:
+    - 'Rich $^{171}$Yb$^+$ reference built around thesis Fig. 3-1, Fig. 19-3, Tables 19.1 and 19.2, and Appendix B / Table B.1.\cite{Hur22}'
+    - 'Hyperfine splittings and line addresses are $^{171}$Yb$^+$-specific; many lifetime, linewidth, and beam-setting values in Table B.1 are quoted for $^{172}$Yb$^+$ unless explicitly noted otherwise.\cite{Hur22}'
+
+states:
+  - id: 2S1/2
+    j: 0.5
+    energy: '0 THz\cite{Hur22}'
+    notation: '$6s\,{}^{2}S_{1/2}$'
+    references:
+      energy: [Hur22]
+      constants: [Fisk97]
+    hyperfine_constants:
+      a: '12642.812118466(2) MHz\cite{Fisk97}'
+    properties:
+      - section: Hyperfine structure
+      - label: Levels
+        value: 'F=0, 1\cite{Hur22}'
+      - label: Hyperfine splitting
+        value: 'F=0 -> 1: +12642.812118466(2) MHz\cite{Fisk97,Hur22}'
+      - section: Role
+      - label: Experimental role
+        value: 'ground state, microwave clock manifold, and common lower state for the 369, 411, 436, and 467 nm lines\cite{Hur22}'
+    notes:
+      - 'For $I=1/2$, all hyperfine structure in the states used here is first-order and fully described by the magnetic-dipole constant $A$.\cite{Hur22}'
+
+  - id: 2P1/2
+    j: 0.5
+    energy: '811.2937743(?) THz\cite{Hur22}'
+    notation: '$6p\,{}^{2}P_{1/2}$'
+    references:
+      energy: [Hur22]
+      constants: [Martensson94]
+    hyperfine_constants:
+      a: '2104.9(1.3) MHz\cite{Martensson94}'
+    properties:
+      - section: Hyperfine structure
+      - label: Levels
+        value: 'F=0, 1\cite{Hur22}'
+      - label: Hyperfine splitting
+        value: 'F=0 -> 1: +2104.9(1.3) MHz\cite{Martensson94,Hur22}'
+      - section: Radiative properties
+      - label: Lifetime
+        value: '8.12(2) ns\cite{Olmschenk09,Hur22}'
+      - label: Natural linewidth
+        value: '19.6(5) MHz\cite{Hur22}'
+      - label: Branching from $2P_{1/2}$
+        value: 'to $2D_{3/2}$: 0.501(15)%; to $2F_{7/2}$: very small\cite{Meyer12,Olmschenk07,Hur22}'
+      - section: Role
+      - label: Experimental role
+        value: 'broad cooling / fluorescence state for 369 nm Doppler cooling, optical pumping, and state readout\cite{Hur22}'
+    notes:
+      - 'Centroid energy compiled from the $^{172}$Yb$^+$ 369 nm line in Table B.1 together with the $^{171,172}$ isotope shift in Table 19.2.\cite{Hur22}'
+
+  - id: 2D3/2
+    j: 1.5
+    energy: '688.3491747(?) THz\cite{Hur22}'
+    notation: '$5d\,{}^{2}D_{3/2}$'
+    references:
+      energy: [Hur22]
+      constants: [Olmschenk07]
+    hyperfine_constants:
+      a: '430(10) MHz\cite{Olmschenk07,Hur22}'
+    properties:
+      - section: Hyperfine structure
+      - label: Levels
+        value: 'F=1, 2\cite{Hur22}'
+      - label: Hyperfine splitting
+        value: 'F=1 -> 2: +860(20) MHz\cite{Olmschenk07,Hur22}'
+      - section: Role
+      - label: Experimental role
+        value: 'metastable lower state of the 436 nm E2 line and the lower state of the 935 nm repumper\cite{Hur22}'
+    notes:
+      - 'Centroid energy follows the explicit Table 19.2 centroid entry for the $^{171}$Yb$^+$ 436 nm transition.\cite{Hur22}'
+
+  - id: 2D5/2
+    j: 2.5
+    energy: '729.4781866(?) THz\cite{Hur22}'
+    notation: '$5d\,{}^{2}D_{5/2}$'
+    references:
+      energy: [Hur22]
+      constants: [Tan21]
+    hyperfine_constants:
+      a: '-63.368(1) MHz\cite{Tan21,Hur22}'
+    properties:
+      - section: Hyperfine structure
+      - label: Levels
+        value: 'F=2, 3\cite{Hur22}'
+      - label: Hyperfine splitting
+        value: 'F=2 -> 3: -190.104(3) MHz\cite{Tan21,Hur22}'
+      - section: Radiative properties
+      - label: Lifetime
+        value: '7.1(3) ms\cite{Yu00,Hur22}'
+      - label: Natural linewidth
+        value: '22.3(8) Hz\cite{Hur22}'
+      - label: Branching from $2D_{5/2}$
+        value: 'to $2F_{7/2}$: 83(3)% of all known decay channels\cite{Taylor97,Hur22}'
+      - section: Role
+      - label: Experimental role
+        value: 'upper state of the 411 nm E2 clock transition and a major source of shelving into $2F_{7/2}$\cite{Hur22}'
+    notes:
+      - 'Centroid energy inferred from the Table 19.2 $F=0 -> 2$ clock line together with the ground-state and $2D_{5/2}$ hyperfine shifts.\cite{Hur22,Fisk97,Tan21}'
+
+  - id: 2F7/2
+    j: 3.5
+    energy: '642.1140514(?) THz\cite{Hur22}'
+    notation: '$4f^{13}6s^{2}\,{}^{2}F_{7/2}$'
+    references:
+      energy: [Hur22]
+      constants: [Roman21]
+    hyperfine_constants:
+      a: '905.13(3) MHz\cite{Roman21,Hur22}'
+    properties:
+      - section: Hyperfine structure
+      - label: Levels
+        value: 'F=3, 4\cite{Hur22}'
+      - label: Hyperfine splitting
+        value: 'F=3 -> 4: +3620.5(1) MHz\cite{Roman21,Hur22}'
+      - section: Radiative properties
+      - label: Lifetime
+        value: '1.58(8) yr in $^{171}$Yb$^+$; older literature value 10^(+7)_(-4) yr\cite{Lange21,Roberts97,Hur22}'
+      - label: Natural linewidth
+        value: '3.19(16) nHz in $^{171}$Yb$^+$; older literature value 0.50^(+0.33)_(-0.21) nHz\cite{Lange21,Roberts97,Hur22}'
+      - section: Role
+      - label: Experimental role
+        value: 'ultra-long-lived upper state of the 467 nm E3 clock transition and lower state for the 760 / 638 nm repumpers\cite{Hur22}'
+    notes:
+      - 'Centroid energy inferred from the Table 19.2 $F=0 -> 3$ E3 line together with the ground-state and $2F_{7/2}$ hyperfine shifts.\cite{Hur22,Fisk97,Roman21}'
+
+  - id: 3D[3/2]1/2
+    j: 0.5
+    energy: '1008.9162801(?) THz\cite{Hur22}'
+    notation: '${}^{3}D[3/2]_{1/2}$'
+    references:
+      energy: [Hur22]
+      constants: [Olmschenk07]
+    hyperfine_constants:
+      a: '-2209.5(1.1) MHz\cite{Olmschenk07,Hur22}'
+    properties:
+      - section: Hyperfine structure
+      - label: Levels
+        value: 'F=0, 1\cite{Hur22}'
+      - label: Hyperfine splitting
+        value: 'F=0 -> 1: -2209.5(1.1) MHz\cite{Olmschenk07,Hur22}'
+      - section: Radiative properties
+      - label: Lifetime
+        value: '37.7(5) ns\cite{Berends93,Hur22}'
+      - label: Natural linewidth
+        value: '4.22(6) MHz\cite{Hur22}'
+      - label: Branching from ${}^{3}D[3/2]_{1/2}$
+        value: 'to $2S_{1/2}$: 98.2%; back to $2D_{3/2}$: 1.8%\cite{Meyer12,Hur22}'
+      - section: Role
+      - label: Experimental role
+        value: 'short-lived upper state used to empty the metastable $2D_{3/2}$ manifold with the 935 nm repumper\cite{Hur22}'
+    notes:
+      - 'Centroid energy derived from the measured $^{171}$Yb$^+$ 935 nm $F=1 -> 0$ line and the Table 19.1 hyperfine constants.\cite{Hur22,Olmschenk07}'
+
+  - id: 1D[3/2]3/2
+    j: 1.5
+    energy: '1036.5422636(?) THz\cite{Hur22}'
+    notation: '${}^{1}D[3/2]_{3/2}$'
+    references:
+      energy: [Hur22]
+      constants: [Roman21]
+    hyperfine_constants:
+      a: '4440(5) MHz\cite{Roman21,Hur22}'
+    properties:
+      - section: Hyperfine structure
+      - label: Levels
+        value: 'F=1, 2\cite{Hur22}'
+      - label: Hyperfine splitting
+        value: 'F=1 -> 2: +8880(10) MHz\cite{Roman21,Hur22}'
+      - section: Radiative properties
+      - label: Lifetime
+        value: '28.6(4) ns\cite{Berends93,Hur22}'
+      - label: Natural linewidth
+        value: '5.56(8) MHz\cite{Hur22}'
+      - label: Branching from ${}^{1}D[3/2]_{3/2}$'
+        value: 'to $2S_{1/2}$: >=96%; to $2D_{5/2}$: 4.2%; to $2D_{3/2}$: <=0.66%\cite{Hur22}'
+      - section: Role
+      - label: Experimental role
+        value: 'fast upper state for the 760 nm $2F_{7/2}$ repumper; thesis notes at least 10x faster repumping than the older 638 nm path\cite{Hur22}'
+    notes:
+      - 'Centroid energy inferred from the measured 760 nm $F=3 -> 1$ and $F=4 -> 2$ lines together with Table 19.1 hyperfine constants.\cite{Hur22,Ransford20,Roman21}'
+
+  - id: 1D[5/2]5/2
+    j: 2.5
+    energy: '1111.5553214(?) THz\cite{Hur22}'
+    notation: '${}^{1}D[5/2]_{5/2}$'
+    references:
+      energy: [Hur22]
+    properties:
+      - section: Role
+      - label: Experimental role
+        value: 'older upper state used for 638 nm repumping from $2F_{7/2}$ before the 760 nm path became standard in this setup\cite{Counts20,Hur22}'
+      - label: Line data available
+        value: 'Table B.1 lists the 638 nm transition frequency and beam settings, but the thesis tables referenced here do not compile a $^{171}$Yb$^+$ hyperfine constant for this state.\cite{Hur22}'
+    notes:
+      - 'Centroid energy estimated by combining the Table B.1 638 nm repumper frequency with the $^{171}$Yb$^+$ $2F_{7/2}$ centroid energy used in this diagram.\cite{Hur22}'
+
+transitions:
+  - between: ['2S1/2[F=0]', '2S1/2[F=1]']
+    type: M1
+    frequency: '12642.812118466(2) MHz\cite{Fisk97,Hur22}'
+    show: [frequency]
+    properties:
+      - section: Clock manifold
+      - label: Usage
+        value: 'microwave hyperfine clock / qubit splitting in $^{171}$Yb$^+$\cite{Fisk97,Hur22}'
+
+  - between: [2S1/2, 2P1/2]
+    type: E1
+    show: [wavelength, type]
+    properties:
+      - section: Table B.1 line data
+      - label: '172Yb+ reference frequency'
+        value: '811.29274(10) THz\cite{Hur22}'
+      - label: Lifetime of $2P_{1/2}$
+        value: '8.12(2) ns\cite{Olmschenk09,Hur22}'
+      - label: Natural linewidth
+        value: '19.6(5) MHz\cite{Hur22}'
+      - label: Saturation intensity
+        value: '~510 uW/mm^2\cite{Hur22}'
+      - label: Branching from $2P_{1/2}$
+        value: 'to $2D_{3/2}$: 0.501(15)%; to $2F_{7/2}$: very small\cite{Meyer12,Olmschenk07,Hur22}'
+      - label: Typical beam settings
+        value: '70 uW @ 75 um waist for Doppler cooling; 80 uW @ 30 um waist for Zeeman optical pumping\cite{Hur22}'
+      - label: Usage
+        value: 'photoionization, Doppler cooling, optical pumping, state readout\cite{Hur22}'
+      - label: Doppler temperature
+        value: '470 uK\cite{Hur22}'
+    notes:
+      - 'The centroid frequency for $^{171}$Yb$^+$ is obtained from the Table B.1 $^{172}$Yb$^+$ line together with the $^{171,172}$ isotope shift in Table 19.2.\cite{Hur22}'
+
+  - between: ['2S1/2[F=1]', '2P1/2[F=0]']
+    type: E1
+    frequency: '811289034.9(?) MHz\cite{Hur22}'
+    show: [frequency]
+    notes:
+      - 'Canonical 369 nm cooling branch for $^{171}$Yb$^+$.\cite{Hur22}'
+
+  - between: ['2S1/2[F=0]', '2P1/2[F=1]']
+    type: E1
+    frequency: '811303782.6(?) MHz\cite{Hur22}'
+    show: [frequency]
+    notes:
+      - '369 nm repump branch that clears the dark $F=0$ ground hyperfine state.\cite{Hur22}'
+
+  - between: ['2S1/2[F=1]', '2P1/2[F=1]']
+    type: E1
+    frequency: '811291139.8(?) MHz\cite{Hur22}'
+    show: [frequency]
+    notes:
+      - 'Useful 369 nm addressing branch when optical pumping among Zeeman / hyperfine sublevels is being discussed.\cite{Hur22}'
+
+  - between: [2S1/2, 2D5/2]
+    type: E2
+    show: [wavelength, type]
+    properties:
+      - section: Table B.1 line data
+      - label: '172Yb+ reference frequency'
+        value: '729.4768670272068(44) THz\cite{Hur22,Roberts99}'
+      - label: Lifetime of $2D_{5/2}$
+        value: '7.1(3) ms\cite{Yu00,Hur22}'
+      - label: Natural linewidth
+        value: '22.3(8) Hz\cite{Hur22}'
+      - label: Saturation intensity
+        value: '~410 pW/mm^2\cite{Hur22}'
+      - label: Branching from $2D_{5/2}$
+        value: 'to $2F_{7/2}$: 83(3)% of all known channels\cite{Taylor97,Hur22}'
+      - label: Typical probe settings
+        value: '1 mW @ 60 um waist (Table B.1 experimental setup)\cite{Hur22}'
+      - label: Usage
+        value: 'optical clock transition alpha\cite{Hur22}'
+
+  - between: ['2S1/2[F=0]', '2D5/2[F=2]']
+    type: E2
+    frequency: '729487779.5662068(?) MHz\cite{Hur22}'
+    show: [frequency]
+    notes:
+      - 'Table 19.2 gives this $^{171}$Yb$^+$ alpha-line address as an offset from the $^{172}$Yb$^+$ clock frequency.\cite{Hur22}'
+
+  - between: [2S1/2, 2D3/2]
+    type: E2
+    show: [wavelength, type]
+    properties:
+      - section: Table B.1 line data
+      - label: '172Yb+ reference frequency'
+        value: '688.347837(20) THz and 688.34790(10) THz\cite{Hur22,Godun14}'
+      - label: Lifetime of $2D_{3/2}$
+        value: '52.7(2.4) ms\cite{Hur22}'
+      - label: Natural linewidth
+        value: '3.02(14) Hz\cite{Hur22}'
+      - label: Saturation intensity
+        value: '~48 pW/mm^2\cite{Hur22}'
+      - label: Typical probe settings
+        value: '0.2 mW @ 15 um waist (Table B.1 experimental setup)\cite{Hur22}'
+      - label: Usage
+        value: 'optical clock transition beta\cite{Hur22}'
+
+  - between: ['2S1/2[F=0]', '2D3/2[F=2]']
+    type: E2
+    frequency: '688358979.30930842(42) MHz\cite{Hur22,Godun14}'
+    show: [frequency]
+    notes:
+      - 'Table 19.2 lists both the resolved $F=0 -> 2$ address and the inferred centroid for the beta line in $^{171}$Yb$^+$.\cite{Hur22}'
+
+  - between: [2S1/2, 2F7/2]
+    type: E3
+    show: [wavelength, type]
+    properties:
+      - section: Table B.1 line data
+      - label: '172Yb+ reference frequency'
+        value: '642.1167851508795(24) THz\cite{Hur22}'
+      - label: Lifetime of $2F_{7/2}$
+        value: '1.58(8) yr in $^{171}$Yb$^+$; older literature value 10^(+7)_(-4) yr\cite{Lange21,Roberts97,Hur22}'
+      - label: Natural linewidth
+        value: '3.19(16) nHz in $^{171}$Yb$^+$; older literature value 0.50^(+0.33)_(-0.21) nHz\cite{Lange21,Roberts97,Hur22}'
+      - label: Saturation intensity
+        value: '~6 x 10^-16 W/mm^2\cite{Hur22}'
+      - label: Typical probe settings
+        value: '160 mW @ 30 um waist (Table B.1 experimental setup)\cite{Hur22}'
+      - label: Usage
+        value: 'optical clock transition gamma\cite{Hur22}'
+
+  - between: ['2S1/2[F=0]', '2F7/2[F=3]']
+    type: E3
+    frequency: '642121496.9726368(?) MHz\cite{Hur22}'
+    show: [frequency]
+    notes:
+      - 'Table 19.2 gives the $^{171}$Yb$^+$ gamma-line address as an offset from the $^{172}$Yb$^+$ centroid frequency.\cite{Hur22}'
+
+  - between: [2D3/2, '3D[3/2]1/2']
+    type: E1
+    show: [wavelength, type]
+    properties:
+      - section: Table B.1 line data
+      - label: '171Yb+ measured address used in Table 19.2'
+        value: 'F=1 -> 0: 320.56930(7) THz\cite{Hur22,McLoughlin11}'
+      - label: Lifetime of ${}^{3}D[3/2]_{1/2}$
+        value: '37.7(5) ns\cite{Berends93,Hur22}'
+      - label: Natural linewidth
+        value: '4.22(6) MHz\cite{Hur22}'
+      - label: Saturation intensity
+        value: '~375 uW/mm^2\cite{Hur22}'
+      - label: Branching from ${}^{3}D[3/2]_{1/2}$'
+        value: 'to $2S_{1/2}$: 98.2%; back to $2D_{3/2}$: 1.8%\cite{Meyer12,Hur22}'
+      - label: Typical beam settings
+        value: '3 mW @ 300 um waist (Table B.1 experimental setup)\cite{Hur22}'
+      - label: Usage
+        value: '$2D_{3/2}$ repumper\cite{Hur22}'
+
+  - between: ['2D3/2[F=1]', '3D[3/2]1/2[F=0]']
+    type: E1
+    frequency: '320569300(70) MHz\cite{Hur22,McLoughlin11}'
+    show: [frequency]
+    notes:
+      - 'Resolved $^{171}$Yb$^+$ 935 nm repump address listed explicitly in Table 19.2.\cite{Hur22}'
+
+  - between: [2F7/2, '1D[3/2]3/2']
+    type: E1
+    show: [wavelength, type]
+    properties:
+      - section: Table B.1 line data
+      - label: '171Yb+ measured addresses used in Table 19.2'
+        value: 'F=3 -> 1: 394.424700 THz; F=4 -> 2: 394.429957 THz\cite{Hur22,Ransford20}'
+      - label: Lifetime of ${}^{1}D[3/2]_{3/2}$
+        value: '28.6(4) ns\cite{Berends93,Hur22}'
+      - label: Natural linewidth
+        value: '5.56(8) MHz\cite{Hur22}'
+      - label: Saturation intensity
+        value: '~2000 uW/mm^2\cite{Hur22}'
+      - label: Branching from ${}^{1}D[3/2]_{3/2}$
+        value: 'to $2S_{1/2}$: >=96%; to $2D_{5/2}$: 4.2%; to $2D_{3/2}$: <=0.66%\cite{Hur22}'
+      - label: Typical beam settings
+        value: '7 mW @ 100 um waist (Table B.1 experimental setup)\cite{Hur22}'
+      - label: Usage
+        value: 'fast $2F_{7/2}$ repumper; thesis notes >=10x faster repumping than the 638 nm path\cite{Hur22}'
+
+  - between: ['2F7/2[F=3]', '1D[3/2]3/2[F=1]']
+    type: E1
+    frequency: '394424700(?) MHz\cite{Hur22,Ransford20}'
+    show: [frequency]
+    notes:
+      - 'Resolved 760 nm repump address listed in Table 19.2 for $^{171}$Yb$^+$.\cite{Hur22}'
+
+  - between: ['2F7/2[F=4]', '1D[3/2]3/2[F=2]']
+    type: E1
+    frequency: '394429957(?) MHz\cite{Hur22,Ransford20}'
+    show: [frequency]
+    notes:
+      - 'Second resolved 760 nm repump address listed in Table 19.2 for $^{171}$Yb$^+$.\cite{Hur22}'
+
+  - between: [2F7/2, '1D[5/2]5/2']
+    type: E1
+    show: [wavelength, type]
+    properties:
+      - section: Table B.1 line data
+      - label: Reference frequency
+        value: '469.44127 THz\cite{Counts20,Hur22}'
+      - label: Typical beam settings
+        value: '2.5 mW @ 100 um waist (Table B.1 experimental setup)\cite{Hur22}'
+      - label: Usage
+        value: 'older $2F_{7/2}$ repumper used before the 760 nm path became standard in this setup\cite{Counts20,Hur22}'
+      - label: Operational note
+        value: 'The thesis reports the 760 nm path as at least 10x faster than this 638 nm repumping route.\cite{Hur22}'
+
+bibliography_bibtex: |
+  @phdthesis{Hur22,
+    author = {Hur, Joonseok},
+    title = {Precision optical spectroscopy and isotope shifts in trapped ytterbium ions},
+    school = {Massachusetts Institute of Technology},
+    year = {2022},
+    note = {Ph.D. thesis; source of Fig. 3-1, Fig. 19-3, Tables 19.1 and 19.2, and Appendix B / Table B.1.}
+  }
+
+  @article{Fisk97,
+    author = {Fisk, P. and Sellars, M. and Lawn, M. and Coles, G.},
+    title = {Accurate measurement of the 12.6 GHz "clock" transition in trapped 171 Yb+ ions},
+    journal = {IEEE Transactions on Ultrasonics, Ferroelectrics, and Frequency Control},
+    volume = {44},
+    pages = {344--354},
+    year = {1997}
+  }
+
+  @article{Martensson94,
+    author = {Martensson-Pendrill, A.-M. and Gough, D. S. and Hannaford, P.},
+    title = {Isotope shifts and hyperfine structure in the 369.4-nm 6s-6p1/2 resonance line of singly ionized ytterbium},
+    journal = {Physical Review A},
+    volume = {49},
+    pages = {3351--3365},
+    year = {1994}
+  }
+
+  @article{Olmschenk07,
+    author = {Olmschenk, S. and Younge, K. C. and Moehring, D. L. and Matsukevich, D. N. and Maunz, P. and Monroe, C.},
+    title = {Manipulation and detection of a trapped Yb+ hyperfine qubit},
+    journal = {Physical Review A},
+    volume = {76},
+    pages = {052314},
+    year = {2007}
+  }
+
+  @article{Tan21,
+    author = {Tan, T. R. and Edmunds, C. L. and Milne, A. R. and Biercuk, M. J. and Hempel, C.},
+    title = {Precision characterization of the 2D5/2 state and the quadratic Zeeman coefficient in 171 Yb+},
+    journal = {Physical Review A},
+    volume = {104},
+    pages = {L010802},
+    year = {2021}
+  }
+
+  @phdthesis{Roman21,
+    author = {Roman, C.},
+    title = {Expanding the 171 Yb+ toolbox: the 2Fo7/2 state as resource for quantum information science},
+    school = {University of California, Los Angeles},
+    year = {2021}
+  }
+
+  @article{McLoughlin11,
+    author = {McLoughlin, J. J. and Nizamani, A. H. and Siverns, J. D. and Sterling, R. C. and Hughes, M. D. and Lekitsch, B. and Stein, B. and Weidt, S. and Hensinger, W. K.},
+    title = {Versatile ytterbium ion trap experiment for operation of scalable ion-trap chips with motional heating and transition-frequency measurements},
+    journal = {Physical Review A},
+    volume = {83},
+    pages = {013406},
+    year = {2011}
+  }
+
+  @phdthesis{Ransford20,
+    author = {Ransford, A. M.},
+    title = {Old Dog, New Trick: High Fidelity, Background-free State Detection of an Ytterbium Ion Qubit},
+    school = {University of California, Los Angeles},
+    year = {2020}
+  }
+
+  @article{Roberts99,
+    author = {Roberts, M. and Taylor, P. and Gateva-Kostova, S. V. and Clarke, R. B. M. and Rowley, W. R. C. and Gill, P.},
+    title = {Measurement of the 2S1/2-2D5/2 clock transition in a single 171 Yb+ ion},
+    journal = {Physical Review A},
+    volume = {60},
+    pages = {2867--2872},
+    year = {1999}
+  }
+
+  @article{Godun14,
+    author = {Godun, R. M. and Nisbet-Jones, P. B. R. and Jones, J. M. and King, S. A. and Johnson, L. A. M. and Margolis, H. S. and Szymaniec, K. and Lea, S. N. and Bongs, K. and Gill, P.},
+    title = {Frequency ratio of two optical clock transitions in 171 Yb+ and constraints on the time variation of fundamental constants},
+    journal = {Physical Review Letters},
+    volume = {113},
+    pages = {210801},
+    year = {2014}
+  }
+
+  @article{Berends93,
+    author = {Berends, R. W. and Pinnington, E. H. and Guo, B. and Ji, Q.},
+    title = {Beam-laser lifetime measurements for four resonance levels of Yb II},
+    journal = {Journal of Physics B},
+    volume = {26},
+    pages = {L701--L704},
+    year = {1993}
+  }
+
+  @article{Meyer12,
+    author = {Meyer, H. M. and Steiner, M. and Ratschbacher, L. and Zipkes, C. and Kohl, M.},
+    title = {Laser spectroscopy and cooling of Yb+ ions on a deep-UV transition},
+    journal = {Physical Review A},
+    volume = {85},
+    pages = {012502},
+    year = {2012}
+  }
+
+  @article{Olmschenk09,
+    author = {Olmschenk, S. and Hayes, D. and Matsukevich, D. N. and Maunz, P. and Moehring, D. L. and Younge, K. C. and Monroe, C.},
+    title = {Measurement of the lifetime of the 6p 2P1/2 level of Yb+},
+    journal = {Physical Review A},
+    volume = {80},
+    pages = {022502},
+    year = {2009}
+  }
+
+  @article{Yu00,
+    author = {Yu, N. and Maleki, L.},
+    title = {Lifetime measurements of the 4f14 5d metastable states in single ytterbium ions},
+    journal = {Physical Review A},
+    volume = {61},
+    pages = {022507},
+    year = {2000}
+  }
+
+  @article{Lange21,
+    author = {Lange, R. and Peshkov, A. A. and Huntemann, N. and Tamm, C. and Surzhykov, A. and Peik, E.},
+    title = {Lifetime of the 2F7/2 level in Yb+ for spontaneous emission of electric octupole radiation},
+    journal = {Physical Review Letters},
+    volume = {127},
+    pages = {213001},
+    year = {2021}
+  }
+
+  @article{Roberts97,
+    author = {Roberts, M. and Taylor, P. and Barwood, G. P. and Gill, P. and Klein, H. A. and Rowley, W. R. C.},
+    title = {Observation of an electric octupole transition in a single ion},
+    journal = {Physical Review Letters},
+    volume = {78},
+    pages = {1876--1879},
+    year = {1997}
+  }
+
+  @article{Taylor97,
+    author = {Taylor, P. and Roberts, M. and Gateva-Kostova, S. V. and Clarke, R. B. M. and Barwood, G. P. and Rowley, W. R. C. and Gill, P.},
+    title = {Investigation of the 2S1/2-2D5/2 clock transition in a single ytterbium ion},
+    journal = {Physical Review A},
+    volume = {56},
+    pages = {2699--2704},
+    year = {1997}
+  }
+
+  @phdthesis{Counts20,
+    author = {Counts, I. T.},
+    title = {Surface Friction and Spectroscopic Probes of New Physics with Trapped Ions},
+    school = {Massachusetts Institute of Technology},
+    year = {2020}
+  }

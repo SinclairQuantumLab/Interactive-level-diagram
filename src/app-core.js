@@ -1087,6 +1087,73 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
     };
   }
 
+  function parseConfiguredScalar(value, {
+    issueKey,
+    fieldLabel,
+  }) {
+    if (value === undefined || value === null || value === "") {
+      return {
+        numericValue: Number.NaN,
+        displayText: "",
+      };
+    }
+
+    const rawText = String(value).trim();
+    const citationSuffix = [...rawText.matchAll(/\\cite\{[^}]+\}/g)].map((match) => match[0]).join("");
+    const strippedText = stripInlineCitations(rawText);
+    const parsedNumber = parseConfiguredNumberToken(strippedText);
+
+    if (!Number.isFinite(parsedNumber?.numericValue)) {
+      pushMeasurementIssue(
+        `${issueKey}:value`,
+        "Invalid scalar value",
+        `${fieldLabel} must be written as a plain number such as "1.3362(13)".`,
+      );
+
+      return {
+        numericValue: Number.NaN,
+        displayText: rawText,
+      };
+    }
+
+    return {
+      numericValue: parsedNumber.numericValue,
+      displayText: `${formatGroupedNumberToken(strippedText)}${citationSuffix}`,
+    };
+  }
+
+  function normalizePropertyEntries(entries) {
+    return (Array.isArray(entries) ? entries : [])
+      .map((entry) => {
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+          return null;
+        }
+
+        if (typeof entry.section === "string" && entry.section.trim()) {
+          return {
+            section: entry.section.trim(),
+          };
+        }
+
+        return {
+          label: entry.label ?? "",
+          value: entry.value ?? "",
+          references: Array.isArray(entry.references) ? entry.references : [],
+        };
+      })
+      .filter((entry) => {
+        if (!entry) {
+          return false;
+        }
+
+        if (entry.section) {
+          return true;
+        }
+
+        return String(entry.label ?? "").trim() || String(entry.value ?? "").trim();
+      });
+  }
+
   function parseStateMeasurement(stateId, fieldLabel, value, targetUnitScale, assumedUnitLabel) {
     return parseConfiguredMeasurement(value, {
       issueKey: `state:${stateId}:${fieldLabel.toLowerCase()}`,
@@ -1118,6 +1185,10 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
     diagramIssues: issues,
     states: (Array.isArray(rawConfig.states) ? rawConfig.states : []).map((state) => {
       const energyMeasurement = parseStateMeasurement(state.id, "energy", state.energy, 1e12, "THz");
+      const gJValue = parseConfiguredScalar(state.g_j, {
+        issueKey: `state:${state.id}:g_j`,
+        fieldLabel: `${state.id} g_J`,
+      });
       const hyperfineConstants = state.hyperfine_constants && typeof state.hyperfine_constants === "object"
         ? {
           a: parseStateMeasurement(state.id, "A", state.hyperfine_constants.a, 1e6, "MHz"),
@@ -1132,10 +1203,12 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
         notation: state.notation || state.id,
         labelPlain: state.id,
         j: state.j,
+        gJConfigured: gJValue.numericValue,
         energyTHz: energyMeasurement.numericValue,
         energyText: energyMeasurement.displayText,
         energyMeasurement: energyMeasurement.measurement,
         notes: Array.isArray(state.notes) ? state.notes : [],
+        properties: normalizePropertyEntries(state.properties),
         referenceMap: state.references && typeof state.references === "object" && !Array.isArray(state.references)
           ? state.references
           : {},
@@ -1198,6 +1271,7 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
         frequencyText: frequencyMeasurement.displayText,
         frequencyMeasurement: frequencyMeasurement.measurement,
         notes: Array.isArray(transition.notes) ? transition.notes : [],
+        properties: normalizePropertyEntries(transition.properties),
         referenceMap: transition.references && typeof transition.references === "object" && !Array.isArray(transition.references)
           ? transition.references
           : {},
@@ -1505,6 +1579,7 @@ let currentLayout = null;
 let pinnedPanels = [];
 let nextPinnedPanelId = 1;
 let activePanelDrag = null;
+let pinnedPanelResizePersistTimer = null;
 let currentDiagramIssues = [];
 let dismissedDiagramIssueKeys = new Set();
 let undoHistory = [];
@@ -1708,6 +1783,7 @@ function serializePinnedPanelEntry(panel) {
       sceneX: panel.sceneX,
       sceneY: panel.sceneY,
       widthScreen: panel.widthScreen,
+      heightScreen: panel.heightScreen,
       showTransitionLabelSelectors: Boolean(panel.showTransitionLabelSelectors),
     };
   }
@@ -1722,6 +1798,7 @@ function serializePinnedPanelEntry(panel) {
       sceneX: panel.sceneX,
       sceneY: panel.sceneY,
       widthScreen: panel.widthScreen,
+      heightScreen: panel.heightScreen,
       showMeasurementLabelSelectors: Boolean(panel.showMeasurementLabelSelectors),
       editMeasurementNotes: Boolean(panel.editMeasurementNotes),
     };

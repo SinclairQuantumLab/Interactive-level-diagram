@@ -916,7 +916,7 @@ function rebuildDerivedDiagramState() {
   fineStates = config.states.map((state) => ({
     ...state,
     columnId: parseOrbitalLetter(state.id),
-    gJ: computeLandegJ(state),
+    gJ: Number.isFinite(state.gJConfigured) ? state.gJConfigured : computeLandegJ(state),
     hyperfine: buildHyperfineLevels(state, config.species.nuclearSpin),
   }));
   rebuildReferenceState();
@@ -1043,6 +1043,33 @@ function appendNoteRows(rows, notes, references = []) {
   return rows;
 }
 
+function appendConfiguredPropertyRows(rows, properties) {
+  const normalizedProperties = Array.isArray(properties) ? properties : [];
+
+  normalizedProperties.forEach((property) => {
+    if (!property || typeof property !== "object") {
+      return;
+    }
+
+    if (typeof property.section === "string" && property.section.trim()) {
+      rows.push(createDetailSectionRow(property.section.trim()));
+      return;
+    }
+
+    const label = property.label ?? "";
+    const value = property.value ?? "";
+    const references = Array.isArray(property.references) ? property.references : [];
+
+    if (!String(label).trim() && !String(value).trim()) {
+      return;
+    }
+
+    rows.push(createDetailRow(label, value, references));
+  });
+
+  return rows;
+}
+
 function withUnknownUncertainty(value) {
   if (typeof value !== "string") {
     return value;
@@ -1132,6 +1159,7 @@ function getFineDetail(state) {
     createDetailRow("Constants", constantParts.join(", ") || "not configured", constantParts.length > 0 ? getReferenceKeysForField(state, "constants") : []),
   ];
 
+  appendConfiguredPropertyRows(rows, state.properties);
   return appendNoteRows(rows, state.notes, getReferenceKeysForField(state, "notes"));
 }
 
@@ -1321,14 +1349,31 @@ function parseStateReference(referenceText) {
   }
 
   const trimmed = referenceText.trim();
-  const match = trimmed.match(/^([^\[\]]+?)(?:\[(.+)\])?$/);
+  let fineStateId = trimmed;
+  let qualifiersText = null;
+  const qualifierMatch = trimmed.match(/^(.*)\[([^\[\]]+)\]\s*$/);
 
-  if (!match) {
+  if (qualifierMatch) {
+    const candidateFineStateId = qualifierMatch[1].trim();
+    const candidateQualifiersText = qualifierMatch[2].trim();
+    const qualifierParts = candidateQualifiersText
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const looksLikeQualifierSuffix = candidateFineStateId
+      && qualifierParts.length > 0
+      && qualifierParts.every((part) => /^[a-zA-Z]+\s*=/.test(part));
+
+    if (looksLikeQualifierSuffix) {
+      fineStateId = candidateFineStateId;
+      qualifiersText = candidateQualifiersText;
+    }
+  }
+
+  if (!fineStateId) {
     return null;
   }
 
-  const fineStateId = match[1].trim();
-  const qualifiersText = match[2];
   const parsed = {
     raw: trimmed,
     fineStateId,
@@ -1860,6 +1905,7 @@ function getTransitionDetail(node) {
     }),
   );
 
+  appendConfiguredPropertyRows(rows, node.properties);
   const noteReferences = getReferenceKeysForField(node, "notes");
   const notes = Array.isArray(node.notes)
     ? node.notes.filter((note) => typeof note === "string" && note.trim())

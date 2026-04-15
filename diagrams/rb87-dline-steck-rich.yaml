@@ -1,0 +1,386 @@
+# Steck-centered Rb-87 D-line reference diagram.
+# In addition to the standard state/transition fields, this file uses:
+# - state.g_j: optional dimensionless override for the fine-structure Lande g-factor
+# - properties:
+#     - section: Section heading
+#     - label: Display label
+#       value: Display value (supports inline \cite{...} references)
+
+meta:
+  id: rb87-dline-steck-rich
+  title: Rubidium-87 D-Line Reference
+
+species:
+  species: Rb
+  atomic_mass_number: 87
+  ionization_number: 0
+  nuclear_spin: 1.5
+  notes:
+    - 'Steck-centered reference diagram for the $5S_{1/2}$, $5P_{1/2}$, and $5P_{3/2}$ manifolds.'
+    - 'Ground-state configuration: [Kr]5$s^1$'
+    - 'Expand fine, hyperfine, and Zeeman structure to expose Table 8 branching factors and the stretched D2 cycling branch.'
+
+states:
+  - id: 5S1/2
+    j: 0.5
+    g_j: '2.00233113(20)\cite{Ari77}'
+    energy: '0 THz\cite{Ste03}'
+    notation: '$5s\,{}^{2}S_{1/2}$'
+    references:
+      energy: [Ste03]
+      constants: [Bize99]
+    hyperfine_constants:
+      a: '3417.34130545215(5) MHz\cite{Bize99}'
+    properties:
+      - section: Atomic reference
+      - label: Ionization limit
+        value: '33690.8048(2) cm^-1 = 4.1771270(2) eV\cite{Ste03}'
+      - label: Relative natural abundance
+        value: '27.83(2)%\cite{Ste03}'
+      - section: Magnetic response
+      - label: 'Measured $g_J$'
+        value: '2.00233113(20)\cite{Ari77}'
+      - label: 'Approx. weak-field $g_F$ values'
+        value: 'F=2 -> +1/2; F=1 -> -1/2\cite{Ste03}'
+      - section: Electric response
+      - label: 'Scalar polarizability $\alpha_0$'
+        value: 'h * 0.0794(16) Hz/(V/cm)^2\cite{Mil00,Ste03}'
+
+  - id: 5P1/2
+    j: 0.5
+    g_j: '0.666\cite{Ste03}'
+    energy: '377.1074635(4) THz\cite{Bar91}'
+    notation: '$5p\,{}^{2}P_{1/2}$'
+    references:
+      energy: [Bar91]
+      constants: [Bar91]
+    hyperfine_constants:
+      a: '408.328(15) MHz\cite{Bar91}'
+    properties:
+      - section: Magnetic response
+      - label: 'Estimated $g_J$'
+        value: '0.666; Steck notes no direct experimental measurement for this manifold\cite{Ste03}'
+      - label: 'Approx. weak-field $g_F$ values'
+        value: 'F=2 -> +1/6; F=1 -> -1/6\cite{Ste03}'
+      - section: Electric response
+      - label: 'Scalar polarizability shift $\alpha_0(5P_{1/2})-\alpha_0(5S_{1/2})$'
+        value: 'h * 0.122306(16) Hz/(V/cm)^2\cite{Mil94,Ste03}'
+      - section: Radiative response
+      - label: Lifetime
+        value: '27.70(4) ns\cite{Volz96,Ste03}'
+      - label: Natural linewidth
+        value: '2pi x 5.746(8) MHz\cite{Volz96,Ste03}'
+
+  - id: 5P3/2
+    j: 1.5
+    g_j: '1.3362(13)\cite{Ari77}'
+    energy: '384.2304844685(62) THz\cite{Ye96}'
+    notation: '$5p\,{}^{2}P_{3/2}$'
+    references:
+      energy: [Ye96]
+      constants: [Ye96]
+    hyperfine_constants:
+      a: '84.7185(20) MHz\cite{Ye96}'
+      b: '12.4965(37) MHz\cite{Ye96}'
+    properties:
+      - section: Magnetic response
+      - label: 'Measured $g_J$'
+        value: '1.3362(13)\cite{Ari77}'
+      - label: 'Approx. weak-field $g_F$ values'
+        value: 'F=3 -> +2/3; F=2 -> +2/3; F=1 -> +2/3; F=0 -> 0\cite{Ste03}'
+      - section: Electric response
+      - label: 'Scalar polarizability shift $\alpha_0(5P_{3/2})-\alpha_0(5S_{1/2})$'
+        value: 'h * 0.1340(8) Hz/(V/cm)^2\cite{Kre97,Ste03}'
+      - label: 'Tensor polarizability $\alpha_2(5P_{3/2})$'
+        value: 'h * -0.0406(8) Hz/(V/cm)^2\cite{Kre97,Ste03}'
+      - section: Radiative response
+      - label: Lifetime
+        value: '26.24(4) ns\cite{Volz96,Ste03}'
+      - label: Natural linewidth
+        value: '2pi x 6.065(9) MHz\cite{Volz96,Ste03}'
+
+transitions:
+  - between: ['5S1/2[F=1]', '5S1/2[F=2]']
+    type: M1
+    frequency: '6.83468261090429(9) GHz\cite{Bize99}'
+    show: [frequency]
+    properties:
+      - section: Clock reference
+      - label: Quadratic Zeeman coefficient
+        value: '2pi x 575.15 Hz/G^2\cite{Ste03}'
+    notes:
+      - 'The $m_F=0 \leftrightarrow m_F=0$ branch is the first-order field-insensitive clock transition.\cite{Ste03}'
+
+  - between: [5S1/2, 5P1/2]
+    type: E1
+    strength: '2.992(3) ea0\cite{Ste03}'
+    frequency: '377.1074635(4) THz\cite{Bar91}'
+    show: [wavelength, strength]
+    properties:
+      - section: Optical line data
+      - label: Transition energy
+        value: '1.55959099(6) eV\cite{Bar91,Ste03}'
+      - label: Air wavelength
+        value: '794.76569 nm\cite{Ste03}'
+      - label: Vacuum wavenumber
+        value: '12578.950985(13) cm^-1\cite{Bar91,Ste03}'
+      - section: Radiative response
+      - label: Lifetime
+        value: '27.70(4) ns\cite{Volz96,Ste03}'
+      - label: 'Decay rate $\Gamma$'
+        value: '36.10(5) x 10^6 s^-1\cite{Volz96,Ste03}'
+      - label: Natural linewidth
+        value: '2pi x 5.746(8) MHz\cite{Volz96,Ste03}'
+      - label: Absorption oscillator strength
+        value: '0.3420(14)\cite{Ste03}'
+      - section: Dipole and drive scales
+      - label: Reduced dipole matrix element
+        value: '2.992(3) ea0 = 2.537(3) x 10^-29 C m\cite{Ste03}'
+      - label: Far-detuned effective dipole moment
+        value: '1.727(2) ea0 = 1.4646(15) x 10^-29 C m\cite{Ste03}'
+      - label: Far-detuned saturation intensity
+        value: '4.484(5) mW/cm^2\cite{Ste03}'
+      - label: Far-detuned resonant cross section
+        value: '1.082 x 10^-9 cm^2\cite{Ste03}'
+      - section: Atomic motion
+      - label: Recoil velocity
+        value: '5.7754 mm/s\cite{Ste03}'
+      - label: Recoil energy
+        value: '2pi x 3.6325 kHz\cite{Ste03}'
+      - label: Recoil temperature
+        value: '348.66 nK\cite{Ste03}'
+      - label: Doppler shift at recoil velocity
+        value: '2pi x 7.2649 kHz\cite{Ste03}'
+      - label: Standing-wave shift for $v_{sw}=v_r$
+        value: '2pi x 14.530 kHz\cite{Ste03}'
+    notes:
+      - 'Expanded D1 hyperfine manifolds expose the Table 8 relative strength factors below.\cite{Ste03}'
+
+  - between: [5S1/2, 5P3/2]
+    type: E1
+    strength: '4.227(5) ea0\cite{Ste03}'
+    frequency: '384.2304844685(62) THz\cite{Ye96}'
+    show: [wavelength, strength]
+    properties:
+      - section: Optical line data
+      - label: Transition energy
+        value: '1.589049439(58) eV\cite{Ye96,Ste03}'
+      - label: Air wavelength
+        value: '780.03200 nm\cite{Ste03}'
+      - label: Vacuum wavenumber
+        value: '12816.54938993(21) cm^-1\cite{Ye96,Ste03}'
+      - section: Radiative response
+      - label: Lifetime
+        value: '26.24(4) ns\cite{Volz96,Ste03}'
+      - label: 'Decay rate $\Gamma$'
+        value: '38.11(6) x 10^6 s^-1\cite{Volz96,Ste03}'
+      - label: Natural linewidth
+        value: '2pi x 6.065(9) MHz\cite{Volz96,Ste03}'
+      - label: Absorption oscillator strength
+        value: '0.6956(15)\cite{Ste03}'
+      - section: Dipole and drive scales
+      - label: Reduced dipole matrix element
+        value: '4.227(5) ea0 = 3.584(4) x 10^-29 C m\cite{Ste03}'
+      - label: Isotropic effective dipole moment
+        value: '2.042(2) ea0 = 1.731(2) x 10^-29 C m\cite{Ste03}'
+      - label: Isotropic saturation intensity
+        value: '3.576(4) mW/cm^2\cite{Ste03}'
+      - label: Isotropic resonant cross section
+        value: '1.356 x 10^-9 cm^2\cite{Ste03}'
+      - label: Far-detuned effective dipole moment
+        value: '2.441(3) ea0 = 2.069(2) x 10^-29 C m\cite{Ste03}'
+      - label: Far-detuned saturation intensity
+        value: '2.503(3) mW/cm^2\cite{Ste03}'
+      - label: Far-detuned resonant cross section
+        value: '1.938 x 10^-9 cm^2\cite{Ste03}'
+      - section: Atomic motion
+      - label: Recoil velocity
+        value: '5.8845 mm/s\cite{Ste03}'
+      - label: Recoil energy
+        value: '2pi x 3.7710 kHz\cite{Ste03}'
+      - label: Recoil temperature
+        value: '361.96 nK\cite{Ste03}'
+      - label: Doppler shift at recoil velocity
+        value: '2pi x 7.5419 kHz\cite{Ste03}'
+      - label: Standing-wave shift for $v_{sw}=v_r$
+        value: '2pi x 15.084 kHz\cite{Ste03}'
+    notes:
+      - 'Expanded D2 hyperfine manifolds expose the MOT cooling, repump, and stretched cycling branches.\cite{Ste03}'
+
+  - between: ['5S1/2[F=1]', '5P1/2[F=1]']
+    type: E1
+    strength: '1/6\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Bar91]
+
+  - between: ['5S1/2[F=1]', '5P1/2[F=2]']
+    type: E1
+    strength: '5/6\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Bar91]
+
+  - between: ['5S1/2[F=2]', '5P1/2[F=1]']
+    type: E1
+    strength: '1/2\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Bar91]
+
+  - between: ['5S1/2[F=2]', '5P1/2[F=2]']
+    type: E1
+    strength: '1/2\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Bar91]
+
+  - between: ['5S1/2[F=1]', '5P3/2[F=0]']
+    type: E1
+    strength: '1/6\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Ye96]
+
+  - between: ['5S1/2[F=1]', '5P3/2[F=1]']
+    type: E1
+    strength: '5/12\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Ye96]
+
+  - between: ['5S1/2[F=1]', '5P3/2[F=2]']
+    type: E1
+    strength: '5/12\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Ye96]
+
+  - between: ['5S1/2[F=2]', '5P3/2[F=1]']
+    type: E1
+    strength: '1/20\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Ye96]
+
+  - between: ['5S1/2[F=2]', '5P3/2[F=2]']
+    type: E1
+    strength: '1/4\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Ye96]
+
+  - between: ['5S1/2[F=2]', '5P3/2[F=3]']
+    type: E1
+    strength: '7/10\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Ye96]
+
+  - between: ['5S1/2[F=2,mF=2]', '5P3/2[F=3,mF=3]']
+    type: E1
+    strength: '2.989(3) ea0\cite{Ste03}'
+    show: [strength]
+    references:
+      derived: [Bize99, Ye96]
+    properties:
+      - section: Cycling branch
+      - label: Dipole moment
+        value: '2.989(3) ea0 = 2.534(3) x 10^-29 C m\cite{Ste03}'
+      - label: Saturation intensity
+        value: '1.669(2) mW/cm^2\cite{Ste03}'
+      - label: Resonant cross section
+        value: '2.907 x 10^-9 cm^2\cite{Ste03}'
+    notes:
+      - 'Stretched $\sigma^+$ D2 cycling transition.\cite{Ste03}'
+
+bibliography_bibtex: |
+  @misc{Ste03,
+    author = {Steck, Daniel A.},
+    title = {Rubidium 87 D Line Data},
+    year = {2003},
+    note = {Revision 1.6, 14 October 2003.},
+    url = {http://steck.us/alkalidata}
+  }
+
+  @article{Bize99,
+    author = {Bize, S. and Sortais, Y. and Santos, M. S. and Mandache, C. and Clairon, A. and Salomon, C.},
+    title = {High-accuracy measurement of the 87Rb ground-state hyperfine splitting in an atomic fountain},
+    journal = {Europhysics Letters},
+    volume = {45},
+    number = {5},
+    pages = {558--564},
+    year = {1999},
+    doi = {10.1209/epl/i1999-00225-x}
+  }
+
+  @article{Ye96,
+    author = {Ye, Jun and Swartz, Steve and Jungner, Peter and Hall, John L.},
+    title = {Hyperfine structure and absolute frequency of the 87Rb 5P3/2 state},
+    journal = {Optics Letters},
+    volume = {21},
+    number = {16},
+    pages = {1280--1282},
+    year = {1996},
+    doi = {10.1364/OL.21.001280}
+  }
+
+  @article{Bar91,
+    author = {Barwood, G. P. and Gill, P. and Rowley, W. R. C.},
+    title = {Frequency Measurements on Optically Narrowed Rb-Stabilised Laser Diodes at 780 nm and 795 nm},
+    journal = {Applied Physics B},
+    volume = {53},
+    pages = {142--147},
+    year = {1991},
+    doi = {10.1007/BF00348610}
+  }
+
+  @article{Volz96,
+    author = {Volz, U. and Schmoranzer, H.},
+    title = {Precision Lifetime Measurements on Alkali Atoms and on Helium by Beam-Gas-Laser Spectroscopy},
+    journal = {Physica Scripta},
+    volume = {T65},
+    pages = {48--56},
+    year = {1996},
+    doi = {10.1088/0031-8949/1996/T65/007}
+  }
+
+  @article{Ari77,
+    author = {Arimondo, E. and Inguscio, M. and Violino, P.},
+    title = {Experimental determinations of the hyperfine structure in the alkali atoms},
+    journal = {Reviews of Modern Physics},
+    volume = {49},
+    pages = {31--75},
+    year = {1977},
+    doi = {10.1103/RevModPhys.49.31}
+  }
+
+  @incollection{Mil00,
+    author = {Miller, Thomas M.},
+    title = {Atomic and Molecular Polarizabilities},
+    booktitle = {CRC Handbook of Chemistry and Physics},
+    editor = {Lide, David R.},
+    edition = {81},
+    publisher = {CRC Press},
+    year = {2000}
+  }
+
+  @article{Mil94,
+    author = {Miller, K. E. and Krause, D. Jr. and Hunter, L. R.},
+    title = {Precise measurement of the Stark shift of the rubidium and potassium D1 lines},
+    journal = {Physical Review A},
+    volume = {49},
+    pages = {5128--5133},
+    year = {1994},
+    doi = {10.1103/PhysRevA.49.5128}
+  }
+
+  @article{Kre97,
+    author = {Krenn, C. and Scherf, W. and Khait, O. and Musso, M. and Windholz, L.},
+    title = {Stark effect investigations of resonance lines of neutral potassium, rubidium, europium and gallium},
+    journal = {Zeitschrift fur Physik D},
+    volume = {41},
+    pages = {229--235},
+    year = {1997},
+    doi = {10.1007/s004600050089}
+  }

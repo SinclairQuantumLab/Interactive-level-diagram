@@ -1566,6 +1566,53 @@ function removePinnedPanel(panelId) {
   renderPinnedPanels();
 }
 
+function schedulePinnedPanelResizePersistence() {
+  if (pinnedPanelResizePersistTimer) {
+    window.clearTimeout(pinnedPanelResizePersistTimer);
+  }
+
+  pinnedPanelResizePersistTimer = window.setTimeout(() => {
+    pinnedPanelResizePersistTimer = null;
+    persistState({ recordHistory: false, announce: false, preserveHistorySnapshot: true });
+  }, 160);
+}
+
+const pinnedPanelResizeObserver = typeof window.ResizeObserver === "function"
+  ? new window.ResizeObserver((entries) => {
+      entries.forEach((entry) => {
+        const panelId = Number(entry.target?.dataset?.panelId);
+
+        if (!Number.isFinite(panelId)) {
+          return;
+        }
+
+        const panel = pinnedPanels.find((item) => item.panelId === panelId);
+
+        if (!panel || entry.target.dataset.resizable !== "true") {
+          return;
+        }
+
+        const width = Math.round(entry.target.offsetWidth || entry.target.getBoundingClientRect().width);
+        const height = Math.round(entry.target.offsetHeight || entry.target.getBoundingClientRect().height);
+        let changed = false;
+
+        if (Number.isFinite(width) && Math.abs((panel.widthScreen ?? 0) - width) >= 1) {
+          panel.widthScreen = width;
+          changed = true;
+        }
+
+        if (Number.isFinite(height) && Math.abs((panel.heightScreen ?? 0) - height) >= 1) {
+          panel.heightScreen = height;
+          changed = true;
+        }
+
+        if (changed) {
+          schedulePinnedPanelResizePersistence();
+        }
+      });
+    })
+  : null;
+
 function buildPinnedPanelContent(panel, layout) {
   const node = getPinnedNode(layout, panel);
 
@@ -1579,6 +1626,9 @@ function buildPinnedPanelContent(panel, layout) {
 
   if (panel.type === "reference") {
     container.classList.add("reference-inspector");
+  } else {
+    container.classList.add("is-resizable");
+    container.dataset.resizable = "true";
   }
 
   const header = document.createElement("div");
@@ -1662,12 +1712,13 @@ function buildPinnedPanelContent(panel, layout) {
     kicker.textContent = "Transition";
     setMixedTextContent(title, buildTransitionTitle(node));
     subtitle.textContent = "";
-    metadata.append(buildMetadataFragment(getTransitionDetail(node), {
+    const transitionMetadata = buildMetadataFragment(getTransitionDetail(node), {
       showSelectors: Boolean(panel.showTransitionLabelSelectors),
-    }));
+    });
     if (panel.showTransitionLabelSelectors) {
       controls.append(buildTransitionLabelPrecisionControls(node));
     }
+    metadata.append(transitionMetadata);
     headerActions.append(createTransitionVisibilityToggleButton(panel));
   } else if (panel.type === "measurement") {
     kicker.textContent = "Measurement";
@@ -1691,12 +1742,41 @@ function buildPinnedPanelContent(panel, layout) {
   controls.hidden = controls.childElementCount === 0;
   headerActions.append(closeButton);
   header.append(headerText, headerActions);
+  if (panel.type === "transition") {
+    container.append(header, subtitle, controls, metadata);
+    return container;
+  }
+
   container.append(header, subtitle, metadata, controls);
   return container;
 }
 
-function renderPinnedPanels(layout = currentLayout) {
+function positionPinnedPanels() {
   updatePinnedPanelLayerTransform();
+
+  if (!pinnedPanelLayer) {
+    return;
+  }
+
+  const shellRect = appShell?.getBoundingClientRect();
+
+  pinnedPanels.forEach((panel) => {
+    const panelElement = pinnedPanelLayer.querySelector(`[data-panel-id="${panel.panelId}"]`);
+
+    if (!panelElement) {
+      return;
+    }
+
+    const screenPosition = getScenePointScreenPosition(panel.sceneX, panel.sceneY);
+    const left = shellRect ? screenPosition.x - shellRect.left : screenPosition.x;
+    const top = shellRect ? screenPosition.y - shellRect.top : screenPosition.y;
+    panelElement.style.left = `${left}px`;
+    panelElement.style.top = `${top}px`;
+  });
+}
+
+function renderPinnedPanels(layout = currentLayout) {
+  pinnedPanelResizeObserver?.disconnect();
   pinnedPanelLayer.innerHTML = "";
 
   const survivingPanels = [];
@@ -1711,17 +1791,16 @@ function renderPinnedPanels(layout = currentLayout) {
     if (panel.widthScreen) {
       panelElement.style.width = `${panel.widthScreen}px`;
     }
-    const screenPosition = getScenePointScreenPosition(panel.sceneX, panel.sceneY);
-    const shellRect = appShell?.getBoundingClientRect();
-    const left = shellRect ? screenPosition.x - shellRect.left : screenPosition.x;
-    const top = shellRect ? screenPosition.y - shellRect.top : screenPosition.y;
-    panelElement.style.left = `${left}px`;
-    panelElement.style.top = `${top}px`;
+    if (panel.heightScreen) {
+      panelElement.style.height = `${panel.heightScreen}px`;
+    }
     pinnedPanelLayer.append(panelElement);
+    pinnedPanelResizeObserver?.observe(panelElement);
     survivingPanels.push(panel);
   });
 
   pinnedPanels = survivingPanels;
+  positionPinnedPanels();
 }
 
 function beginPanelDrag(event, panelId) {
@@ -1797,6 +1876,7 @@ function pinInspector(event, type, id) {
     sceneX: scenePoint.x,
     sceneY: scenePoint.y,
     widthScreen: tooltipRect?.width ?? null,
+    heightScreen: null,
   });
   nextPinnedPanelId += 1;
   renderPinnedPanels(layout);
@@ -1841,6 +1921,9 @@ function applyStateObject(stateObject, options = {}) {
         sceneY: Number.isFinite(panel.sceneY) ? panel.sceneY : 0,
         widthScreen: Number.isFinite(panel.widthScreen)
           ? panel.widthScreen
+          : null,
+        heightScreen: Number.isFinite(panel.heightScreen)
+          ? panel.heightScreen
           : null,
         showTransitionLabelSelectors: Boolean(panel.showTransitionLabelSelectors),
         showMeasurementLabelSelectors: Boolean(panel.showMeasurementLabelSelectors),
