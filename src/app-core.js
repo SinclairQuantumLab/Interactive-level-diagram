@@ -46,7 +46,6 @@ const diagramPickerWebList = document.getElementById("diagram-picker-web-list");
 const diagramPickerWebHint = document.getElementById("diagram-picker-web-hint");
 const diagramPickerWebPath = document.getElementById("diagram-picker-web-path");
 const diagramPickerLocalPickButton = document.getElementById("diagram-picker-local-pick");
-const diagramPickerLocalBody = document.getElementById("diagram-picker-local-body");
 const diagramPickerLocalList = document.getElementById("diagram-picker-local-list");
 const diagramPickerLocalHint = document.getElementById("diagram-picker-local-hint");
 const diagramPickerLocalPath = document.getElementById("diagram-picker-local-path");
@@ -1639,13 +1638,39 @@ function createExpandedDefaultStateLists() {
   };
 }
 
-function buildBaseLayoutStateObject({ expansionMode = "collapsed" } = {}) {
-  const expansionState = expansionMode === "expanded"
+function createExpansionStateLists(expansionMode = "collapsed") {
+  return expansionMode === "expanded"
     ? createExpandedDefaultStateLists()
     : {
       expandedFine: defaultExpandedFine,
       expandedHyperfine: defaultExpandedHyperfine,
     };
+}
+
+function getConfiguredDefaultLayout() {
+  return config.defaultLayout && typeof config.defaultLayout === "object" && !Array.isArray(config.defaultLayout)
+    ? config.defaultLayout
+    : null;
+}
+
+function selectConfiguredLayoutArray(configuredLayout, key, fallbackValue) {
+  return Array.isArray(configuredLayout?.[key]) ? configuredLayout[key] : fallbackValue;
+}
+
+function stateObjectHasHiddenItems(stateObject) {
+  if (!stateObject || typeof stateObject !== "object" || Array.isArray(stateObject)) {
+    return false;
+  }
+
+  return (
+    Array.isArray(stateObject.hiddenStates) && stateObject.hiddenStates.length > 0
+  ) || (
+    Array.isArray(stateObject.hiddenTransitions) && stateObject.hiddenTransitions.length > 0
+  );
+}
+
+function buildBaseLayoutStateObject({ expansionMode = "collapsed" } = {}) {
+  const expansionState = createExpansionStateLists(expansionMode);
 
   return {
     expandedFine: expansionState.expandedFine,
@@ -1673,9 +1698,7 @@ function buildBaseLayoutStateObject({ expansionMode = "collapsed" } = {}) {
 }
 
 function buildDiagramDefaultStateObject() {
-  const configuredLayout = config.defaultLayout && typeof config.defaultLayout === "object" && !Array.isArray(config.defaultLayout)
-    ? config.defaultLayout
-    : null;
+  const configuredLayout = getConfiguredDefaultLayout();
   const baseState = buildBaseLayoutStateObject({ expansionMode: "expanded" });
 
   if (!configuredLayout) {
@@ -1688,13 +1711,13 @@ function buildDiagramDefaultStateObject() {
   const mergedState = {
     ...baseState,
     ...configuredLayout,
-    expandedFine: Array.isArray(configuredLayout.expandedFine) ? configuredLayout.expandedFine : baseState.expandedFine,
-    expandedHyperfine: Array.isArray(configuredLayout.expandedHyperfine) ? configuredLayout.expandedHyperfine : baseState.expandedHyperfine,
-    pinnedPanels: Array.isArray(configuredLayout.pinnedPanels) ? configuredLayout.pinnedPanels : baseState.pinnedPanels,
-    measureSelection: Array.isArray(configuredLayout.measureSelection) ? configuredLayout.measureSelection : baseState.measureSelection,
-    measurements: Array.isArray(configuredLayout.measurements) ? configuredLayout.measurements : baseState.measurements,
-    hiddenStates: Array.isArray(configuredLayout.hiddenStates) ? configuredLayout.hiddenStates : baseState.hiddenStates,
-    hiddenTransitions: Array.isArray(configuredLayout.hiddenTransitions) ? configuredLayout.hiddenTransitions : baseState.hiddenTransitions,
+    expandedFine: selectConfiguredLayoutArray(configuredLayout, "expandedFine", baseState.expandedFine),
+    expandedHyperfine: selectConfiguredLayoutArray(configuredLayout, "expandedHyperfine", baseState.expandedHyperfine),
+    pinnedPanels: selectConfiguredLayoutArray(configuredLayout, "pinnedPanels", baseState.pinnedPanels),
+    measureSelection: selectConfiguredLayoutArray(configuredLayout, "measureSelection", baseState.measureSelection),
+    measurements: selectConfiguredLayoutArray(configuredLayout, "measurements", baseState.measurements),
+    hiddenStates: selectConfiguredLayoutArray(configuredLayout, "hiddenStates", baseState.hiddenStates),
+    hiddenTransitions: selectConfiguredLayoutArray(configuredLayout, "hiddenTransitions", baseState.hiddenTransitions),
     controls: {
       ...baseState.controls,
       ...configuredControls,
@@ -1715,12 +1738,7 @@ function buildExpansionOnlyStateObject(expansionMode = "collapsed") {
   const baseState = typeof buildSerializableState === "function"
     ? buildSerializableState()
     : buildDiagramDefaultStateObject();
-  const expansionState = expansionMode === "expanded"
-    ? createExpandedDefaultStateLists()
-    : {
-      expandedFine: defaultExpandedFine,
-      expandedHyperfine: defaultExpandedHyperfine,
-    };
+  const expansionState = createExpansionStateLists(expansionMode);
 
   return {
     ...baseState,
@@ -1801,22 +1819,7 @@ function resolveDiagramPickerLayoutStateObject(layoutFlavor = "default") {
 function buildDiagramPickerPreviewStateObject(layoutFlavor = "default") {
   const stateObject = resolveDiagramPickerLayoutStateObject(layoutFlavor);
 
-  if (
-    layoutFlavor !== "default"
-    || !stateObject
-    || typeof stateObject !== "object"
-    || Array.isArray(stateObject)
-  ) {
-    return stateObject;
-  }
-
-  const hasHiddenItems = (
-    Array.isArray(stateObject.hiddenStates) && stateObject.hiddenStates.length > 0
-  ) || (
-    Array.isArray(stateObject.hiddenTransitions) && stateObject.hiddenTransitions.length > 0
-  );
-
-  if (!hasHiddenItems) {
+  if (layoutFlavor !== "default" || !stateObjectHasHiddenItems(stateObject)) {
     return stateObject;
   }
 
@@ -2642,12 +2645,6 @@ function renderDiagramPicker() {
   if (diagramPickerLocalPickButton) {
     diagramPickerLocalPickButton.disabled = !browserDiagramSourceInfo.supported;
   }
-
-  if (diagramPickerLocalBody) {
-    diagramPickerLocalBody.hidden = false;
-  }
-
-  syncDiagramPickerLayoutFlavorUi();
 
   renderDiagramPickerList(diagramPickerWebList, hostedEntries, {
     source: "hosted",

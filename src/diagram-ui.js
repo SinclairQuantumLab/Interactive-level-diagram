@@ -924,6 +924,11 @@ function buildMetadataValueFragment(value, referenceKeys) {
   return fragment;
 }
 
+function isCompactNoteMetadataLabel(label) {
+  const normalizedLabelText = typeof label === "string" ? label.trim() : "";
+  return /^Note(?:\s+\d+)?$/i.test(normalizedLabelText);
+}
+
 function buildMetadataEntryFragment(row, options = {}) {
   const normalized = normalizeMetadataRow(row);
   const fragment = document.createDocumentFragment();
@@ -940,8 +945,7 @@ function buildMetadataEntryFragment(row, options = {}) {
   const dd = document.createElement("dd");
   const showSelectors = Boolean(options.showSelectors);
   const showEditors = Boolean(options.showEditors);
-  const normalizedLabelText = typeof normalized.label === "string" ? normalized.label.trim() : "";
-  const isCompactNoteRow = /^Note(?:\s+\d+)?$/i.test(normalizedLabelText);
+  const isCompactNoteRow = isCompactNoteMetadataLabel(normalized.label);
   const formatEditor = normalized.editor?.type === "measurement-format"
     ? buildMeasurementSectionFormatEditorFragment(normalized.editor)
     : null;
@@ -973,7 +977,9 @@ function buildMetadataEntryFragment(row, options = {}) {
     dd.classList.add("metadata-span-all", "metadata-note-item");
   }
 
-  if (shouldShowSelector || shouldShowEditor || isCompactNoteRow) {
+  const shouldRenderInteractiveRow = shouldShowSelector || shouldShowEditor || isCompactNoteRow;
+
+  if (shouldRenderInteractiveRow) {
     const valueRow = document.createElement("div");
     valueRow.className = "metadata-value-row";
 
