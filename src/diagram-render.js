@@ -1697,6 +1697,80 @@ function removeMeasurement(measurementId) {
   setStatus("Measure line removed.");
 }
 
+function getMeasurementLabelBox(node) {
+  const labelRect = node.labelPosition?.rect || null;
+
+  return {
+    rect: labelRect,
+    x: labelRect ? labelRect.left : ((node.labelPosition?.x ?? node.midX) - 80),
+    y: labelRect ? labelRect.top : ((node.labelPosition?.y ?? node.midY) - 16),
+    width: labelRect ? Math.max(1, labelRect.right - labelRect.left) : 160,
+    height: labelRect ? Math.max(1, labelRect.bottom - labelRect.top) : 34,
+  };
+}
+
+function populateMeasurementLabelHtml(container, lines) {
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = "";
+
+  lines.forEach((line, index) => {
+    const lineElement = document.createElement("div");
+    lineElement.className = "measure-label-line";
+
+    if (index > 0) {
+      lineElement.dataset.lineIndex = String(index);
+    }
+
+    setMixedTextContent(lineElement, line);
+    container.append(lineElement);
+  });
+}
+
+function updateMeasurementLabelSelection(labelSelection, transition) {
+  labelSelection.each(function (node) {
+    const label = d3.select(this);
+    const labelBox = getMeasurementLabelBox(node);
+
+    applyTransition(label, transition)
+      .attr("x", labelBox.x)
+      .attr("y", labelBox.y)
+      .attr("width", labelBox.width)
+      .attr("height", labelBox.height)
+      .style("display", node.lines.length > 0 ? null : "none");
+
+    populateMeasurementLabelHtml(this.firstChild, node.lines);
+  });
+}
+
+function getMeasurementRemoveButtonPosition(node) {
+  const labelRect = node.labelPosition?.rect && node.lines.length > 0
+    ? node.labelPosition.rect
+    : null;
+
+  return {
+    x: labelRect
+      ? labelRect.right + layoutConfig.measureRemoveButtonGapPx + layoutConfig.measureRemoveButtonRadiusPx
+      : node.midX,
+    y: labelRect
+      ? labelRect.top + layoutConfig.measureRemoveButtonRadiusPx
+      : node.midY - layoutConfig.measureLabelOffsetPx,
+  };
+}
+
+function updateMeasurementRemoveButtons(removeButtons, transition) {
+  applyTransition(removeButtons, transition)
+    .attr("transform", (node) => {
+      const position = getMeasurementRemoveButtonPosition(node);
+      return `translate(${position.x}, ${position.y})`;
+    });
+
+  removeButtons.select("circle.measure-remove-button-chip")
+    .attr("r", layoutConfig.measureRemoveButtonRadiusPx);
+}
+
 function renderMeasurementLines(layout, transition) {
   const groups = layers.measurements.selectAll("g.measure-hit")
     .data(layout.measurementNodes || [], (d) => d.id)
@@ -1782,42 +1856,7 @@ function renderMeasurementLines(layout, transition) {
     .attr("x2", (d) => d.x2 + (d.vectorGeometry.normalX * layoutConfig.measureTickSizePx))
     .attr("y2", (d) => d.y2 + (d.vectorGeometry.normalY * layoutConfig.measureTickSizePx));
 
-  groups.select("foreignObject.measure-label-fo")
-    .each(function (d) {
-      const label = d3.select(this);
-      const labelRect = d.labelPosition?.rect || null;
-      const labelX = labelRect ? labelRect.left : ((d.labelPosition?.x ?? d.midX) - 80);
-      const labelY = labelRect ? labelRect.top : ((d.labelPosition?.y ?? d.midY) - 16);
-      const labelWidth = labelRect ? Math.max(1, labelRect.right - labelRect.left) : 160;
-      const labelHeight = labelRect ? Math.max(1, labelRect.bottom - labelRect.top) : 34;
-
-      applyTransition(label, transition)
-        .attr("x", labelX)
-        .attr("y", labelY)
-        .attr("width", labelWidth)
-        .attr("height", labelHeight)
-        .style("display", d.lines.length > 0 ? null : "none");
-
-      const container = this.firstChild;
-
-      if (!container) {
-        return;
-      }
-
-      container.innerHTML = "";
-
-      d.lines.forEach((line, index) => {
-        const lineElement = document.createElement("div");
-        lineElement.className = "measure-label-line";
-
-        if (index > 0) {
-          lineElement.dataset.lineIndex = String(index);
-        }
-
-        setMixedTextContent(lineElement, line);
-        container.append(lineElement);
-      });
-    });
+  updateMeasurementLabelSelection(groups.select("foreignObject.measure-label-fo"), transition);
 
   const removeButtons = groups.select("g.measure-remove-button")
     .style("display", currentMeasureToolEnabled ? null : "none")
@@ -1832,22 +1871,7 @@ function renderMeasurementLines(layout, transition) {
       removeMeasurement(d.id);
     });
 
-  applyTransition(removeButtons, transition)
-    .attr("transform", (d) => {
-      const labelRect = d.labelPosition?.rect && d.lines.length > 0
-        ? d.labelPosition.rect
-        : null;
-      const x = labelRect
-        ? labelRect.right + layoutConfig.measureRemoveButtonGapPx + layoutConfig.measureRemoveButtonRadiusPx
-        : d.midX;
-      const y = labelRect
-        ? labelRect.top + layoutConfig.measureRemoveButtonRadiusPx
-        : d.midY - layoutConfig.measureLabelOffsetPx;
-      return `translate(${x}, ${y})`;
-    });
-
-  removeButtons.select("circle.measure-remove-button-chip")
-    .attr("r", layoutConfig.measureRemoveButtonRadiusPx);
+  updateMeasurementRemoveButtons(removeButtons, transition);
 }
 
 function expandBounds(bounds, minX, minY, maxX, maxY) {
@@ -2912,6 +2936,16 @@ function applyLayoutPresetState(stateObject, {
   }
 }
 
+function bindDiagramPickerLayoutFlavorButton(button, flavor) {
+  button?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setDiagramPickerLayoutFlavor(flavor, {
+      applyCurrentDiagram: hasLoadedDiagramSource,
+      announce: true,
+    });
+  });
+}
+
 resetConfigButton.addEventListener("click", () => {
   applyLayoutPresetState(buildDiagramDefaultStateObject(), {
     statusMessage: config.defaultLayout ? "Layout reset to the diagram default." : "Layout reset to the fully expanded layout.",
@@ -2947,37 +2981,10 @@ chooseDiagramToggleButton?.addEventListener("click", (event) => {
   closeDiagramPicker();
 });
 
-diagramPickerLayoutDefaultButton?.addEventListener("click", (event) => {
-  event.stopPropagation();
-  setDiagramPickerLayoutFlavor("default", {
-    applyCurrentDiagram: hasLoadedDiagramSource,
-    announce: true,
-  });
-});
-
-diagramPickerLayoutSavedButton?.addEventListener("click", (event) => {
-  event.stopPropagation();
-  setDiagramPickerLayoutFlavor("saved", {
-    applyCurrentDiagram: hasLoadedDiagramSource,
-    announce: true,
-  });
-});
-
-diagramPickerLayoutCollapsedButton?.addEventListener("click", (event) => {
-  event.stopPropagation();
-  setDiagramPickerLayoutFlavor("collapsed", {
-    applyCurrentDiagram: hasLoadedDiagramSource,
-    announce: true,
-  });
-});
-
-diagramPickerLayoutExpandedButton?.addEventListener("click", (event) => {
-  event.stopPropagation();
-  setDiagramPickerLayoutFlavor("expanded", {
-    applyCurrentDiagram: hasLoadedDiagramSource,
-    announce: true,
-  });
-});
+bindDiagramPickerLayoutFlavorButton(diagramPickerLayoutDefaultButton, "default");
+bindDiagramPickerLayoutFlavorButton(diagramPickerLayoutSavedButton, "saved");
+bindDiagramPickerLayoutFlavorButton(diagramPickerLayoutCollapsedButton, "collapsed");
+bindDiagramPickerLayoutFlavorButton(diagramPickerLayoutExpandedButton, "expanded");
 
 diagramPickerSearchInput?.addEventListener("input", (event) => {
   diagramPickerSearchQuery = event.target.value || "";
