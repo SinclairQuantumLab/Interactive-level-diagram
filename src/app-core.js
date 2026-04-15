@@ -1579,7 +1579,7 @@ let hasInteractiveDiagram = false;
 let diagramPickerLayoutFlavor = "default";
 let diagramPickerPreviewActive = false;
 let diagramPickerSearchQuery = "";
-let diagramPickerSortMode = "alpha-asc";
+let diagramPickerSortMode = "modified-desc";
 function syncDocumentTitle() {
   document.title = hasLoadedDiagramSource
     ? `${config.meta.title || `${config.species.species}-${config.species.atomic_mass_number}`} Diagram`

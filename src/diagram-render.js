@@ -2992,7 +2992,7 @@ diagramPickerSearchInput?.addEventListener("input", (event) => {
 });
 
 diagramPickerSortSelect?.addEventListener("change", (event) => {
-  diagramPickerSortMode = event.target.value || "alpha-asc";
+  diagramPickerSortMode = event.target.value || "modified-desc";
   renderDiagramPicker();
 });
 
