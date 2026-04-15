@@ -244,6 +244,14 @@ function inferExpectedBrowserDiagramsFolderPath() {
   }
 }
 
+function shouldShowSuggestedLocalFolderPath() {
+  try {
+    return new URL(window.location.href).protocol === "file:";
+  } catch {
+    return false;
+  }
+}
+
 function findMatchingBibtexDelimiter(text, startIndex, openChar, closeChar) {
   let depth = 0;
   let inString = false;
@@ -2080,7 +2088,9 @@ function getHostedDiagramPickerUiState() {
 
 function getLocalDiagramPickerUiState() {
   const folderName = browserDiagramSourceInfo.folderName || diagramsFolderHandle?.name || "";
-  const expectedFolderPath = inferExpectedBrowserDiagramsFolderPath();
+  const expectedFolderPath = shouldShowSuggestedLocalFolderPath()
+    ? inferExpectedBrowserDiagramsFolderPath()
+    : "";
   const usesExpectedFolderName = folderName.toLowerCase() === BROWSER_DIAGRAMS_FOLDER_NAME;
 
   if (browserDiagramSourceInfo.activeSource === "folder") {
@@ -2088,7 +2098,7 @@ function getLocalDiagramPickerUiState() {
       hint: usesExpectedFolderName
         ? `Using "${folderName}" for local diagram YAML files.`
         : `Using "${folderName}" for local diagram YAML files.`,
-      path: `Suggested local folder: ${expectedFolderPath}`,
+      path: expectedFolderPath ? `Suggested local folder: ${expectedFolderPath}` : "",
       emptyText: `No readable .yaml diagrams were found in "${folderName}".`,
     };
   }
@@ -2104,7 +2114,7 @@ function getLocalDiagramPickerUiState() {
   if (!browserDiagramSourceInfo.hasStoredHandle) {
     return {
       hint: `Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder on your computer to browse local diagram YAML files in this browser.`,
-      path: `Suggested local folder: ${expectedFolderPath}`,
+      path: expectedFolderPath ? `Suggested local folder: ${expectedFolderPath}` : "",
       emptyText: "Choose a local folder to list local diagrams here.",
     };
   }
@@ -2112,7 +2122,7 @@ function getLocalDiagramPickerUiState() {
   if (!browserDiagramSourceInfo.permissionGranted) {
     return {
       hint: `This browser no longer has access to the previously chosen folder${folderName ? ` "${folderName}"` : ""}. Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder again.`,
-      path: `Suggested local folder: ${expectedFolderPath}`,
+      path: expectedFolderPath ? `Suggested local folder: ${expectedFolderPath}` : "",
       emptyText: "Reconnect the local folder to browse its diagrams.",
     };
   }
@@ -2122,7 +2132,7 @@ function getLocalDiagramPickerUiState() {
       hint: usesExpectedFolderName
         ? `No readable .yaml diagrams were found in "${folderName}". Add diagram YAML files there or choose another folder.`
         : `You selected "${folderName}". The usual folder for this app is "${BROWSER_DIAGRAMS_FOLDER_NAME}". If this is the wrong folder, choose it again.`,
-      path: `Suggested local folder: ${expectedFolderPath}`,
+      path: expectedFolderPath ? `Suggested local folder: ${expectedFolderPath}` : "",
       emptyText: `No readable .yaml diagrams were found in "${folderName}".`,
     };
   }
@@ -2133,7 +2143,7 @@ function getLocalDiagramPickerUiState() {
         ? `Using "${folderName}" for diagram YAML files.`
         : `Using "${folderName}" for local diagram YAML files.`)
       : `Local diagrams from "${folderName}" are available here.`,
-    path: `Suggested local folder: ${expectedFolderPath}`,
+    path: expectedFolderPath ? `Suggested local folder: ${expectedFolderPath}` : "",
     emptyText: `No readable .yaml diagrams were found in "${folderName}".`,
   };
 }
