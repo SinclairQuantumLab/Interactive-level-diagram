@@ -5,7 +5,8 @@
  *
  * Copyright (c) 2026 Joonseok Hur
  *
- * Developed in the Josiah Sinclair group, UW-Madison.
+ * Originally developed by Joonseok Hur in the Josiah Sinclair Group,
+ * UW-Madison.
  */
 
 function getHyperfineScalePxPerMHz(fineState) {
@@ -1447,8 +1448,22 @@ function ensureTransitionMarkerDefinition() {
 ensureTransitionMarkerDefinition();
 
 let suppressZoomPersistence = false;
+let lastWindowActivationAt = 0;
+
+function markWindowActivated() {
+  lastWindowActivationAt = performance.now();
+}
 
 const zoomBehavior = d3.zoom()
+  .filter((event) => {
+    const activatedRecently = lastWindowActivationAt > 0 && (performance.now() - lastWindowActivationAt) < 280;
+
+    if (activatedRecently && event.type === "wheel") {
+      return false;
+    }
+
+    return (!event.ctrlKey || event.type === "wheel") && !event.button;
+  })
   .scaleExtent([0.55, 4.5])
   .on("zoom", (event) => {
     currentZoomTransform = event.transform;
@@ -1467,6 +1482,13 @@ const zoomBehavior = d3.zoom()
 
 svg.call(zoomBehavior);
 svg.on("dblclick.zoom", null);
+
+window.addEventListener("focus", markWindowActivated);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    markWindowActivated();
+  }
+});
 
 function drawGuides(layout, transition) {
   const groundState = layout.fineStateMap.get("5S1/2") || layout.fineStates[0];
@@ -1927,7 +1949,7 @@ function computeLayoutBounds(layout) {
       margin.left,
       groundState.energyY - 34,
       width - margin.right - 180,
-      groundState.energyY + guideOffset + 36,
+      groundState.energyY + guideOffset + 12,
     );
   }
 
@@ -1967,31 +1989,39 @@ function getFitViewportOptions() {
   };
 
   const heroRect = heroPanel?.getBoundingClientRect();
-
-  if (!heroRect) {
-    return [baseRect];
-  }
-
-  const heroRight = Math.max(baseRect.x, (heroRect.right - svgRect.left + 22) * scaleX);
-  const heroBottom = Math.max(baseRect.y, (heroRect.bottom - svgRect.top + 22) * scaleY);
   const candidates = [baseRect];
+  const panelAwareCandidates = [];
 
-  if (heroRight < width - basePaddingX - 120) {
-    candidates.push({
-      x: heroRight,
-      y: baseRect.y,
-      width: Math.max(120, width - heroRight - basePaddingX),
-      height: baseRect.height,
-    });
-  }
+  if (heroRect) {
+    const heroRight = Math.max(baseRect.x, (heroRect.right - svgRect.left + 22) * scaleX);
+    const heroBottom = Math.max(baseRect.y, (heroRect.bottom - svgRect.top + 22) * scaleY);
 
-  if (heroBottom < height - basePaddingY - 120) {
-    candidates.push({
-      x: baseRect.x,
-      y: heroBottom,
-      width: baseRect.width,
-      height: Math.max(120, height - heroBottom - basePaddingY),
-    });
+    if (heroRight < width - basePaddingX - 120) {
+      panelAwareCandidates.push({
+        x: heroRight,
+        y: baseRect.y,
+        width: Math.max(120, width - heroRight - basePaddingX),
+        height: baseRect.height,
+      });
+    }
+
+    if (heroBottom < height - basePaddingY - 120) {
+      panelAwareCandidates.push({
+        x: baseRect.x,
+        y: heroBottom,
+        width: baseRect.width,
+        height: Math.max(120, height - heroBottom - basePaddingY),
+      });
+    }
+
+    if (heroRight < width - basePaddingX - 120 && heroBottom < height - basePaddingY - 120) {
+      panelAwareCandidates.push({
+        x: heroRight,
+        y: heroBottom,
+        width: Math.max(120, width - heroRight - basePaddingX),
+        height: Math.max(120, height - heroBottom - basePaddingY),
+      });
+    }
   }
 
   const referencesRect = currentReferencesVisible && referencesPanel && referencesPanel.classList.contains("is-open")
@@ -2003,7 +2033,7 @@ function getFitViewportOptions() {
     const referencesTop = Math.max(baseRect.y, (referencesRect.top - svgRect.top - 18) * scaleY);
 
     if (referencesLeft > baseRect.x + 120) {
-      candidates.push({
+      panelAwareCandidates.push({
         x: baseRect.x,
         y: baseRect.y,
         width: Math.max(120, referencesLeft - baseRect.x),
@@ -2012,7 +2042,7 @@ function getFitViewportOptions() {
     }
 
     if (referencesTop > baseRect.y + 120) {
-      candidates.push({
+      panelAwareCandidates.push({
         x: baseRect.x,
         y: baseRect.y,
         width: baseRect.width,
@@ -2021,7 +2051,7 @@ function getFitViewportOptions() {
     }
   }
 
-  return candidates;
+  return panelAwareCandidates.length > 0 ? panelAwareCandidates : candidates;
 }
 
 function computeFitViewTransform(layout) {
@@ -2047,9 +2077,11 @@ function computeFitViewTransform(layout) {
     }
   });
 
-  const k = clamp(bestScale * 0.94, minZoom, maxZoom);
-  const x = bestRect.x + ((bestRect.width - (contentWidth * k)) / 2) - (bounds.minX * k);
-  const y = bestRect.y + ((bestRect.height - (contentHeight * k)) / 2) - (bounds.minY * k);
+  const k = clamp(bestScale * 0.965, minZoom, maxZoom);
+  const horizontalSlack = Math.max(0, bestRect.width - (contentWidth * k));
+  const verticalSlack = Math.max(0, bestRect.height - (contentHeight * k));
+  const x = bestRect.x + (horizontalSlack / 2) - (bounds.minX * k);
+  const y = bestRect.y + (verticalSlack * 0.76) - (bounds.minY * k);
 
   return d3.zoomIdentity.translate(x, y).scale(k);
 }
@@ -2615,15 +2647,175 @@ function render(animationDuration = 0, options = {}) {
   }
 }
 
-copyConfigButton.addEventListener("click", async () => {
-  const serialized = serializeState();
+let layoutEditorFocusReturnTarget = null;
+
+function escapeLayoutEditorHtml(text) {
+  return String(text || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function syncLayoutEditorHighlight() {
+  if (!layoutEditorHighlight || !layoutEditorText) {
+    return;
+  }
+
+  const content = layoutEditorText.value || "";
+  const canHighlight = Boolean(window.hljs?.highlight);
+  layoutEditorHighlight.classList.toggle("hljs", canHighlight);
+
+  if (canHighlight) {
+    const highlighted = window.hljs.highlight(content, {
+      language: "yaml",
+      ignoreIllegals: true,
+    });
+    layoutEditorHighlight.innerHTML = `${highlighted.value}\n`;
+  } else {
+    layoutEditorHighlight.innerHTML = `${escapeLayoutEditorHtml(content)}\n`;
+  }
+
+  layoutEditorHighlight.scrollTop = layoutEditorText.scrollTop;
+  layoutEditorHighlight.scrollLeft = layoutEditorText.scrollLeft;
+}
+
+function syncLayoutEditorPlacement() {
+  if (!layoutEditorModal || !heroPanel) {
+    return;
+  }
+
+  if (window.innerWidth <= 860) {
+    layoutEditorModal.style.removeProperty("--layout-editor-top");
+    layoutEditorModal.style.removeProperty("--layout-editor-right");
+    layoutEditorModal.style.removeProperty("--layout-editor-bottom");
+    layoutEditorModal.style.removeProperty("--layout-editor-left");
+    return;
+  }
+
+  const heroRect = heroPanel.getBoundingClientRect();
+  const viewportPadding = 18;
+  const left = Math.min(
+    Math.max(viewportPadding, heroRect.right + 18),
+    Math.max(viewportPadding, window.innerWidth - 420),
+  );
+
+  layoutEditorModal.style.setProperty("--layout-editor-top", `${viewportPadding}px`);
+  layoutEditorModal.style.setProperty("--layout-editor-right", `${viewportPadding}px`);
+  layoutEditorModal.style.setProperty("--layout-editor-bottom", `${viewportPadding}px`);
+  layoutEditorModal.style.setProperty("--layout-editor-left", `${left}px`);
+}
+
+function closeLayoutEditor({ restoreFocus = true } = {}) {
+  if (!layoutEditorModal || layoutEditorModal.hidden) {
+    return;
+  }
+
+  layoutEditorModal.hidden = true;
+
+  if (restoreFocus && layoutEditorFocusReturnTarget instanceof HTMLElement) {
+    layoutEditorFocusReturnTarget.focus();
+  }
+}
+
+function openLayoutEditor() {
+  if (!layoutEditorModal || !layoutEditorText) {
+    const serialized = serializeState();
+    window.prompt("Copy or edit this layout YAML:", serialized);
+    return;
+  }
+
+  layoutEditorFocusReturnTarget = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null;
+  layoutEditorText.value = serializeState();
+  syncLayoutEditorPlacement();
+  syncLayoutEditorHighlight();
+  layoutEditorModal.hidden = false;
+
+  window.requestAnimationFrame(() => {
+    layoutEditorText.focus();
+    layoutEditorText.setSelectionRange(0, layoutEditorText.value.length);
+  });
+}
+
+async function copyLayoutEditorText() {
+  if (!layoutEditorText) {
+    return;
+  }
+
+  const serialized = layoutEditorText.value;
 
   try {
     await navigator.clipboard.writeText(serialized);
     setStatus("Layout copied to the clipboard.");
   } catch {
-    window.prompt("Copy this layout string:", serialized);
-    setStatus("Clipboard access was unavailable, so the layout was shown for manual copy.");
+    layoutEditorText.focus();
+    layoutEditorText.select();
+    setStatus("Clipboard access was unavailable, so the layout text was selected for manual copy.");
+  }
+}
+
+function applyLayoutEditorText() {
+  if (!layoutEditorText) {
+    return;
+  }
+
+  const pasted = layoutEditorText.value.trim();
+
+  if (!pasted) {
+    return;
+  }
+
+  try {
+    applyStateObject(parseSerializedState(pasted), { animationDuration: CONTROL_ANIMATION_MS });
+    closeLayoutEditor();
+    setStatus("Layout loaded.");
+  } catch {
+    setStatus("That layout string could not be parsed.");
+  }
+}
+
+editConfigButton?.addEventListener("click", () => {
+  openLayoutEditor();
+});
+
+layoutEditorCloseButton?.addEventListener("click", () => {
+  closeLayoutEditor();
+});
+
+layoutEditorCopyButton?.addEventListener("click", async () => {
+  await copyLayoutEditorText();
+});
+
+layoutEditorApplyButton?.addEventListener("click", () => {
+  applyLayoutEditorText();
+});
+
+layoutEditorModal?.addEventListener("click", (event) => {
+  if (event.target === layoutEditorModal) {
+    closeLayoutEditor();
+  }
+});
+
+layoutEditorText?.addEventListener("keydown", (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+    event.preventDefault();
+    applyLayoutEditorText();
+  }
+});
+
+layoutEditorText?.addEventListener("input", () => {
+  syncLayoutEditorHighlight();
+});
+
+layoutEditorText?.addEventListener("scroll", () => {
+  syncLayoutEditorHighlight();
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !layoutEditorModal?.hidden) {
+    event.preventDefault();
+    closeLayoutEditor();
   }
 });
 
@@ -2633,21 +2825,6 @@ undoActionButton?.addEventListener("click", () => {
 
 redoActionButton?.addEventListener("click", () => {
   redoStateChange();
-});
-
-loadConfigButton.addEventListener("click", () => {
-  const pasted = window.prompt("Paste a saved layout YAML:");
-
-  if (!pasted) {
-    return;
-  }
-
-  try {
-    applyStateObject(parseSerializedState(pasted), { animationDuration: CONTROL_ANIMATION_MS });
-    setStatus("Layout loaded.");
-  } catch {
-    setStatus("That layout string could not be parsed.");
-  }
 });
 
 resetConfigButton.addEventListener("click", () => {
@@ -2690,6 +2867,20 @@ chooseDiagramToggleButton?.addEventListener("click", (event) => {
   const willOpen = diagramPicker.hidden;
   diagramPicker.hidden = !willOpen;
   chooseDiagramToggleButton.setAttribute("aria-expanded", willOpen ? "true" : "false");
+
+  if (willOpen && typeof positionDiagramPickerPanel === "function") {
+    requestAnimationFrame(positionDiagramPickerPanel);
+  }
+});
+
+diagramPickerLocalPickButton?.addEventListener("click", async (event) => {
+  event.stopPropagation();
+  await pickDiagramsFolder();
+});
+
+diagramPickerCloseButton?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  closeDiagramPicker();
 });
 
 referencesToggleButton?.addEventListener("click", () => {
@@ -2808,7 +2999,7 @@ helpToggleButton.addEventListener("click", (event) => {
 });
 
 document.addEventListener("click", (event) => {
-  if (!diagramPicker.hidden && !diagramPicker.contains(event.target) && !chooseDiagramToggleButton.contains(event.target)) {
+  if (diagramPicker && !diagramPicker.hidden && !diagramPicker.contains(event.target) && !chooseDiagramToggleButton?.contains(event.target)) {
     closeDiagramPicker();
   }
 
@@ -2822,6 +3013,63 @@ document.addEventListener("click", (event) => {
 
   closeHelpPanel();
 });
+
+let activeDiagramPickerDrag = null;
+
+function beginDiagramPickerDrag(event) {
+  if (!diagramPicker || diagramPicker.hidden) {
+    return;
+  }
+
+  const shellRect = appShell?.getBoundingClientRect();
+  const currentLeft = Number.parseFloat(diagramPicker.style.left || "0");
+  const currentTop = Number.parseFloat(diagramPicker.style.top || "0");
+
+  activeDiagramPickerDrag = {
+    originClientX: event.clientX,
+    originClientY: event.clientY,
+    originLeft: Number.isFinite(currentLeft) ? currentLeft : 0,
+    originTop: Number.isFinite(currentTop) ? currentTop : 0,
+    shellWidth: shellRect?.width || window.innerWidth,
+    shellHeight: shellRect?.height || window.innerHeight,
+  };
+  diagramPicker.querySelector(".diagram-picker-header")?.classList.add("is-dragging");
+}
+
+function handleDiagramPickerDrag(event) {
+  if (!activeDiagramPickerDrag) {
+    return;
+  }
+
+  const viewportPadding = 24;
+  const panelWidth = diagramPicker.offsetWidth || 620;
+  const panelHeight = diagramPicker.offsetHeight || 420;
+  const nextLeft = clamp(
+    activeDiagramPickerDrag.originLeft + (event.clientX - activeDiagramPickerDrag.originClientX),
+    viewportPadding,
+    activeDiagramPickerDrag.shellWidth - panelWidth - viewportPadding,
+  );
+  const nextTop = clamp(
+    activeDiagramPickerDrag.originTop + (event.clientY - activeDiagramPickerDrag.originClientY),
+    viewportPadding,
+    activeDiagramPickerDrag.shellHeight - panelHeight - viewportPadding,
+  );
+
+  diagramPicker.style.left = `${nextLeft}px`;
+  diagramPicker.style.top = `${nextTop}px`;
+  setDiagramPickerCustomPosition({
+    left: nextLeft + (appShell?.getBoundingClientRect().left || 0),
+    top: nextTop + (appShell?.getBoundingClientRect().top || 0),
+  });
+}
+
+function endDiagramPickerDrag(event) {
+  if (!activeDiagramPickerDrag) {
+    return;
+  }
+  activeDiagramPickerDrag = null;
+  diagramPicker?.querySelector(".diagram-picker-header")?.classList.remove("is-dragging");
+}
 
 document.addEventListener("keydown", (event) => {
   const modifierKey = event.ctrlKey || event.metaKey;
@@ -2856,6 +3104,12 @@ document.addEventListener("keydown", (event) => {
 });
 
 pinnedPanelLayer.addEventListener("pointerdown", (event) => {
+  const interactiveTarget = event.target.closest("button, input, textarea, select, a, label");
+
+  if (interactiveTarget) {
+    return;
+  }
+
   const handle = event.target.closest("[data-drag-handle]");
   const panelElement = event.target.closest(".inspector");
 
@@ -2867,14 +3121,37 @@ pinnedPanelLayer.addEventListener("pointerdown", (event) => {
   beginPanelDrag(event, Number(panelElement.dataset.panelId));
 });
 
+diagramPicker?.addEventListener("mousedown", (event) => {
+  const interactiveTarget = event.target.closest("button, input, textarea, select, a, label");
+
+  if (interactiveTarget) {
+    return;
+  }
+
+  const handle = event.target.closest('[data-drag-handle="diagram-picker"]');
+
+  if (!handle) {
+    return;
+  }
+
+  event.preventDefault();
+  beginDiagramPickerDrag(event);
+});
+
 window.addEventListener("pointermove", handlePanelDrag);
 window.addEventListener("pointerup", endPanelDrag);
 window.addEventListener("pointercancel", endPanelDrag);
+window.addEventListener("mousemove", handleDiagramPickerDrag);
+window.addEventListener("mouseup", endDiagramPickerDrag);
 
 window.addEventListener("resize", () => {
   hideTooltip();
+  syncLayoutEditorPlacement();
+  syncLayoutEditorHighlight();
+  renderFineLabelOverlay(currentLayout, 0);
   renderPinnedPanels();
   positionHelpPanel();
+  positionDiagramPickerPanel();
   renderReferencesPanel();
 });
 
@@ -2894,3 +3171,5 @@ window.addEventListener("resize", () => {
   }
   initializeHistoryState();
 })();
+
+

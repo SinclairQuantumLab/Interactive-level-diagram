@@ -5,7 +5,8 @@
  *
  * Copyright (c) 2026 Joonseok Hur
  *
- * Developed in the Josiah Sinclair group, UW-Madison.
+ * Originally developed by Joonseok Hur in the Josiah Sinclair Group,
+ * UW-Madison.
  */
 
 const LAYOUT_EXPORT_VERSION = 3;
@@ -816,7 +817,7 @@ function buildMeasurementNoteEditorFragment(editor) {
   const input = document.createElement("input");
   input.type = "text";
   input.className = "note-editor-input";
-  input.placeholder = `Note ${(editor.noteIndex ?? 0) + 1}`;
+  input.placeholder = "Add note";
 
   const measurement = getMeasurementEntryById(editor.measurementId);
   const notes = Array.isArray(measurement?.notes) ? measurement.notes : [];
@@ -967,6 +968,12 @@ function buildMetadataEntryFragment(row, options = {}) {
     const valueRow = document.createElement("div");
     valueRow.className = "metadata-value-row";
 
+    if (shouldShowEditor) {
+      valueRow.classList.add("is-note-editor-row");
+      dt.classList.add("metadata-label-hidden");
+      dd.classList.add("metadata-span-all");
+    }
+
     if (shouldShowSelector) {
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
@@ -1010,9 +1017,17 @@ function renderTooltipControls(controlMarkup) {
 function applyTheme(themeName) {
   currentTheme = themeName === "dark" ? "dark" : "light";
   document.documentElement.setAttribute("data-theme", currentTheme);
+  document.documentElement.style.colorScheme = currentTheme;
   document.body?.setAttribute("data-theme", currentTheme);
   appShell?.setAttribute("data-theme", currentTheme);
   themeToggleButton.textContent = currentTheme === "dark" ? "Light Mode" : "Dark Mode";
+
+  try {
+    const themeStorageKey = APP_CONFIG.storage.themeKey || "level-diagram-theme";
+    window.localStorage.setItem(themeStorageKey, currentTheme);
+  } catch {
+    return;
+  }
 }
 
 function persistState({ recordHistory = true, announce = true, preserveHistorySnapshot = false } = {}) {
@@ -1381,6 +1396,51 @@ function positionHelpPanel() {
 
   helpPanel.style.left = `${left - shellRect.left}px`;
   helpPanel.style.top = `${top - shellRect.top}px`;
+}
+
+let diagramPickerCustomPosition = null;
+
+function setDiagramPickerCustomPosition(position) {
+  if (!position || !Number.isFinite(position.left) || !Number.isFinite(position.top)) {
+    diagramPickerCustomPosition = null;
+    return;
+  }
+
+  diagramPickerCustomPosition = {
+    left: position.left,
+    top: position.top,
+  };
+}
+
+function positionDiagramPickerPanel() {
+  if (!diagramPicker || diagramPicker.hidden || !heroPanel || !appShell) {
+    return;
+  }
+
+  const shellRect = appShell.getBoundingClientRect();
+  const heroRect = heroPanel.getBoundingClientRect();
+  const gap = 14;
+  const viewportPadding = 24;
+  const panelWidth = diagramPicker.offsetWidth || 620;
+  const panelHeight = diagramPicker.offsetHeight || 420;
+
+  let left = diagramPickerCustomPosition?.left ?? (heroRect.right + gap);
+  let top = diagramPickerCustomPosition?.top ?? (heroRect.top + 52);
+
+  if (!diagramPickerCustomPosition && left + panelWidth + viewportPadding > window.innerWidth) {
+    left = heroRect.left;
+    top = heroRect.bottom + gap;
+  }
+
+  left = Math.min(Math.max(left, viewportPadding), window.innerWidth - panelWidth - viewportPadding);
+  top = Math.min(Math.max(top, viewportPadding), window.innerHeight - panelHeight - viewportPadding);
+
+  diagramPickerCustomPosition = {
+    left,
+    top,
+  };
+  diagramPicker.style.left = `${left - shellRect.left}px`;
+  diagramPicker.style.top = `${top - shellRect.top}px`;
 }
 
 function getSceneScreenCTM() {
@@ -1900,11 +1960,12 @@ function applyStateObject(stateObject, options = {}) {
   ).scale(Number.isFinite(zoomState.k) ? zoomState.k : defaultZoomState.k);
 
   currentZoomTransform = zoomTransform;
-  scene.attr("transform", currentZoomTransform);
   render(options.animationDuration ?? 0);
 
   if (options.syncZoom !== false) {
-    svg.call(zoomBehavior.transform, currentZoomTransform);
+    applyZoomTransform(zoomTransform, { persist: false, animationDuration: 0 });
+  } else {
+    scene.attr("transform", currentZoomTransform);
   }
 
   if (options.persist !== false) {
@@ -1920,7 +1981,7 @@ function loadStoredState() {
       return false;
     }
 
-    applyStateObject(parseSerializedState(raw), { persist: false, syncZoom: false });
+    applyStateObject(parseSerializedState(raw), { persist: false, syncZoom: true });
     return true;
   } catch {
     setStatus("Stored layout could not be read, so the default prototype layout is in use.");

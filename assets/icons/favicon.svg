@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Interactive Atomic Level Diagram</title>
+  <desc id="desc">Compact favicon with extra-thick level bars, a ground-state bar pushed aggressively toward the bottom edge, and a heavier transition aimed at the middle excited state.</desc>
+  <rect width="64" height="64" rx="18" fill="#19241f"/>
+  <path d="M28.5 51.6 L36.4 21.2" fill="none" stroke="#ff8d78" stroke-width="6" stroke-linecap="round"/>
+  <rect x="6.5" y="50.5" width="38" height="6.5" rx="3.25" fill="#edf3ef"/>
+  <rect x="8" y="10.5" width="13.5" height="6.2" rx="3.1" fill="#7bc2ff"/>
+  <rect x="24.5" y="10.5" width="13.5" height="6.2" rx="3.1" fill="#d79cff"/>
+  <rect x="41" y="10.5" width="13.5" height="6.2" rx="3.1" fill="#d79cff"/>
+</svg>

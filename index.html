@@ -4,6 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interactive atomic level diagram</title>
+  <link rel="icon" href="assets/icons/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <script>
+    (() => {
+      const themeStorageKey = "level-diagram-theme";
+
+      try {
+        const storedTheme = window.localStorage.getItem(themeStorageKey);
+        const initialTheme = storedTheme === "dark" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", initialTheme);
+        document.documentElement.style.colorScheme = initialTheme;
+      } catch {
+        document.documentElement.setAttribute("data-theme", "light");
+        document.documentElement.style.colorScheme = "light";
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="src/vendor/katex/katex.min.css">
   <link rel="stylesheet" href="src/styles.css">
 </head>
@@ -20,7 +40,6 @@
       <div class="species-hero">
         <h1 id="species-notation">Choose Diagram</h1>
         <p class="species-name" id="species-name">Pick a diagram from the project list.</p>
-        <p class="hero-attribution">Copyright (c) 2026 Joonseok Hur. Developed in the Josiah Sinclair group, UW-Madison.</p>
       </div>
       <ul class="species-properties" id="species-properties"></ul>
 
@@ -40,14 +59,19 @@
             <button id="redo-action" class="history-button" type="button" aria-label="Redo" title="Redo">&#8631;</button>
             <button id="theme-toggle" type="button">Dark Mode</button>
             <button id="reset-view" type="button">Fit View</button>
-            <button id="copy-config" type="button">Copy Layout</button>
-            <button id="load-config" type="button">Load Layout</button>
+            <button id="hide-toggle" class="icon-button" type="button" aria-label="Hide or show items" title="Hide or show items" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M1.5 12s3.6-6 10.5-6 10.5 6 10.5 6-3.6 6-10.5 6S1.5 12 1.5 12z"></path>
+                <circle cx="12" cy="12" r="3.2"></circle>
+              </svg>
+            </button>
+            <button id="edit-config" type="button">Edit Layout</button>
             <button id="reset-config" type="button">Reset Layout</button>
           </div>
         </section>
 
-        <section class="control-group" aria-label="Useful tools">
-          <h2 class="control-group-title">Useful Tools</h2>
+        <section class="control-group" aria-label="Tools">
+          <h2 class="control-group-title">Tool</h2>
           <div class="control-row">
             <button id="measure-toggle" class="icon-button" type="button" aria-label="Measure tool" title="Measure tool" aria-pressed="false">
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -58,25 +82,10 @@
                 <path d="m6.5 13.5 1.5 1.5"></path>
               </svg>
             </button>
-            <button id="hide-toggle" class="icon-button" type="button" aria-label="Hide or show items" title="Hide or show items" aria-pressed="false">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M1.5 12s3.6-6 10.5-6 10.5 6 10.5 6-3.6 6-10.5 6S1.5 12 1.5 12z"></path>
-                <circle cx="12" cy="12" r="3.2"></circle>
-              </svg>
-            </button>
           </div>
         </section>
       </div>
 
-      <section id="diagram-picker" class="diagram-picker" hidden aria-label="Available diagrams">
-        <div class="diagram-picker-header">
-          <h2>Available Diagrams</h2>
-          <div id="diagram-picker-actions" class="diagram-picker-actions"></div>
-        </div>
-        <p id="diagram-picker-hint" class="diagram-picker-hint"></p>
-        <p id="diagram-picker-path" class="diagram-picker-path" hidden></p>
-        <ul id="diagram-picker-list" class="diagram-picker-list"></ul>
-      </section>
       <div class="control-stack">
         <section class="control-panel" aria-label="Magnetic field controls">
           <button id="b-field-toggle" class="control-panel-header control-panel-toggle" type="button" aria-expanded="true">
@@ -107,6 +116,7 @@
           </div>
         </section>
       </div>
+      <p class="panel-attribution">Copyright (c) 2026 Joonseok Hur, Josiah Sinclair Group, UW-Madison. <a href="LICENSE" target="_blank" rel="noopener noreferrer">MPL-2.0</a></p>
     </section>
 
     <aside id="help-panel" class="help-panel" hidden>
@@ -123,6 +133,56 @@
         <li>Drag pinned panels by their headers and use the mouse wheel or trackpad to zoom.</li>
         <li>Use the magnetic-field panel to toggle Zeeman shifts and adjust their visual scale.</li>
       </ul>
+    </aside>
+
+    <aside id="diagram-picker" class="diagram-picker" hidden aria-label="Available diagrams">
+      <div class="diagram-picker-header inspector-header" data-drag-handle="diagram-picker">
+        <div>
+          <h2>Available Diagrams</h2>
+        </div>
+        <div class="inspector-header-actions">
+          <button id="diagram-picker-close" class="diagram-picker-close inspector-close" type="button" aria-label="Close available diagrams">x</button>
+        </div>
+      </div>
+      <section class="diagram-picker-source" aria-labelledby="diagram-picker-web-title">
+        <div class="diagram-picker-source-header">
+          <h3 id="diagram-picker-web-title" class="diagram-picker-source-title">Web Repo</h3>
+        </div>
+        <p id="diagram-picker-web-hint" class="diagram-picker-hint"></p>
+        <p id="diagram-picker-web-path" class="diagram-picker-path" hidden></p>
+        <ul id="diagram-picker-web-list" class="diagram-picker-list"></ul>
+      </section>
+      <section class="diagram-picker-source diagram-picker-source-local" aria-labelledby="diagram-picker-local-title">
+        <div class="diagram-picker-source-header">
+          <h3 id="diagram-picker-local-title" class="diagram-picker-source-title">Local Folder</h3>
+          <button id="diagram-picker-local-pick" class="diagram-picker-action" type="button">Choose Folder</button>
+        </div>
+        <div id="diagram-picker-local-body" class="diagram-picker-source-body">
+          <p id="diagram-picker-local-hint" class="diagram-picker-hint"></p>
+          <p id="diagram-picker-local-path" class="diagram-picker-path" hidden></p>
+          <ul id="diagram-picker-local-list" class="diagram-picker-list"></ul>
+        </div>
+      </section>
+    </aside>
+
+    <aside id="layout-editor-modal" class="layout-editor-modal" hidden aria-labelledby="layout-editor-title" aria-modal="true" role="dialog">
+      <section class="layout-editor-panel">
+        <div class="layout-editor-header">
+          <div>
+            <h2 id="layout-editor-title">Edit Layout</h2>
+            <p class="layout-editor-copy">Review, copy, or paste a saved layout YAML here.</p>
+          </div>
+          <div class="layout-editor-toolbar">
+            <button id="layout-editor-copy" class="layout-editor-action" type="button">Copy Text</button>
+            <button id="layout-editor-apply" class="layout-editor-action is-primary" type="button">Apply Layout</button>
+            <button id="layout-editor-close" class="layout-editor-close" type="button" aria-label="Close layout editor">X</button>
+          </div>
+        </div>
+        <div class="layout-editor-surface">
+          <pre id="layout-editor-highlight" class="layout-editor-highlight" aria-hidden="true"></pre>
+          <textarea id="layout-editor-text" class="layout-editor-text" spellcheck="false" aria-label="Layout YAML editor"></textarea>
+        </div>
+      </section>
     </aside>
 
     <aside id="references-panel" class="references-panel" aria-label="References" aria-hidden="true">
@@ -167,6 +227,8 @@ storage:
   stateVersion: 5
   stateKeyPrefix: level-diagram-state-
   selectedDiagramKey: level-diagram-selected-diagram
+  selectedDiagramSourceKey: level-diagram-selected-source
+  themeKey: level-diagram-theme
   diagramsFolderDb: level-diagram-db
   diagramsFolderStore: handles
   diagramsFolderKey: diagrams-folder
@@ -222,6 +284,8 @@ layout:
   <script src="src/vendor/d3/d3.min.js"></script>
   <script src="src/vendor/katex/katex.min.js"></script>
   <script src="src/vendor/js-yaml/js-yaml.min.js"></script>
+  <script src="src/vendor/highlightjs/highlight.min.js"></script>
+  <script src="src/vendor/highlightjs/yaml.min.js"></script>
   <script>
     window.__APP_RUNTIME_VERSION_OVERRIDE__ = "";
   </script>

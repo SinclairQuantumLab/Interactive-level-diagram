@@ -5,7 +5,8 @@
  *
  * Copyright (c) 2026 Joonseok Hur
  *
- * Developed in the Josiah Sinclair group, UW-Madison.
+ * Originally developed by Joonseok Hur in the Josiah Sinclair Group,
+ * UW-Madison.
  */
 
 function groupIntegerDigits(integerText) {
