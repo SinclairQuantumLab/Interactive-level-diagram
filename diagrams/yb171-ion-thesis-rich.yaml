@@ -421,6 +421,86 @@ transitions:
       - label: Operational note
         value: 'The thesis reports the 760 nm path as at least 10x faster than this 638 nm repumping route.\cite{Hur22}'
 
+default_layout:
+  expandedFine:
+    - 2S1/2
+    - 2D3/2
+    - 2D5/2
+    - 2F7/2
+    - 3D[3/2]1/2
+    - 1D[3/2]3/2
+    - 1D[5/2]5/2
+    - 2P1/2
+  expandedHyperfine:
+    - 2S1/2[F=0]
+    - 2S1/2[F=1]
+    - 2D3/2[F=1]
+    - 2D3/2[F=2]
+    - 2D5/2[F=2]
+    - 2D5/2[F=3]
+    - 2F7/2[F=3]
+    - 2F7/2[F=4]
+    - 3D[3/2]1/2[F=0]
+    - 3D[3/2]1/2[F=1]
+    - 1D[3/2]3/2[F=1]
+    - 1D[3/2]3/2[F=2]
+    - 2P1/2[F=1]
+    - 2P1/2[F=0]
+  pinnedPanels: []
+  theme: dark
+  referencesVisible: false
+  measureToolEnabled: false
+  hideToolEnabled: false
+  measureSelection: []
+  measurements: []
+  hiddenStates: []
+  hiddenTransitions:
+    - between: ['2D3/2[F=2]', '2S1/2[F=0]']
+    - between: ['2D5/2[F=2]', '2S1/2[F=0]']
+    - between: ['2F7/2[F=3]', '2S1/2[F=0]']
+    - between: ['2P1/2[F=1]', '2S1/2[F=0]']
+    - between: ['2D3/2[F=1]', '3D[3/2]1/2[F=0]']
+    - between: ['1D[3/2]3/2[F=1]', '2F7/2[F=3]']
+    - between: ['1D[3/2]3/2[F=2]', '2F7/2[F=4]']
+    - between: ['2P1/2[F=1]', '2S1/2[F=1]']
+  controls:
+    hyperfineScaleByFineState:
+      2S1/2: 0.12133888504649774
+      2P1/2: 0.5445026528424212
+      2D3/2: 1
+      2D5/2: 1
+      2F7/2: 0.3341950400261143
+      3D[3/2]1/2: 0.3250872973854344
+      1D[3/2]3/2: 0.09204495717531712
+      1D[5/2]5/2: 1
+    transitionLabels:
+      - {between: ['2S1/2[F=0]', '2S1/2[F=1]'], show: [frequency], precision: {wavelength: null, frequency: null}}
+      - {between: [2P1/2, 2S1/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
+      - {between: ['2P1/2[F=0]', '2S1/2[F=1]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
+      - {between: ['2P1/2[F=1]', '2S1/2[F=0]'], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+      - {between: ['2P1/2[F=1]', '2S1/2[F=1]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
+      - {between: [2D5/2, 2S1/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
+      - {between: ['2D5/2[F=2]', '2S1/2[F=0]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
+      - {between: [2D3/2, 2S1/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
+      - {between: ['2D3/2[F=2]', '2S1/2[F=0]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
+      - {between: [2F7/2, 2S1/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
+      - {between: ['2F7/2[F=3]', '2S1/2[F=0]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
+      - {between: [2D3/2, '3D[3/2]1/2'], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
+      - {between: ['2D3/2[F=1]', '3D[3/2]1/2[F=0]'], show: [frequency], precision: {wavelength: null, frequency: null}}
+      - {between: ['1D[3/2]3/2', 2F7/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
+      - {between: ['1D[3/2]3/2[F=1]', '2F7/2[F=3]'], show: [frequency], precision: {wavelength: 0, frequency: null}}
+      - {between: ['1D[3/2]3/2[F=2]', '2F7/2[F=4]'], show: [frequency], precision: {wavelength: null, frequency: null}}
+      - {between: ['1D[5/2]5/2', 2F7/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
+    bFieldEnabled: true
+    bFieldVisualScale: 1
+    bFieldGauss: 1
+    bFieldGaussMin: 0
+    bFieldGaussMax: 10
+  zoom:
+    x: 258.2786436833051
+    'y': 261.4237109901381
+    k: 0.6826032012969743
+
 bibliography_bibtex: |
   @phdthesis{Hur22,
     author = {Hur, Joonseok},

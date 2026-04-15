@@ -294,6 +294,69 @@ transitions:
     notes:
       - 'Stretched $\sigma^+$ D2 cycling transition.\cite{Ste03}'
 
+default_layout:
+  expandedFine:
+    - 5S1/2
+    - 5P3/2
+    - 5P1/2
+  expandedHyperfine:
+    - 5P3/2[F=0]
+    - 5P3/2[F=1]
+    - 5P3/2[F=2]
+    - 5P3/2[F=3]
+    - 5P1/2[F=2]
+    - 5P1/2[F=1]
+    - 5S1/2[F=2]
+    - 5S1/2[F=1]
+  pinnedPanels: []
+  theme: dark
+  referencesVisible: false
+  measureToolEnabled: false
+  hideToolEnabled: false
+  measureSelection: []
+  measurements: []
+  hiddenStates: []
+  hiddenTransitions:
+    - between: ['5P1/2[F=1]', '5S1/2[F=2]']
+    - between: ['5P1/2[F=2]', '5S1/2[F=1]']
+    - between: ['5P1/2[F=2]', '5S1/2[F=2]']
+    - between: ['5P3/2[F=3]', '5S1/2[F=2]']
+    - between: ['5P3/2[F=1]', '5S1/2[F=2]']
+    - between: ['5P3/2[F=2]', '5S1/2[F=2]']
+    - between: ['5P3/2[F=2]', '5S1/2[F=1]']
+    - between: ['5P3/2[F=0]', '5S1/2[F=1]']
+    - between: ['5P3/2[F=1]', '5S1/2[F=1]']
+    - between: ['5P1/2[F=1]', '5S1/2[F=1]']
+  controls:
+    hyperfineScaleByFineState:
+      5S1/2: 0.15275660582380723
+      5P1/2: 0.7870457896950984
+      5P3/2: 2.0892961308540388
+    transitionLabels:
+      - {between: ['5S1/2[F=1]', '5S1/2[F=2]'], show: [frequency], precision: {wavelength: null, frequency: null}}
+      - {between: [5P1/2, 5S1/2], show: [wavelength, strength], precision: {wavelength: 1, frequency: null}}
+      - {between: [5P3/2, 5S1/2], show: [wavelength, strength], precision: {wavelength: 1, frequency: null}}
+      - {between: ['5P1/2[F=1]', '5S1/2[F=1]'], show: [strength], precision: {wavelength: null, frequency: null}}
+      - {between: ['5P1/2[F=2]', '5S1/2[F=1]'], show: [strength], precision: {wavelength: null, frequency: null}}
+      - {between: ['5P1/2[F=1]', '5S1/2[F=2]'], show: [strength], precision: {wavelength: null, frequency: null}}
+      - {between: ['5P1/2[F=2]', '5S1/2[F=2]'], show: [strength], precision: {wavelength: null, frequency: null}}
+      - {between: ['5P3/2[F=0]', '5S1/2[F=1]'], show: [strength], precision: {wavelength: null, frequency: null}}
+      - {between: ['5P3/2[F=1]', '5S1/2[F=1]'], show: [strength], precision: {wavelength: null, frequency: null}}
+      - {between: ['5P3/2[F=2]', '5S1/2[F=1]'], show: [strength], precision: {wavelength: null, frequency: null}}
+      - {between: ['5P3/2[F=1]', '5S1/2[F=2]'], show: [strength], precision: {wavelength: null, frequency: null}}
+      - {between: ['5P3/2[F=2]', '5S1/2[F=2]'], show: [strength], precision: {wavelength: null, frequency: null}}
+      - {between: ['5P3/2[F=3]', '5S1/2[F=2]'], show: [strength], precision: {wavelength: null, frequency: null}}
+      - {between: ['5P3/2[F=3,mF=3]', '5S1/2[F=2,mF=2]'], show: [strength], precision: {wavelength: null, frequency: null}}
+    bFieldEnabled: true
+    bFieldVisualScale: 1
+    bFieldGauss: 1
+    bFieldGaussMin: 0
+    bFieldGaussMax: 10
+  zoom:
+    x: 27.017886153125005
+    'y': -421.6934208546079
+    k: 1.4520243676482156
+
 bibliography_bibtex: |
   @misc{Ste03,
     author = {Steck, Daniel A.},

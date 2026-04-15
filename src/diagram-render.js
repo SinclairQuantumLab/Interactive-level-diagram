@@ -1468,7 +1468,7 @@ const zoomBehavior = d3.zoom()
 
     return (!event.ctrlKey || event.type === "wheel") && !event.button;
   })
-  .scaleExtent([0.55, 4.5])
+  .scaleExtent([0.05, 10])
   .on("zoom", (event) => {
     currentZoomTransform = event.transform;
     scene.attr("transform", currentZoomTransform);
@@ -1708,9 +1708,10 @@ function renderMeasurementLines(layout, transition) {
         entered.append("line").attr("class", "measure-line");
         entered.append("line").attr("class", "measure-tick measure-tick-start");
         entered.append("line").attr("class", "measure-tick measure-tick-end");
-        entered.append("text")
-          .attr("class", "measure-label")
-          .attr("text-anchor", "middle");
+        entered.append("foreignObject")
+          .attr("class", "measure-label-fo")
+          .append("xhtml:div")
+          .attr("class", "measure-label-html");
 
         const removeButton = entered.append("g")
           .attr("class", "measure-remove-button")
@@ -1779,21 +1780,40 @@ function renderMeasurementLines(layout, transition) {
     .attr("x2", (d) => d.x2 + (d.vectorGeometry.normalX * layoutConfig.measureTickSizePx))
     .attr("y2", (d) => d.y2 + (d.vectorGeometry.normalY * layoutConfig.measureTickSizePx));
 
-  groups.select("text.measure-label")
+  groups.select("foreignObject.measure-label-fo")
     .each(function (d) {
-      const text = d3.select(this);
-      text.selectAll("tspan").remove();
+      const label = d3.select(this);
+      const labelRect = d.labelPosition?.rect || null;
+      const labelX = labelRect ? labelRect.left : ((d.labelPosition?.x ?? d.midX) - 80);
+      const labelY = labelRect ? labelRect.top : ((d.labelPosition?.y ?? d.midY) - 16);
+      const labelWidth = labelRect ? Math.max(1, labelRect.right - labelRect.left) : 160;
+      const labelHeight = labelRect ? Math.max(1, labelRect.bottom - labelRect.top) : 34;
 
-      applyTransition(text, transition)
-        .attr("x", d.labelPosition?.x ?? d.midX)
-        .attr("y", d.labelPosition?.y ?? d.midY)
+      applyTransition(label, transition)
+        .attr("x", labelX)
+        .attr("y", labelY)
+        .attr("width", labelWidth)
+        .attr("height", labelHeight)
         .style("display", d.lines.length > 0 ? null : "none");
 
+      const container = this.firstChild;
+
+      if (!container) {
+        return;
+      }
+
+      container.innerHTML = "";
+
       d.lines.forEach((line, index) => {
-        text.append("tspan")
-          .attr("x", d.labelPosition?.x ?? d.midX)
-          .attr("dy", index === 0 ? "0em" : "1.05em")
-          .text(line);
+        const lineElement = document.createElement("div");
+        lineElement.className = "measure-label-line";
+
+        if (index > 0) {
+          lineElement.dataset.lineIndex = String(index);
+        }
+
+        setMixedTextContent(lineElement, line);
+        container.append(lineElement);
       });
     });
 
@@ -2090,6 +2110,40 @@ function computeFitViewTransform(layout) {
   return d3.zoomIdentity.translate(x, y).scale(k);
 }
 
+function computeDynamicZoomExtent(layout) {
+  if (!layout || layout.fineStates.length === 0) {
+    return [0.05, 10];
+  }
+
+  const bounds = computeLayoutBounds(layout);
+  const contentWidth = Math.max(1, bounds.maxX - bounds.minX);
+  const contentHeight = Math.max(1, bounds.maxY - bounds.minY);
+  const candidates = getFitViewportOptions();
+
+  let bestRect = candidates[0];
+  let fitScale = 0;
+
+  candidates.forEach((candidate) => {
+    const scale = Math.min(candidate.width / contentWidth, candidate.height / contentHeight);
+
+    if (scale > fitScale) {
+      fitScale = scale;
+      bestRect = candidate;
+    }
+  });
+
+  const minZoom = Math.max(0.01, fitScale * 0.5);
+  const singleBarTargetWidth = Math.max(48, layoutConfig.fineBarWidth || 118);
+  const maxZoom = Math.max(minZoom * 1.5, (bestRect.width * 0.92) / singleBarTargetWidth);
+
+  return [minZoom, maxZoom];
+}
+
+function syncZoomExtent(layout = currentLayout) {
+  const [minZoom, maxZoom] = computeDynamicZoomExtent(layout);
+  zoomBehavior.scaleExtent([minZoom, maxZoom]);
+}
+
 function applyZoomTransform(transform, { persist = true, animationDuration = 0 } = {}) {
   currentZoomTransform = transform;
   suppressZoomPersistence = !persist;
@@ -2106,6 +2160,7 @@ function applyZoomTransform(transform, { persist = true, animationDuration = 0 }
 }
 
 function fitView({ persist = true, animationDuration = 220 } = {}) {
+  syncZoomExtent(currentLayout);
   const transform = computeFitViewTransform(currentLayout);
   applyZoomTransform(transform, { persist, animationDuration });
 }
@@ -2636,6 +2691,7 @@ function render(animationDuration = 0, options = {}) {
 
   const layout = buildLayoutModel();
   currentLayout = layout;
+  syncZoomExtent(layout);
   setDiagramIssues(layout.diagramIssues || []);
   const transition = createRenderTransition(animationDuration);
   drawGuides(layout, transition);
@@ -2831,50 +2887,109 @@ redoActionButton?.addEventListener("click", () => {
   redoStateChange();
 });
 
+function applyLayoutPresetState(stateObject, {
+  statusMessage,
+  persist = true,
+  animationDuration = EXPAND_COLLAPSE_ANIMATION_MS,
+} = {}) {
+  if (!stateObject) {
+    return;
+  }
+
+  applyStateObject(stateObject, { animationDuration, persist: false });
+  fitView({ persist: false, animationDuration });
+
+  if (persist) {
+    persistState();
+  } else {
+    initializeHistoryState();
+  }
+
+  if (statusMessage) {
+    setStatus(statusMessage);
+  }
+}
+
 resetConfigButton.addEventListener("click", () => {
-  applyStateObject({
-    expandedFine: defaultExpandedFine,
-    expandedHyperfine: defaultExpandedHyperfine,
-    pinnedPanels: [],
-    theme: "light",
-    referencesVisible: defaultReferencesVisible,
-    measureToolEnabled: defaultMeasureToolEnabled,
-    hideToolEnabled: defaultHideToolEnabled,
-    measureSelection: [],
-    measurements: [],
-    hiddenStates: [],
-    hiddenTransitions: [],
-    controls: {
-      hyperfineScaleByFineState: createDefaultHyperfineScaleMap(),
-      transitionLabels: [],
-      bFieldEnabled: defaultBFieldEnabled,
-      bFieldVisualScale: defaultBFieldVisualScale,
-      bFieldGauss: defaultBFieldGauss,
-      bFieldGaussMin: defaultBFieldGaussMin,
-      bFieldGaussMax: defaultBFieldGaussMax,
-    },
-    zoom: defaultZoomState,
-  }, { animationDuration: EXPAND_COLLAPSE_ANIMATION_MS, persist: false });
-  fitView({ persist: false, animationDuration: EXPAND_COLLAPSE_ANIMATION_MS });
-  persistState();
-  setStatus("Layout reset to the prototype default.");
+  applyLayoutPresetState(buildDiagramDefaultStateObject(), {
+    statusMessage: config.defaultLayout ? "Layout reset to the diagram default." : "Layout reset to the fully expanded layout.",
+  });
 });
 
-resetViewButton.addEventListener("click", () => {
-  fitView({ persist: true, animationDuration: 220 });
-  setStatus("View fitted to the current window.");
+collapseConfigButton?.addEventListener("click", () => {
+  applyLayoutPresetState(buildExpansionOnlyStateObject("collapsed"), {
+    statusMessage: "All fine and hyperfine levels collapsed.",
+  });
+});
+
+expandConfigButton?.addEventListener("click", () => {
+  applyLayoutPresetState(buildExpansionOnlyStateObject("expanded"), {
+    statusMessage: "All fine and hyperfine levels expanded.",
+  });
 });
 
 chooseDiagramToggleButton?.addEventListener("click", (event) => {
   event.stopPropagation();
 
   const willOpen = diagramPicker.hidden;
-  diagramPicker.hidden = !willOpen;
-  chooseDiagramToggleButton.setAttribute("aria-expanded", willOpen ? "true" : "false");
 
-  if (willOpen && typeof positionDiagramPickerPanel === "function") {
-    requestAnimationFrame(positionDiagramPickerPanel);
+  if (willOpen) {
+    openDiagramPicker();
+    setDiagramPickerLayoutFlavor("default", {
+      applyCurrentDiagram: hasLoadedDiagramSource,
+      announce: false,
+    });
+    return;
   }
+
+  closeDiagramPicker();
+});
+
+diagramPickerLayoutDefaultButton?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setDiagramPickerLayoutFlavor("default", {
+    applyCurrentDiagram: hasLoadedDiagramSource,
+    announce: true,
+  });
+});
+
+diagramPickerLayoutSavedButton?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setDiagramPickerLayoutFlavor("saved", {
+    applyCurrentDiagram: hasLoadedDiagramSource,
+    announce: true,
+  });
+});
+
+diagramPickerLayoutCollapsedButton?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setDiagramPickerLayoutFlavor("collapsed", {
+    applyCurrentDiagram: hasLoadedDiagramSource,
+    announce: true,
+  });
+});
+
+diagramPickerLayoutExpandedButton?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setDiagramPickerLayoutFlavor("expanded", {
+    applyCurrentDiagram: hasLoadedDiagramSource,
+    announce: true,
+  });
+});
+
+diagramPickerSearchInput?.addEventListener("input", (event) => {
+  diagramPickerSearchQuery = event.target.value || "";
+  renderDiagramPicker();
+});
+
+diagramPickerSortSelect?.addEventListener("change", (event) => {
+  diagramPickerSortMode = event.target.value || "alpha-asc";
+  renderDiagramPicker();
+});
+
+resetViewButton.addEventListener("click", () => {
+  fitView({ persist: true, animationDuration: 220 });
+  setStatus("View fitted to the current window.");
 });
 
 diagramPickerLocalPickButton?.addEventListener("click", async (event) => {
@@ -3170,6 +3285,7 @@ window.addEventListener("resize", () => {
   syncControlUI();
   renderReferencesPanel();
   if (!hasStoredState) {
+    applyStateObject(buildDiagramDefaultStateObject(), { persist: false });
     render();
     fitView({ persist: false, animationDuration: 0 });
   }

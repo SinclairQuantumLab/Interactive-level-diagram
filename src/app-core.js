@@ -22,6 +22,8 @@ const actionStack = document.getElementById("action-stack");
 const issueStack = document.getElementById("issue-stack");
 const editConfigButton = document.getElementById("edit-config");
 const resetConfigButton = document.getElementById("reset-config");
+const collapseConfigButton = document.getElementById("collapse-config");
+const expandConfigButton = document.getElementById("expand-config");
 const resetViewButton = document.getElementById("reset-view");
 const undoActionButton = document.getElementById("undo-action");
 const redoActionButton = document.getElementById("redo-action");
@@ -46,6 +48,12 @@ const diagramPickerLocalBody = document.getElementById("diagram-picker-local-bod
 const diagramPickerLocalList = document.getElementById("diagram-picker-local-list");
 const diagramPickerLocalHint = document.getElementById("diagram-picker-local-hint");
 const diagramPickerLocalPath = document.getElementById("diagram-picker-local-path");
+const diagramPickerLayoutDefaultButton = document.getElementById("diagram-picker-layout-default");
+const diagramPickerLayoutSavedButton = document.getElementById("diagram-picker-layout-saved");
+const diagramPickerLayoutCollapsedButton = document.getElementById("diagram-picker-layout-collapsed");
+const diagramPickerLayoutExpandedButton = document.getElementById("diagram-picker-layout-expanded");
+const diagramPickerSearchInput = document.getElementById("diagram-picker-search");
+const diagramPickerSortSelect = document.getElementById("diagram-picker-sort");
 const referencesPanel = document.getElementById("references-panel");
 const referencesList = document.getElementById("references-list");
 const referencesCloseButton = document.getElementById("references-close");
@@ -647,7 +655,7 @@ function normalizeHostedManifestFileList(manifestData) {
   return [];
 }
 
-function buildDiagramCatalogEntry(fileName, rawYamlText) {
+function buildDiagramCatalogEntry(fileName, rawYamlText, { lastModifiedMs = null, sourceIndex = 0 } = {}) {
   try {
     const parsed = parseDiagramConfig(rawYamlText);
     const inlineBibText = extractInlineBibliographyText(parsed);
@@ -657,6 +665,8 @@ function buildDiagramCatalogEntry(fileName, rawYamlText) {
       title: normalized.meta.title || fileName,
       text: rawYamlText,
       bibliographyText: inlineBibText,
+      lastModifiedMs: Number.isFinite(lastModifiedMs) ? lastModifiedMs : null,
+      sourceIndex,
     };
   } catch {
     return {
@@ -664,12 +674,56 @@ function buildDiagramCatalogEntry(fileName, rawYamlText) {
       title: `${fileName} (invalid YAML)`,
       text: null,
       bibliographyText: null,
+      lastModifiedMs: Number.isFinite(lastModifiedMs) ? lastModifiedMs : null,
+      sourceIndex,
     };
   }
 }
 
-function sortDiagramCatalogEntries(entries) {
-  return [...entries].sort((left, right) => left.fileName.localeCompare(right.fileName));
+const diagramPickerFileNameCollator = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: "base",
+});
+
+function compareDiagramCatalogEntries(left, right, sortMode = "alpha-asc") {
+  const alphaCompare = diagramPickerFileNameCollator.compare(left.fileName || "", right.fileName || "");
+
+  if (sortMode === "alpha-desc") {
+    return alphaCompare * -1;
+  }
+
+  if (sortMode === "modified-desc" || sortMode === "modified-asc") {
+    const leftModified = Number.isFinite(left.lastModifiedMs) ? left.lastModifiedMs : null;
+    const rightModified = Number.isFinite(right.lastModifiedMs) ? right.lastModifiedMs : null;
+
+    if (leftModified !== null && rightModified !== null && leftModified !== rightModified) {
+      return sortMode === "modified-desc"
+        ? rightModified - leftModified
+        : leftModified - rightModified;
+    }
+
+    if (leftModified !== rightModified) {
+      return leftModified === null ? 1 : -1;
+    }
+  }
+
+  if (left.sourceIndex !== right.sourceIndex) {
+    return left.sourceIndex - right.sourceIndex;
+  }
+
+  return alphaCompare;
+}
+
+function filterAndSortDiagramCatalogEntries(entries) {
+  const normalizedQuery = diagramPickerSearchQuery.trim().toLowerCase();
+  const filteredEntries = normalizedQuery
+    ? entries.filter((entry) => {
+      const haystack = `${entry.title || ""}\n${entry.fileName || ""}`.toLowerCase();
+      return haystack.includes(normalizedQuery);
+    })
+    : [...entries];
+
+  return filteredEntries.sort((left, right) => compareDiagramCatalogEntries(left, right, diagramPickerSortMode));
 }
 
 async function loadHostedDiagramCatalog() {
@@ -687,26 +741,31 @@ async function loadHostedDiagramCatalog() {
     const fileNames = normalizeHostedManifestFileList(manifestData);
     const entries = [];
 
-    for (const fileName of fileNames) {
+    for (const [sourceIndex, fileName] of fileNames.entries()) {
       const diagramUrl = new URL(fileName, manifestUrl);
-      const rawYamlText = await fetchTextResource(diagramUrl.toString(), { optional: true });
+      const resourceRecord = await fetchTextResourceRecord(diagramUrl.toString(), { optional: true });
 
-      if (!rawYamlText) {
+      if (!resourceRecord?.text) {
         entries.push({
           fileName,
           title: `${fileName} (unreadable)`,
           text: null,
           bibliographyText: null,
+          lastModifiedMs: resourceRecord?.lastModifiedMs ?? null,
+          sourceIndex,
         });
         continue;
       }
 
-      entries.push(buildDiagramCatalogEntry(fileName, rawYamlText));
+      entries.push(buildDiagramCatalogEntry(fileName, resourceRecord.text, {
+        lastModifiedMs: resourceRecord.lastModifiedMs,
+        sourceIndex,
+      }));
     }
 
     return {
       available: true,
-      entries: sortDiagramCatalogEntries(entries),
+      entries,
     };
   } catch {
     return {
@@ -727,18 +786,23 @@ async function loadFolderDiagramCatalog(folderHandle) {
     try {
       const file = await entry.getFile();
       const rawYamlText = await file.text();
-      entries.push(buildDiagramCatalogEntry(entry.name, rawYamlText));
+      entries.push(buildDiagramCatalogEntry(entry.name, rawYamlText, {
+        lastModifiedMs: file.lastModified,
+        sourceIndex: entries.length,
+      }));
     } catch {
       entries.push({
         fileName: entry.name,
         title: `${entry.name} (invalid YAML)`,
         text: null,
         bibliographyText: null,
+        lastModifiedMs: null,
+        sourceIndex: entries.length,
       });
     }
   }
 
-  return sortDiagramCatalogEntries(entries);
+  return entries;
 }
 
 function createConfigId(species) {
@@ -1255,6 +1319,9 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
       };
     }),
     bibliography,
+    defaultLayout: rawConfig.default_layout && typeof rawConfig.default_layout === "object" && !Array.isArray(rawConfig.default_layout)
+      ? rawConfig.default_layout
+      : null,
     transitions: (Array.isArray(rawConfig.transitions) ? rawConfig.transitions : []).map((transition, index) => {
       const between = (Array.isArray(transition.between) ? transition.between : [])
         .map(normalizeTransitionEndpointRef);
@@ -1303,6 +1370,7 @@ function createEmptyConfig() {
       notes: [],
     },
     bibliography: [],
+    defaultLayout: null,
     diagramIssues: [],
     states: [],
     transitions: [],
@@ -1448,7 +1516,7 @@ function getDiagramEntriesForSource(source) {
   return [];
 }
 
-function activateDiagramSelection(source, preferredPath = null) {
+function activateDiagramSelection(source, preferredPath = null, { layoutFlavor = "saved" } = {}) {
   const normalizedSource = source === "folder" ? "folder" : "hosted";
   const sourceEntries = getDiagramEntriesForSource(normalizedSource);
   const nextCatalog = {
@@ -1481,12 +1549,13 @@ function activateDiagramSelection(source, preferredPath = null) {
   currentTransitionLabelFieldsById = createDefaultTransitionLabelFieldMap();
   currentTransitionLabelPrecisionById = createDefaultTransitionLabelPrecisionMap();
 
-  const hasStoredState = loadStoredState();
+  const hasStoredState = layoutFlavor === "saved" ? loadStoredState() : false;
   applyTheme(currentTheme);
   syncControlUI();
   renderReferencesPanel();
 
   if (!hasStoredState) {
+    applyStateObject(buildDiagramPickerPreviewStateObject(layoutFlavor), { persist: false });
     render();
     fitView({ persist: false, animationDuration: 0 });
   }
@@ -1506,6 +1575,10 @@ let hasLoadedDiagramSource = false;
 let selectedDiagramPath = null;
 let browserDiagramSourceInfo = createBrowserDiagramSourceInfo();
 let hasInteractiveDiagram = false;
+let diagramPickerLayoutFlavor = "default";
+let diagramPickerPreviewActive = false;
+let diagramPickerSearchQuery = "";
+let diagramPickerSortMode = "alpha-asc";
 function syncDocumentTitle() {
   document.title = hasLoadedDiagramSource
     ? `${config.meta.title || `${config.species.species}-${config.species.atomic_mass_number}`} Diagram`
@@ -1554,6 +1627,277 @@ const defaultHideToolEnabled = false;
 const bFieldVisualScaleSliderRange = { min: 0.1, max: 10 };
 const hyperfineScaleSliderRange = { min: 0.01, max: 100 };
 const MU_B_OVER_H_MHZ_PER_GAUSS = 1.3996246;
+
+function createExpandedDefaultStateLists() {
+  return {
+    expandedFine: fineStates.map((state) => state.id),
+    expandedHyperfine: fineStates.flatMap((state) => (
+      Array.isArray(state.hyperfine) ? state.hyperfine.map((level) => level.id) : []
+    )),
+  };
+}
+
+function buildBaseLayoutStateObject({ expansionMode = "collapsed" } = {}) {
+  const expansionState = expansionMode === "expanded"
+    ? createExpandedDefaultStateLists()
+    : {
+      expandedFine: defaultExpandedFine,
+      expandedHyperfine: defaultExpandedHyperfine,
+    };
+
+  return {
+    expandedFine: expansionState.expandedFine,
+    expandedHyperfine: expansionState.expandedHyperfine,
+    pinnedPanels: [],
+    theme: currentTheme,
+    referencesVisible: defaultReferencesVisible,
+    measureToolEnabled: defaultMeasureToolEnabled,
+    hideToolEnabled: defaultHideToolEnabled,
+    measureSelection: [],
+    measurements: [],
+    hiddenStates: [],
+    hiddenTransitions: [],
+    controls: {
+      hyperfineScaleByFineState: createDefaultHyperfineScaleMap(),
+      transitionLabels: [],
+      bFieldEnabled: defaultBFieldEnabled,
+      bFieldVisualScale: defaultBFieldVisualScale,
+      bFieldGauss: defaultBFieldGauss,
+      bFieldGaussMin: defaultBFieldGaussMin,
+      bFieldGaussMax: defaultBFieldGaussMax,
+    },
+    zoom: defaultZoomState,
+  };
+}
+
+function buildDiagramDefaultStateObject() {
+  const configuredLayout = config.defaultLayout && typeof config.defaultLayout === "object" && !Array.isArray(config.defaultLayout)
+    ? config.defaultLayout
+    : null;
+  const baseState = buildBaseLayoutStateObject({ expansionMode: "expanded" });
+
+  if (!configuredLayout) {
+    return baseState;
+  }
+
+  const configuredControls = configuredLayout.controls && typeof configuredLayout.controls === "object" && !Array.isArray(configuredLayout.controls)
+    ? configuredLayout.controls
+    : {};
+  const mergedState = {
+    ...baseState,
+    ...configuredLayout,
+    expandedFine: Array.isArray(configuredLayout.expandedFine) ? configuredLayout.expandedFine : baseState.expandedFine,
+    expandedHyperfine: Array.isArray(configuredLayout.expandedHyperfine) ? configuredLayout.expandedHyperfine : baseState.expandedHyperfine,
+    pinnedPanels: Array.isArray(configuredLayout.pinnedPanels) ? configuredLayout.pinnedPanels : baseState.pinnedPanels,
+    measureSelection: Array.isArray(configuredLayout.measureSelection) ? configuredLayout.measureSelection : baseState.measureSelection,
+    measurements: Array.isArray(configuredLayout.measurements) ? configuredLayout.measurements : baseState.measurements,
+    hiddenStates: Array.isArray(configuredLayout.hiddenStates) ? configuredLayout.hiddenStates : baseState.hiddenStates,
+    hiddenTransitions: Array.isArray(configuredLayout.hiddenTransitions) ? configuredLayout.hiddenTransitions : baseState.hiddenTransitions,
+    controls: {
+      ...baseState.controls,
+      ...configuredControls,
+    },
+  };
+
+  if (
+    typeof configuredLayout.hideToolEnabled !== "boolean"
+    && (mergedState.hiddenStates.length > 0 || mergedState.hiddenTransitions.length > 0)
+  ) {
+    mergedState.hideToolEnabled = true;
+  }
+
+  return mergedState;
+}
+
+function buildExpansionOnlyStateObject(expansionMode = "collapsed") {
+  const baseState = typeof buildSerializableState === "function"
+    ? buildSerializableState()
+    : buildDiagramDefaultStateObject();
+  const expansionState = expansionMode === "expanded"
+    ? createExpandedDefaultStateLists()
+    : {
+      expandedFine: defaultExpandedFine,
+      expandedHyperfine: defaultExpandedHyperfine,
+    };
+
+  return {
+    ...baseState,
+    expandedFine: expansionState.expandedFine,
+    expandedHyperfine: expansionState.expandedHyperfine,
+  };
+}
+
+function parseStoredStateText(raw) {
+  const text = String(raw || "").trim();
+
+  if (!text || typeof window.jsyaml?.load !== "function") {
+    return null;
+  }
+
+  try {
+    return window.jsyaml.load(text);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchTextResourceRecord(resourceUrl, { optional = false } = {}) {
+  try {
+    const response = await window.fetch(resourceUrl, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      if (optional) {
+        return null;
+      }
+
+      throw new Error(`Failed to fetch ${resourceUrl}: ${response.status}`);
+    }
+
+    const lastModifiedHeader = response.headers.get("last-modified");
+    const parsedLastModified = lastModifiedHeader ? Date.parse(lastModifiedHeader) : Number.NaN;
+
+    return {
+      text: await response.text(),
+      lastModifiedMs: Number.isFinite(parsedLastModified) ? parsedLastModified : null,
+    };
+  } catch (error) {
+    if (optional) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+function readStoredStateObject(stateStorageKey = storageKey) {
+  try {
+    const raw = window.localStorage.getItem(stateStorageKey);
+    return raw ? parseStoredStateText(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveDiagramPickerLayoutStateObject(layoutFlavor = "default") {
+  if (layoutFlavor === "saved") {
+    return readStoredStateObject(storageKey) || buildDiagramDefaultStateObject();
+  }
+
+  if (layoutFlavor === "collapsed") {
+    return buildBaseLayoutStateObject({ expansionMode: "collapsed" });
+  }
+
+  if (layoutFlavor === "expanded") {
+    return buildBaseLayoutStateObject({ expansionMode: "expanded" });
+  }
+
+  return buildDiagramDefaultStateObject();
+}
+
+function buildDiagramPickerPreviewStateObject(layoutFlavor = "default") {
+  const stateObject = resolveDiagramPickerLayoutStateObject(layoutFlavor);
+
+  if (
+    layoutFlavor !== "default"
+    || !stateObject
+    || typeof stateObject !== "object"
+    || Array.isArray(stateObject)
+  ) {
+    return stateObject;
+  }
+
+  const hasHiddenItems = (
+    Array.isArray(stateObject.hiddenStates) && stateObject.hiddenStates.length > 0
+  ) || (
+    Array.isArray(stateObject.hiddenTransitions) && stateObject.hiddenTransitions.length > 0
+  );
+
+  if (!hasHiddenItems) {
+    return stateObject;
+  }
+
+  return {
+    ...stateObject,
+    hideToolEnabled: true,
+  };
+}
+
+function syncDiagramPickerLayoutFlavorUi() {
+  if (diagramPickerLayoutDefaultButton) {
+    const isDefault = diagramPickerLayoutFlavor === "default";
+    diagramPickerLayoutDefaultButton.setAttribute("aria-pressed", isDefault ? "true" : "false");
+    diagramPickerLayoutDefaultButton.classList.toggle("is-active", isDefault);
+  }
+
+  if (diagramPickerLayoutSavedButton) {
+    const isSaved = diagramPickerLayoutFlavor === "saved";
+    diagramPickerLayoutSavedButton.setAttribute("aria-pressed", isSaved ? "true" : "false");
+    diagramPickerLayoutSavedButton.classList.toggle("is-active", isSaved);
+  }
+
+  if (diagramPickerLayoutCollapsedButton) {
+    const isCollapsed = diagramPickerLayoutFlavor === "collapsed";
+    diagramPickerLayoutCollapsedButton.setAttribute("aria-pressed", isCollapsed ? "true" : "false");
+    diagramPickerLayoutCollapsedButton.classList.toggle("is-active", isCollapsed);
+  }
+
+  if (diagramPickerLayoutExpandedButton) {
+    const isExpanded = diagramPickerLayoutFlavor === "expanded";
+    diagramPickerLayoutExpandedButton.setAttribute("aria-pressed", isExpanded ? "true" : "false");
+    diagramPickerLayoutExpandedButton.classList.toggle("is-active", isExpanded);
+  }
+}
+
+function syncDiagramPickerBrowseControlsUi() {
+  if (diagramPickerSearchInput && diagramPickerSearchInput.value !== diagramPickerSearchQuery) {
+    diagramPickerSearchInput.value = diagramPickerSearchQuery;
+  }
+
+  if (diagramPickerSortSelect && diagramPickerSortSelect.value !== diagramPickerSortMode) {
+    diagramPickerSortSelect.value = diagramPickerSortMode;
+  }
+}
+
+function setDiagramPickerLayoutFlavor(layoutFlavor, { applyCurrentDiagram = false, announce = true } = {}) {
+  diagramPickerLayoutFlavor = ["saved", "collapsed", "expanded"].includes(layoutFlavor) ? layoutFlavor : "default";
+  syncDiagramPickerLayoutFlavorUi();
+
+  if (!applyCurrentDiagram || !hasLoadedDiagramSource || typeof applyStateObject !== "function") {
+    return;
+  }
+
+  const savedState = diagramPickerLayoutFlavor === "saved" ? readStoredStateObject(storageKey) : null;
+  const stateObject = buildDiagramPickerPreviewStateObject(diagramPickerLayoutFlavor);
+
+  applyStateObject(stateObject, { animationDuration: CONTROL_ANIMATION_MS, persist: false });
+  fitView({ persist: false, animationDuration: CONTROL_ANIMATION_MS });
+  initializeHistoryState();
+
+  if (!announce) {
+    return;
+  }
+
+  if (diagramPickerLayoutFlavor === "saved") {
+    setStatus(savedState
+      ? "Browsing the saved layout for this diagram."
+      : "No saved layout was found, so the diagram default is shown while browsing.");
+    return;
+  }
+
+  if (diagramPickerLayoutFlavor === "collapsed") {
+    setStatus("Browsing the fully collapsed layout.");
+    return;
+  }
+
+  if (diagramPickerLayoutFlavor === "expanded") {
+    setStatus("Browsing the fully expanded layout.");
+    return;
+  }
+
+  setStatus("Browsing the diagram default layout.");
+}
 const ZEEMAN_VISUAL_MHZ_TO_PX = 14 / 3;
 const ELECTRON_SPIN = 0.5;
 const ORBITAL_L_BY_LETTER = {
@@ -2054,6 +2398,15 @@ function closeDiagramPicker() {
 
   diagramPicker.hidden = true;
   chooseDiagramToggleButton?.setAttribute("aria-expanded", "false");
+  const shouldRestoreNormalLayout = diagramPickerPreviewActive && hasLoadedDiagramSource;
+  diagramPickerPreviewActive = false;
+
+  if (shouldRestoreNormalLayout) {
+    setDiagramPickerLayoutFlavor("saved", {
+      applyCurrentDiagram: true,
+      announce: false,
+    });
+  }
 }
 
 function openDiagramPicker() {
@@ -2061,8 +2414,10 @@ function openDiagramPicker() {
     return;
   }
 
+  diagramPickerPreviewActive = true;
   diagramPicker.hidden = false;
   chooseDiagramToggleButton?.setAttribute("aria-expanded", "true");
+  syncDiagramPickerBrowseControlsUi();
   if (typeof positionDiagramPickerPanel === "function") {
     requestAnimationFrame(positionDiagramPickerPanel);
   }
@@ -2207,6 +2562,10 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText }) {
     const button = document.createElement("button");
     const title = document.createElement("span");
     const fileLink = document.createElement("a");
+    const selectDiagram = (event) => {
+      event?.stopPropagation?.();
+      activateDiagramSelection(source, entry.fileName, { layoutFlavor: diagramPickerLayoutFlavor });
+    };
 
     li.className = "diagram-picker-item";
     card.className = "diagram-picker-card";
@@ -2221,9 +2580,13 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText }) {
     setDashboardTextContent(title, entry.title);
     fileLink.textContent = entry.fileName;
     button.append(title);
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      activateDiagramSelection(source, entry.fileName);
+    button.addEventListener("click", selectDiagram);
+    card.addEventListener("click", (event) => {
+      if (event.target.closest(".diagram-picker-file")) {
+        return;
+      }
+
+      selectDiagram(event);
     });
     fileLink.addEventListener("click", (event) => {
       event.preventDefault();
@@ -2242,9 +2605,19 @@ function renderDiagramPicker() {
   }
 
   syncDiagramSourceUi();
+  syncDiagramPickerBrowseControlsUi();
 
   const hostedState = getHostedDiagramPickerUiState();
   const localState = getLocalDiagramPickerUiState();
+  const hostedEntries = filterAndSortDiagramCatalogEntries(diagramCatalog.hostedEntries || []);
+  const localEntries = filterAndSortDiagramCatalogEntries(diagramCatalog.folderEntries || []);
+  const normalizedSearchQuery = diagramPickerSearchQuery.trim();
+  const hostedEmptyText = normalizedSearchQuery
+    ? `No web repo diagrams matched "${normalizedSearchQuery}".`
+    : hostedState.emptyText;
+  const localEmptyText = normalizedSearchQuery
+    ? `No local folder diagrams matched "${normalizedSearchQuery}".`
+    : localState.emptyText;
 
   if (diagramPickerWebHint) {
     diagramPickerWebHint.textContent = hostedState.hint;
@@ -2272,13 +2645,15 @@ function renderDiagramPicker() {
     diagramPickerLocalBody.hidden = false;
   }
 
-  renderDiagramPickerList(diagramPickerWebList, diagramCatalog.hostedEntries || [], {
+  syncDiagramPickerLayoutFlavorUi();
+
+  renderDiagramPickerList(diagramPickerWebList, hostedEntries, {
     source: "hosted",
-    emptyText: hostedState.emptyText,
+    emptyText: hostedEmptyText,
   });
-  renderDiagramPickerList(diagramPickerLocalList, diagramCatalog.folderEntries || [], {
+  renderDiagramPickerList(diagramPickerLocalList, localEntries, {
     source: "folder",
-    emptyText: localState.emptyText,
+    emptyText: localEmptyText,
   });
 
   if (!diagramPicker.hidden && typeof positionDiagramPickerPanel === "function") {
@@ -2287,7 +2662,18 @@ function renderDiagramPicker() {
 }
 
 function syncDiagramUiAvailability() {
-  const diagramButtons = [undoActionButton, redoActionButton, referencesToggleButton, measureToggleButton, hideToggleButton, editConfigButton, resetConfigButton, resetViewButton];
+  const diagramButtons = [
+    undoActionButton,
+    redoActionButton,
+    referencesToggleButton,
+    measureToggleButton,
+    hideToggleButton,
+    editConfigButton,
+    resetConfigButton,
+    collapseConfigButton,
+    expandConfigButton,
+    resetViewButton,
+  ];
 
   diagramButtons.forEach((button) => {
     if (button) {

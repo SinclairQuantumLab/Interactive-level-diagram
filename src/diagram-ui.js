@@ -938,6 +938,8 @@ function buildMetadataEntryFragment(row, options = {}) {
   const dd = document.createElement("dd");
   const showSelectors = Boolean(options.showSelectors);
   const showEditors = Boolean(options.showEditors);
+  const normalizedLabelText = typeof normalized.label === "string" ? normalized.label.trim() : "";
+  const isCompactNoteRow = /^Note(?:\s+\d+)?$/i.test(normalizedLabelText);
   const formatEditor = normalized.editor?.type === "measurement-format"
     ? buildMeasurementSectionFormatEditorFragment(normalized.editor)
     : null;
@@ -964,12 +966,24 @@ function buildMetadataEntryFragment(row, options = {}) {
     return fragment;
   }
 
-  if (shouldShowSelector || shouldShowEditor) {
+  if (isCompactNoteRow) {
+    dt.classList.add("metadata-label-hidden");
+    dd.classList.add("metadata-span-all", "metadata-note-item");
+  }
+
+  if (shouldShowSelector || shouldShowEditor || isCompactNoteRow) {
     const valueRow = document.createElement("div");
     valueRow.className = "metadata-value-row";
 
     if (shouldShowEditor) {
       valueRow.classList.add("is-note-editor-row");
+    }
+
+    if (isCompactNoteRow) {
+      valueRow.classList.add("is-note-bullet-row");
+    }
+
+    if (shouldShowEditor || isCompactNoteRow) {
       dt.classList.add("metadata-label-hidden");
       dd.classList.add("metadata-span-all");
     }
@@ -983,6 +997,14 @@ function buildMetadataEntryFragment(row, options = {}) {
         updateMetadataSelectorSelection(normalized.selector, checkbox.checked);
       });
       valueRow.append(checkbox);
+    }
+
+    if (isCompactNoteRow) {
+      const bullet = document.createElement("span");
+      bullet.className = "metadata-note-bullet";
+      bullet.setAttribute("aria-hidden", "true");
+      bullet.textContent = "•";
+      valueRow.append(bullet);
     }
 
     if (shouldShowEditor) {
@@ -1032,6 +1054,10 @@ function applyTheme(themeName) {
 
 function persistState({ recordHistory = true, announce = true, preserveHistorySnapshot = false } = {}) {
   const serialized = serializeState();
+
+  if (diagramPickerPreviewActive) {
+    return serialized;
+  }
 
   if (recordHistory) {
     recordHistorySnapshot(serialized);
@@ -2067,7 +2093,7 @@ function loadStoredState() {
     applyStateObject(parseSerializedState(raw), { persist: false, syncZoom: true });
     return true;
   } catch {
-    setStatus("Stored layout could not be read, so the default prototype layout is in use.");
+    setStatus("Stored layout could not be read, so the diagram default layout is in use.");
     return false;
   }
 }
