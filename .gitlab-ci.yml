@@ -16,6 +16,18 @@ deploy-pages:
     - cp -r assets public/assets
     - cp -r src public/src
     - cp -r diagrams public/diagrams
+    - |
+      if [ -n "$CLOUDFLARE_WEB_ANALYTICS_TOKEN" ]; then
+        SNIPPET="<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{\"token\": \"$CLOUDFLARE_WEB_ANALYTICS_TOKEN\"}'></script><!-- End Cloudflare Web Analytics -->"
+        awk -v snippet="$SNIPPET" '
+          /<\/head>/ && !inserted {
+            print snippet
+            inserted = 1
+          }
+          { print }
+        ' public/index.html > public/index.html.tmp
+        mv public/index.html.tmp public/index.html
+      fi
   artifacts:
     paths:
       - public
