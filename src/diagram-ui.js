@@ -359,7 +359,7 @@ function buildMetadataFragment(rows, options = {}) {
       sectionBlock.append(heading);
     }
 
-    const grid = document.createElement("dl");
+    const grid = document.createElement("div");
     grid.className = "metadata-section-grid";
     section.rows.forEach((row) => {
       grid.append(buildMetadataEntryFragment(row, options));
@@ -1056,8 +1056,10 @@ function buildMetadataEntryFragment(row, options = {}) {
     return fragment;
   }
 
-  const dt = document.createElement("dt");
-  const dd = document.createElement("dd");
+  const dt = document.createElement("div");
+  dt.className = "metadata-entry-key";
+  const dd = document.createElement("div");
+  dd.className = "metadata-entry-value";
   const showSelectors = Boolean(options.showSelectors);
   const showEditors = Boolean(options.showEditors);
   const showInlineControls = Boolean(options.showInlineControls);
