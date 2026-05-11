@@ -1657,10 +1657,6 @@ function getConfiguredDefaultLayout() {
     : null;
 }
 
-function selectConfiguredLayoutArray(configuredLayout, key, fallbackValue) {
-  return Array.isArray(configuredLayout?.[key]) ? configuredLayout[key] : fallbackValue;
-}
-
 function normalizeFineDisplacementEntry(entry) {
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
     return null;
@@ -1697,6 +1693,118 @@ function normalizeFineDisplacements(value) {
   );
 }
 
+function getLayoutRecord(value) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value
+    : null;
+}
+
+function pickFirstArray(...candidates) {
+  return candidates.find((candidate) => Array.isArray(candidate));
+}
+
+function pickFirstBoolean(...candidates) {
+  for (const candidate of candidates) {
+    if (typeof candidate === "boolean") {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
+
+function pickFirstFiniteNumber(...candidates) {
+  for (const candidate of candidates) {
+    if (Number.isFinite(candidate)) {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
+
+function pickFirstString(...candidates) {
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
+
+function normalizeLayoutStateObject(stateObject, { expansionMode = "collapsed" } = {}) {
+  const sourceState = getLayoutRecord(stateObject) || {};
+  const layoutState = getLayoutRecord(sourceState.layout) || {};
+  const expandedState = getLayoutRecord(layoutState.expanded) || {};
+  const hiddenState = getLayoutRecord(layoutState.hidden) || {};
+  const viewState = getLayoutRecord(sourceState.view) || {};
+  const viewZoomState = getLayoutRecord(viewState.zoom) || {};
+  const toolsState = getLayoutRecord(sourceState.tools) || {};
+  const hideToolState = getLayoutRecord(toolsState.hide) || {};
+  const measureToolState = getLayoutRecord(toolsState.measure) || {};
+  const moveToolState = getLayoutRecord(toolsState.move) || {};
+  const diagramState = getLayoutRecord(sourceState.diagram) || {};
+  const diagramHyperfineState = getLayoutRecord(diagramState.hyperfine) || {};
+  const diagramTransitionsState = getLayoutRecord(diagramState.transitions) || {};
+  const magneticFieldState = getLayoutRecord(diagramState.magneticField) || {};
+  const magneticFieldRangeState = getLayoutRecord(magneticFieldState.range) || {};
+  const legacyControlsState = getLayoutRecord(sourceState.controls) || {};
+  const legacyZoomState = getLayoutRecord(sourceState.zoom) || {};
+  const baseState = buildBaseLayoutStateObject({ expansionMode });
+
+  const normalizedState = {
+    ...baseState,
+    expandedFine: pickFirstArray(expandedState.fine, sourceState.expandedFine) || baseState.expandedFine,
+    expandedHyperfine: pickFirstArray(expandedState.hyperfine, sourceState.expandedHyperfine) || baseState.expandedHyperfine,
+    pinnedPanels: pickFirstArray(layoutState.pinnedPanels, sourceState.pinnedPanels) || baseState.pinnedPanels,
+    theme: pickFirstString(viewState.theme, sourceState.theme) || baseState.theme,
+    referencesVisible: pickFirstBoolean(viewState.referencesVisible, sourceState.referencesVisible) ?? baseState.referencesVisible,
+    measureToolEnabled: pickFirstBoolean(measureToolState.enabled, sourceState.measureToolEnabled) ?? baseState.measureToolEnabled,
+    hideToolEnabled: pickFirstBoolean(hideToolState.enabled, sourceState.hideToolEnabled) ?? baseState.hideToolEnabled,
+    moveToolEnabled: pickFirstBoolean(moveToolState.enabled, sourceState.moveToolEnabled) ?? baseState.moveToolEnabled,
+    measureSelection: pickFirstArray(measureToolState.selection, sourceState.measureSelection) || baseState.measureSelection,
+    measurements: pickFirstArray(measureToolState.measurements, sourceState.measurements) || baseState.measurements,
+    hiddenStates: pickFirstArray(hiddenState.states, sourceState.hiddenStates) || baseState.hiddenStates,
+    hiddenTransitions: pickFirstArray(hiddenState.transitions, sourceState.hiddenTransitions) || baseState.hiddenTransitions,
+    fineDisplacements: normalizeFineDisplacements(layoutState.fineDisplacements ?? sourceState.fineDisplacements),
+    controls: {
+      ...baseState.controls,
+      hyperfineScaleByFineState: getLayoutRecord(diagramHyperfineState.scaleByFineState)
+        || getLayoutRecord(legacyControlsState.hyperfineScaleByFineState)
+        || baseState.controls.hyperfineScaleByFineState,
+      transitionLabels: pickFirstArray(diagramTransitionsState.labels, legacyControlsState.transitionLabels)
+        || baseState.controls.transitionLabels,
+      bFieldEnabled: pickFirstBoolean(magneticFieldState.enabled, legacyControlsState.bFieldEnabled)
+        ?? baseState.controls.bFieldEnabled,
+      bFieldVisualScale: pickFirstFiniteNumber(magneticFieldState.visualScale, legacyControlsState.bFieldVisualScale)
+        ?? baseState.controls.bFieldVisualScale,
+      bFieldGauss: pickFirstFiniteNumber(magneticFieldState.gauss, legacyControlsState.bFieldGauss)
+        ?? baseState.controls.bFieldGauss,
+      bFieldGaussMin: pickFirstFiniteNumber(magneticFieldRangeState.min, legacyControlsState.bFieldGaussMin)
+        ?? baseState.controls.bFieldGaussMin,
+      bFieldGaussMax: pickFirstFiniteNumber(magneticFieldRangeState.max, legacyControlsState.bFieldGaussMax)
+        ?? baseState.controls.bFieldGaussMax,
+    },
+    zoom: {
+      x: pickFirstFiniteNumber(viewZoomState.x, legacyZoomState.x) ?? baseState.zoom.x,
+      y: pickFirstFiniteNumber(viewZoomState.y, legacyZoomState.y) ?? baseState.zoom.y,
+      k: pickFirstFiniteNumber(viewZoomState.k, legacyZoomState.k) ?? baseState.zoom.k,
+    },
+  };
+
+  const hasExplicitHideEnabled = pickFirstBoolean(hideToolState.enabled, sourceState.hideToolEnabled);
+
+  if (
+    typeof hasExplicitHideEnabled !== "boolean"
+    && (normalizedState.hiddenStates.length > 0 || normalizedState.hiddenTransitions.length > 0)
+  ) {
+    normalizedState.hideToolEnabled = true;
+  }
+
+  return normalizedState;
+}
+
 function getFineStateDisplacement(stateId) {
   const entry = currentFineDisplacements?.[stateId];
   return normalizeFineDisplacementEntry(entry) || { x: 0, y: 0 };
@@ -1720,15 +1828,8 @@ function setFineStateDisplacement(stateId, displacement) {
 }
 
 function stateObjectHasHiddenItems(stateObject) {
-  if (!stateObject || typeof stateObject !== "object" || Array.isArray(stateObject)) {
-    return false;
-  }
-
-  return (
-    Array.isArray(stateObject.hiddenStates) && stateObject.hiddenStates.length > 0
-  ) || (
-    Array.isArray(stateObject.hiddenTransitions) && stateObject.hiddenTransitions.length > 0
-  );
+  const normalizedState = normalizeLayoutStateObject(stateObject);
+  return normalizedState.hiddenStates.length > 0 || normalizedState.hiddenTransitions.length > 0;
 }
 
 function buildBaseLayoutStateObject({ expansionMode = "collapsed" } = {}) {
@@ -1763,45 +1864,14 @@ function buildBaseLayoutStateObject({ expansionMode = "collapsed" } = {}) {
 
 function buildDiagramDefaultStateObject() {
   const configuredLayout = getConfiguredDefaultLayout();
-  const baseState = buildBaseLayoutStateObject({ expansionMode: "expanded" });
-
-  if (!configuredLayout) {
-    return baseState;
-  }
-
-  const configuredControls = configuredLayout.controls && typeof configuredLayout.controls === "object" && !Array.isArray(configuredLayout.controls)
-    ? configuredLayout.controls
-    : {};
-  const mergedState = {
-    ...baseState,
-    ...configuredLayout,
-    expandedFine: selectConfiguredLayoutArray(configuredLayout, "expandedFine", baseState.expandedFine),
-    expandedHyperfine: selectConfiguredLayoutArray(configuredLayout, "expandedHyperfine", baseState.expandedHyperfine),
-    pinnedPanels: selectConfiguredLayoutArray(configuredLayout, "pinnedPanels", baseState.pinnedPanels),
-    measureSelection: selectConfiguredLayoutArray(configuredLayout, "measureSelection", baseState.measureSelection),
-    measurements: selectConfiguredLayoutArray(configuredLayout, "measurements", baseState.measurements),
-    hiddenStates: selectConfiguredLayoutArray(configuredLayout, "hiddenStates", baseState.hiddenStates),
-    hiddenTransitions: selectConfiguredLayoutArray(configuredLayout, "hiddenTransitions", baseState.hiddenTransitions),
-    fineDisplacements: normalizeFineDisplacements(configuredLayout.fineDisplacements),
-    controls: {
-      ...baseState.controls,
-      ...configuredControls,
-    },
-  };
-
-  if (
-    typeof configuredLayout.hideToolEnabled !== "boolean"
-    && (mergedState.hiddenStates.length > 0 || mergedState.hiddenTransitions.length > 0)
-  ) {
-    mergedState.hideToolEnabled = true;
-  }
-
-  return mergedState;
+  return configuredLayout
+    ? normalizeLayoutStateObject(configuredLayout, { expansionMode: "expanded" })
+    : buildBaseLayoutStateObject({ expansionMode: "expanded" });
 }
 
 function buildExpansionOnlyStateObject(expansionMode = "collapsed") {
-  const baseState = typeof buildSerializableState === "function"
-    ? buildSerializableState()
+  const baseState = typeof buildCurrentLayoutStateObject === "function"
+    ? buildCurrentLayoutStateObject()
     : buildDiagramDefaultStateObject();
   const expansionState = createExpansionStateLists(expansionMode);
 
@@ -1859,7 +1929,7 @@ async function fetchTextResourceRecord(resourceUrl, { optional = false } = {}) {
 function readStoredStateObject(stateStorageKey = storageKey) {
   try {
     const raw = window.localStorage.getItem(stateStorageKey);
-    return raw ? parseStoredStateText(raw) : null;
+    return raw ? normalizeLayoutStateObject(parseStoredStateText(raw)) : null;
   } catch {
     return null;
   }

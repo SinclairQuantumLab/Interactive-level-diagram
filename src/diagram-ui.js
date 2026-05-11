@@ -11,12 +11,10 @@
 +--------------------------------------------------------------------+
 */
 
-const LAYOUT_EXPORT_VERSION = 3;
+const LAYOUT_EXPORT_VERSION = 4;
 
-function buildSerializableState() {
+function buildCurrentLayoutStateObject() {
   return {
-    version: LAYOUT_EXPORT_VERSION,
-    appVersion: APP_CONFIG.ui.appVersion || "",
     expandedFine: Array.from(expandedFine),
     expandedHyperfine: Array.from(expandedHyperfine),
     pinnedPanels: pinnedPanels.map(serializePinnedPanelEntry),
@@ -49,6 +47,64 @@ function buildSerializableState() {
   };
 }
 
+function buildSerializableState() {
+  const currentLayoutState = buildCurrentLayoutStateObject();
+
+  return {
+    version: LAYOUT_EXPORT_VERSION,
+    appVersion: APP_CONFIG.ui.appVersion || "",
+    view: {
+      theme: currentLayoutState.theme,
+      referencesVisible: currentLayoutState.referencesVisible,
+      zoom: {
+        ...currentLayoutState.zoom,
+      },
+    },
+    layout: {
+      expanded: {
+        fine: currentLayoutState.expandedFine,
+        hyperfine: currentLayoutState.expandedHyperfine,
+      },
+      hidden: {
+        states: currentLayoutState.hiddenStates,
+        transitions: currentLayoutState.hiddenTransitions,
+      },
+      fineDisplacements: currentLayoutState.fineDisplacements,
+      pinnedPanels: currentLayoutState.pinnedPanels,
+    },
+    tools: {
+      hide: {
+        enabled: currentLayoutState.hideToolEnabled,
+      },
+      measure: {
+        enabled: currentLayoutState.measureToolEnabled,
+        selection: currentLayoutState.measureSelection,
+        measurements: currentLayoutState.measurements,
+      },
+      move: {
+        enabled: currentLayoutState.moveToolEnabled,
+      },
+    },
+    diagram: {
+      hyperfine: {
+        scaleByFineState: currentLayoutState.controls.hyperfineScaleByFineState,
+      },
+      transitions: {
+        labels: currentLayoutState.controls.transitionLabels,
+      },
+      magneticField: {
+        enabled: currentLayoutState.controls.bFieldEnabled,
+        visualScale: currentLayoutState.controls.bFieldVisualScale,
+        gauss: currentLayoutState.controls.bFieldGauss,
+        range: {
+          min: currentLayoutState.controls.bFieldGaussMin,
+          max: currentLayoutState.controls.bFieldGaussMax,
+        },
+      },
+    },
+  };
+}
+
 function serializeState() {
   const stateObject = buildSerializableState();
 
@@ -59,7 +115,7 @@ function serializeState() {
   return window.jsyaml.dump(stateObject, {
     noRefs: true,
     lineWidth: -1,
-    flowLevel: 3,
+    flowLevel: 5,
     sortKeys: false,
   });
 }
@@ -2039,14 +2095,18 @@ function pinInspector(event, type, id) {
 }
 
 function applyStateObject(stateObject, options = {}) {
-  expandedFine = new Set(Array.isArray(stateObject.expandedFine) ? stateObject.expandedFine : defaultExpandedFine);
+  const normalizedState = normalizeLayoutStateObject(stateObject);
+
+  expandedFine = new Set(
+    Array.isArray(normalizedState.expandedFine) ? normalizedState.expandedFine : defaultExpandedFine,
+  );
   expandedHyperfine = new Set(
-    (Array.isArray(stateObject.expandedHyperfine) ? stateObject.expandedHyperfine : defaultExpandedHyperfine)
+    (Array.isArray(normalizedState.expandedHyperfine) ? normalizedState.expandedHyperfine : defaultExpandedHyperfine)
       .map((id) => String(id || "").trim())
       .filter(Boolean),
   );
-  pinnedPanels = Array.isArray(stateObject.pinnedPanels)
-    ? stateObject.pinnedPanels
+  pinnedPanels = Array.isArray(normalizedState.pinnedPanels)
+    ? normalizedState.pinnedPanels
       .filter((panel) => panel && typeof panel === "object")
       .map((panel) => ({
         panelId: Number.isFinite(panel.panelId) ? panel.panelId : nextPinnedPanelId++,
@@ -2070,46 +2130,46 @@ function applyStateObject(stateObject, options = {}) {
       }))
     : [];
   nextPinnedPanelId = Math.max(nextPinnedPanelId, ...pinnedPanels.map((panel) => panel.panelId + 1), 1);
-  applyTheme(stateObject.theme || "light");
-  currentReferencesVisible = typeof stateObject.referencesVisible === "boolean"
-    ? stateObject.referencesVisible
+  applyTheme(normalizedState.theme || "light");
+  currentReferencesVisible = typeof normalizedState.referencesVisible === "boolean"
+    ? normalizedState.referencesVisible
     : defaultReferencesVisible;
-  currentMeasureToolEnabled = typeof stateObject.measureToolEnabled === "boolean"
-    ? stateObject.measureToolEnabled
+  currentMeasureToolEnabled = typeof normalizedState.measureToolEnabled === "boolean"
+    ? normalizedState.measureToolEnabled
     : defaultMeasureToolEnabled;
-  currentHideToolEnabled = typeof stateObject.hideToolEnabled === "boolean"
-    ? stateObject.hideToolEnabled
+  currentHideToolEnabled = typeof normalizedState.hideToolEnabled === "boolean"
+    ? normalizedState.hideToolEnabled
     : defaultHideToolEnabled;
-  currentMoveToolEnabled = typeof stateObject.moveToolEnabled === "boolean"
-    ? stateObject.moveToolEnabled
+  currentMoveToolEnabled = typeof normalizedState.moveToolEnabled === "boolean"
+    ? normalizedState.moveToolEnabled
     : defaultMoveToolEnabled;
-  currentMeasureSelection = Array.isArray(stateObject.measureSelection)
-    ? stateObject.measureSelection
+  currentMeasureSelection = Array.isArray(normalizedState.measureSelection)
+    ? normalizedState.measureSelection
       .map(normalizeMeasureSelection)
       .filter(Boolean)
       .slice(0, 2)
     : [];
-  currentMeasurements = Array.isArray(stateObject.measurements)
-    ? stateObject.measurements
+  currentMeasurements = Array.isArray(normalizedState.measurements)
+    ? normalizedState.measurements
       .map(normalizeMeasurementEntry)
       .filter(Boolean)
     : [];
   hiddenStateKeys = new Set(
-    Array.isArray(stateObject.hiddenStates)
-      ? stateObject.hiddenStates
+    Array.isArray(normalizedState.hiddenStates)
+      ? normalizedState.hiddenStates
         .map(normalizeHiddenStateEntry)
         .filter(Boolean)
         .map(createHiddenStateKey)
       : [],
   );
   hiddenTransitionIds = new Set(
-    Array.isArray(stateObject.hiddenTransitions)
-      ? stateObject.hiddenTransitions
+    Array.isArray(normalizedState.hiddenTransitions)
+      ? normalizedState.hiddenTransitions
         .map(normalizeHiddenTransitionId)
         .filter(Boolean)
       : [],
   );
-  currentFineDisplacements = normalizeFineDisplacements(stateObject.fineDisplacements);
+  currentFineDisplacements = normalizeFineDisplacements(normalizedState.fineDisplacements);
 
   if (currentMoveToolEnabled) {
     currentHideToolEnabled = false;
@@ -2119,7 +2179,7 @@ function applyStateObject(stateObject, options = {}) {
     currentMeasureToolEnabled = false;
     currentMeasureSelection = [];
   }
-  const controls = stateObject.controls || {};
+  const controls = normalizedState.controls || {};
   const savedHyperfineScales = controls.hyperfineScaleByFineState;
   const normalizedTransitionControls = normalizeTransitionControlEntries(controls.transitionLabels);
   currentHyperfineScaleByFineState = createDefaultHyperfineScaleMap(defaultHyperfineScale);
@@ -2183,7 +2243,7 @@ function applyStateObject(stateObject, options = {}) {
   syncControlUI();
   renderReferencesPanel();
 
-  const zoomState = stateObject.zoom || defaultZoomState;
+  const zoomState = normalizedState.zoom || defaultZoomState;
   const zoomTransform = d3.zoomIdentity.translate(
     Number.isFinite(zoomState.x) ? zoomState.x : defaultZoomState.x,
     Number.isFinite(zoomState.y) ? zoomState.y : defaultZoomState.y,
