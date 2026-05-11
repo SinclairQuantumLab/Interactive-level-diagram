@@ -2028,6 +2028,8 @@ h1 {
   margin: 0;
   align-items: start;
   min-width: 0;
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .tooltip dt {
@@ -2120,11 +2122,15 @@ h1 {
 .metadata-entry-key {
   font-weight: 700;
   color: var(--text-main);
+  text-align: left;
+  justify-self: start;
 }
 
 .metadata-entry-value {
   margin: 0;
   color: var(--text-muted);
+  text-align: left;
+  justify-self: stretch;
 }
 
 .metadata-value-lines {
