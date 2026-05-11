@@ -2000,11 +2000,17 @@ h1 {
   color: var(--text-muted);
 }
 
-.inspector dl {
+.inspector-metadata {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.metadata-section-grid {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 6px 10px;
-  margin: 12px 0 0;
+  margin: 0;
 }
 
 .tooltip dt {
@@ -2064,9 +2070,12 @@ h1 {
   text-align: center;
 }
 
+.metadata-section-block {
+  display: grid;
+  gap: 8px;
+}
+
 .metadata-section-heading {
-  grid-column: 1 / -1;
-  margin-top: 4px;
   padding-top: 10px;
   border-top: 1px solid var(--panel-border);
   font-size: 0.76rem;
@@ -2076,7 +2085,7 @@ h1 {
   color: var(--accent);
 }
 
-.metadata-section-heading:first-child {
+.metadata-section-block:first-child .metadata-section-heading {
   margin-top: 0;
   padding-top: 0;
   border-top: 0;

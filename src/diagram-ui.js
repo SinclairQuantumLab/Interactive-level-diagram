@@ -321,9 +321,51 @@ function renderMetadataRows(container, rows) {
 
 function buildMetadataFragment(rows, options = {}) {
   const fragment = document.createDocumentFragment();
+  const normalizedRows = (Array.isArray(rows) ? rows : []).map(normalizeMetadataRow);
+  const sections = [];
+  let currentSection = {
+    title: "",
+    rows: [],
+  };
 
-  rows.forEach((row) => {
-    fragment.append(buildMetadataEntryFragment(row, options));
+  normalizedRows.forEach((row) => {
+    if (row.type === "section") {
+      if (currentSection.title || currentSection.rows.length > 0) {
+        sections.push(currentSection);
+      }
+
+      currentSection = {
+        title: row.title || "",
+        rows: [],
+      };
+      return;
+    }
+
+    currentSection.rows.push(row);
+  });
+
+  if (currentSection.title || currentSection.rows.length > 0) {
+    sections.push(currentSection);
+  }
+
+  sections.forEach((section) => {
+    const sectionBlock = document.createElement("section");
+    sectionBlock.className = "metadata-section-block";
+
+    if (section.title) {
+      const heading = document.createElement("div");
+      heading.className = "metadata-section-heading";
+      setMixedTextContent(heading, section.title);
+      sectionBlock.append(heading);
+    }
+
+    const grid = document.createElement("dl");
+    grid.className = "metadata-section-grid";
+    section.rows.forEach((row) => {
+      grid.append(buildMetadataEntryFragment(row, options));
+    });
+    sectionBlock.append(grid);
+    fragment.append(sectionBlock);
   });
 
   return fragment;
@@ -1676,7 +1718,8 @@ function buildPinnedPanelContent(panel, layout) {
   kicker.className = "tooltip-kicker";
   const title = document.createElement("h2");
   const subtitle = document.createElement("p");
-  const metadata = document.createElement("dl");
+  const metadata = document.createElement("div");
+  metadata.className = "inspector-metadata";
   const controls = document.createElement("div");
   controls.className = "inspector-controls";
 

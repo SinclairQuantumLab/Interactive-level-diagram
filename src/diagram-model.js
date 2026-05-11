@@ -1158,8 +1158,48 @@ function withUnknownUncertainty(value) {
   return match ? `${match[1]}(?)${match[2]}` : `${trimmed}(?)`;
 }
 
-function formatConstantDisplay(symbol, valueMHz) {
-  return Number.isFinite(valueMHz) ? `${symbol}=${withUnknownUncertainty(formatMHz(valueMHz, 3))}` : null;
+function formatConstantValueDisplay(valueMHz) {
+  return Number.isFinite(valueMHz) ? withUnknownUncertainty(formatMHz(valueMHz, 3)) : null;
+}
+
+function resolveConstantRowValue(configuredText, valueMHz) {
+  return configuredText || formatConstantValueDisplay(valueMHz) || "";
+}
+
+function buildFineStructureRows(state) {
+  if (!state) {
+    return [];
+  }
+
+  return [
+    createDetailRow("Energy", state.energyText || withUnknownUncertainty(formatTHz(state.energyTHz)), getReferenceKeysForField(state, "energy")),
+    createDetailRow({ type: "subscript-token", base: "g", subscript: "J", suffix: "" }, formatGroupedNumberToken(state.gJ.toFixed(4))),
+  ];
+}
+
+function buildHyperfineConstantRows(constants, references = []) {
+  if (!constants || typeof constants !== "object") {
+    return [];
+  }
+
+  const rows = [];
+  const constantSpecs = [
+    ["A", constants.aText, constants.aMHz],
+    ["B", constants.bText, constants.bMHz],
+    ["C", constants.cText, constants.cMHz],
+  ];
+
+  constantSpecs.forEach(([label, configuredText, numericValue]) => {
+    const displayValue = resolveConstantRowValue(configuredText, numericValue);
+
+    if (!displayValue) {
+      return;
+    }
+
+    rows.push(createDetailRow(label, displayValue, references));
+  });
+
+  return rows;
 }
 
 function getHyperfineScaleForFineState(fineStateId) {
@@ -1221,37 +1261,33 @@ function createZeemanLevels(hyperfineState) {
 }
 
 function getFineDetail(state) {
-  const constants = state.hyperfineConstants || {};
-  const constantParts = [
-    constants.aText ? `A=${constants.aText}` : formatConstantDisplay("A", constants.aMHz),
-    constants.bText ? `B=${constants.bText}` : formatConstantDisplay("B", constants.bMHz),
-    constants.cText ? `C=${constants.cText}` : formatConstantDisplay("C", constants.cMHz),
-  ].filter(Boolean);
-
-  const rows = [
-    createDetailRow("Energy", state.energyText || withUnknownUncertainty(formatTHz(state.energyTHz)), getReferenceKeysForField(state, "energy")),
-    createDetailRow({ type: "subscript-token", base: "g", subscript: "J", suffix: "" }, formatGroupedNumberToken(state.gJ.toFixed(4))),
-    createDetailRow("Constants", constantParts.join(", ") || "not configured", constantParts.length > 0 ? getReferenceKeysForField(state, "constants") : []),
-  ];
+  const rows = buildFineStructureRows(state);
 
   appendConfiguredPropertyRows(rows, state.properties);
   return appendNoteRows(rows, state.notes, getReferenceKeysForField(state, "notes"));
 }
 
 function getHyperfineDetail(node) {
-  const references = getReferenceKeysForField(node, "constants");
   const fineState = getFineStateById(node.parentFineId);
+  const hyperfineReferences = getReferenceKeysForField(node, "constants");
   const rows = [
-    createDetailRow({ type: "subscript-token", base: "g", subscript: "F", suffix: "" }, formatGroupedNumberToken(node.gF.toFixed(4)), references),
-    createDetailRow("Shift", withUnknownUncertainty(formatSignedMHz(node.shiftMHz, 3)), references),
+    createDetailSectionRow("Fine structure"),
+    ...buildFineStructureRows(fineState),
+    createDetailSectionRow("Hyperfine structure"),
   ];
 
+  rows.push(...buildHyperfineConstantRows(fineState?.hyperfineConstants, getReferenceKeysForField(fineState, "constants")));
+  rows.push(
+    createDetailRow({ type: "subscript-token", base: "g", subscript: "F", suffix: "" }, formatGroupedNumberToken(node.gF.toFixed(4)), hyperfineReferences),
+    createDetailRow("Shift", withUnknownUncertainty(formatSignedMHz(node.shiftMHz, 3)), hyperfineReferences),
+  );
+
   if (Math.abs(node.shiftFromLowestMHz) > 1e-9) {
-    rows.push(createDetailRow("From lowest", withUnknownUncertainty(formatMHz(node.shiftFromLowestMHz, 3)), references));
+    rows.push(createDetailRow("From lowest", withUnknownUncertainty(formatMHz(node.shiftFromLowestMHz, 3)), hyperfineReferences));
   }
 
   if (node.intervalBelowMHz !== null) {
-    rows.push(createDetailRow("Interval below", withUnknownUncertainty(formatMHz(node.intervalBelowMHz, 3)), references));
+    rows.push(createDetailRow("Interval below", withUnknownUncertainty(formatMHz(node.intervalBelowMHz, 3)), hyperfineReferences));
   }
 
   rows.push(...buildInheritedRadiativePropertyRows([
