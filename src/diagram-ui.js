@@ -311,12 +311,9 @@ function setDiagramIssues(issues, { resetDismissed = false } = {}) {
   renderDiagramIssues();
 }
 
-function renderMetadataRows(container, rows) {
+function renderMetadataContent(container, rows, options = {}) {
   container.innerHTML = "";
-
-  rows.forEach((row) => {
-    container.append(buildMetadataEntryFragment(row));
-  });
+  container.append(buildMetadataFragment(rows, options));
 }
 
 function buildMetadataFragment(rows, options = {}) {
@@ -1832,42 +1829,41 @@ function buildPinnedPanelContent(panel, layout) {
     kicker.textContent = "Fine Structure";
     setMixedTextContent(title, node.label);
     subtitle.textContent = "";
-    metadata.append(buildMetadataFragment(getFineDetail(node)));
+    renderMetadataContent(metadata, getFineDetail(node));
   } else if (panel.type === "hyperfine") {
     kicker.textContent = "Hyperfine Level";
     setMixedTextContent(title, `${node.parentLabel}  ${hyperfineLabel(node)}`);
     subtitle.textContent = "";
-    metadata.append(buildMetadataFragment(getHyperfineDetail(node), {
+    renderMetadataContent(metadata, getHyperfineDetail(node), {
       showInlineControls: true,
-    }));
+    });
   } else if (panel.type === "zeeman") {
     kicker.textContent = "Zeeman Sublevel";
     setZeemanTitleContent(title, node);
     subtitle.textContent = "";
-    metadata.append(buildMetadataFragment(getZeemanDetail(node)));
+    renderMetadataContent(metadata, getZeemanDetail(node));
   } else if (panel.type === "transition") {
     kicker.textContent = "Transition";
     setMixedTextContent(title, buildTransitionTitle(node));
     subtitle.textContent = "";
-    const transitionMetadata = buildMetadataFragment(getTransitionDetail(node), {
+    renderMetadataContent(metadata, getTransitionDetail(node), {
       showSelectors: Boolean(panel.showTransitionLabelSelectors),
     });
     if (panel.showTransitionLabelSelectors) {
       controls.append(buildTransitionLabelPrecisionControls(node));
     }
-    metadata.append(transitionMetadata);
     headerActions.append(createTransitionVisibilityToggleButton(panel));
   } else if (panel.type === "measurement") {
     kicker.textContent = "Measurement";
     title.textContent = "";
     subtitle.textContent = "";
-    metadata.append(buildMetadataFragment(getMeasurementDetail(node, {
+    renderMetadataContent(metadata, getMeasurementDetail(node, {
       includeEmptyNoteRow: Boolean(panel.editMeasurementNotes),
       includeLabelFormatControls: Boolean(panel.showMeasurementLabelSelectors),
     }), {
       showSelectors: Boolean(panel.showMeasurementLabelSelectors),
       showEditors: Boolean(panel.editMeasurementNotes),
-    }));
+    });
     headerActions.append(createMeasurementEditToggleButton(panel));
     headerActions.append(createMeasurementVisibilityToggleButton(panel));
   }

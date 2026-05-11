@@ -1963,8 +1963,6 @@ h1 {
 [data-theme="dark"] .metadata-entry-value,
 [data-theme="dark"] .inspector h2,
 [data-theme="dark"] .tooltip p,
-[data-theme="dark"] .tooltip dt,
-[data-theme="dark"] .tooltip dd,
 [data-theme="dark"] .tooltip h2,
 [data-theme="dark"] .inspector .hyperfine-scale-header strong,
 [data-theme="dark"] .inspector .hyperfine-scale-header span {
@@ -1973,17 +1971,9 @@ h1 {
 
 [data-theme="dark"] .inspector p,
 [data-theme="dark"] .tooltip p,
-[data-theme="dark"] .tooltip dd,
 [data-theme="dark"] .metadata-entry-value,
 [data-theme="dark"] .inspector .hyperfine-scale-header span {
   color: var(--text-muted);
-}
-
-.tooltip dl {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 6px 10px;
-  margin: 12px 0 0;
 }
 
 .tooltip-controls {
@@ -2032,16 +2022,6 @@ h1 {
   unicode-bidi: isolate;
 }
 
-.tooltip dt {
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.tooltip dd {
-  margin: 0;
-  color: var(--text-muted);
-}
-
 .metadata-value-row {
   display: flex;
   align-items: start;
@@ -2086,6 +2066,10 @@ h1 {
 .metadata-section-block {
   display: block;
   min-width: 0;
+}
+
+.tooltip .metadata-section-block:first-child {
+  margin-top: 12px;
 }
 
 .metadata-section-block + .metadata-section-block {

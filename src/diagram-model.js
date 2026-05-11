@@ -832,13 +832,6 @@ function normalizeExplicitHyperfineLevels(levels, fineState, nuclearSpin, gJ) {
     gF: computeLandegF(nuclearSpin, fineState.j, level.F, gJ),
     properties: Array.isArray(level.properties) ? [...level.properties] : [],
   }));
-  const sorted = [...mapped].sort((a, b) => a.shiftMHz - b.shiftMHz);
-  const minShift = sorted[0]?.shiftMHz ?? 0;
-
-  sorted.forEach((level, index) => {
-    level.shiftFromLowestMHz = level.shiftMHz - minShift;
-    level.intervalBelowMHz = index === 0 ? null : level.shiftMHz - sorted[index - 1].shiftMHz;
-  });
 
   return mapped;
 }
@@ -868,13 +861,6 @@ function buildHyperfineLevels(state, nuclearSpin, gJ) {
     gF: computeLandegF(nuclearSpin, state.j, F, gJ),
     properties: [],
   }));
-  const sortedByShift = [...rawLevels].sort((a, b) => a.shiftMHz - b.shiftMHz);
-  const minShift = sortedByShift[0]?.shiftMHz ?? 0;
-
-  sortedByShift.forEach((level, index) => {
-    level.shiftFromLowestMHz = level.shiftMHz - minShift;
-    level.intervalBelowMHz = index === 0 ? null : level.shiftMHz - sortedByShift[index - 1].shiftMHz;
-  });
 
   return rawLevels;
 }
@@ -1294,14 +1280,6 @@ function getHyperfineDetail(node) {
     ...fineEnergyRows,
     createDetailRow("Shift", withUnknownUncertainty(formatSignedMHz(node.shiftMHz, 3)), hyperfineReferences),
   ];
-
-  if (Math.abs(node.shiftFromLowestMHz) > 1e-9) {
-    rows.push(createDetailRow("From lowest", withUnknownUncertainty(formatMHz(node.shiftFromLowestMHz, 3)), hyperfineReferences));
-  }
-
-  if (node.intervalBelowMHz !== null) {
-    rows.push(createDetailRow("Interval below", withUnknownUncertainty(formatMHz(node.intervalBelowMHz, 3)), hyperfineReferences));
-  }
 
   rows.push(
     createDetailSectionRow("Hyperfine structure"),

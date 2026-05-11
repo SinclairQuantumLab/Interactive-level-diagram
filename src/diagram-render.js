@@ -430,8 +430,6 @@ function buildExpandedStateLayout(fineState, { parentEndX = 0, parentEnergyY = 0
       x2: hyperfineX1 + width,
       y: parentEnergyY + relY,
       shiftMHz: level.shiftMHz,
-      shiftFromLowestMHz: level.shiftFromLowestMHz,
-      intervalBelowMHz: level.intervalBelowMHz,
       hyperfineConstants: fineState.hyperfineConstants,
       absoluteEnergyTHz: fineState.energyTHz + level.shiftMHz * 1e-6,
     };
@@ -1345,7 +1343,7 @@ function showTooltip(event, kicker, title, subtitle, rows, controlMarkup = null)
   setMixedTextContent(tooltipSubtitle, subtitle);
   tooltipTitle.hidden = !String(tooltipTitle.textContent || "").trim();
   tooltipSubtitle.hidden = !subtitle;
-  renderMetadataRows(tooltipMetadata, rows);
+  renderMetadataContent(tooltipMetadata, rows);
   renderTooltipControls(controlMarkup);
 
   moveTooltip(event);
