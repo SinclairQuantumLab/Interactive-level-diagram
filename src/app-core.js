@@ -2223,19 +2223,33 @@ function normalizeMeasurementEntry(entry) {
 
 function normalizeHiddenStateEntry(entry) {
   if (typeof entry === "string") {
-    const match = entry.match(/^([^:]+):(.+)$/);
+    const normalizedEntry = entry.trim();
 
-    if (!match) {
+    if (!normalizedEntry) {
       return null;
     }
 
+    const match = normalizedEntry.match(/^([^:]+):(.+)$/);
+
+    if (match) {
+      return normalizeMeasureSelection({
+        type: match[1],
+        id: match[2],
+      });
+    }
+
     return normalizeMeasureSelection({
-      type: match[1],
-      id: match[2],
+      type: inferMeasurementSelectionType(normalizedEntry),
+      id: normalizedEntry,
     });
   }
 
   return normalizeMeasureSelection(entry);
+}
+
+function serializeHiddenStateEntry(entry) {
+  const normalizedEntry = normalizeHiddenStateEntry(entry);
+  return normalizedEntry ? normalizedEntry.id : null;
 }
 
 function createHiddenStateKey(entry) {

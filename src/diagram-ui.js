@@ -25,7 +25,9 @@ function buildCurrentLayoutStateObject() {
     moveToolEnabled: currentMoveToolEnabled,
     measureSelection: currentMeasureSelection,
     measurements: currentMeasurements.map(serializeMeasurementEntry).filter(Boolean),
-    hiddenStates: Array.from(hiddenStateKeys),
+    hiddenStates: Array.from(hiddenStateKeys)
+      .map(serializeHiddenStateEntry)
+      .filter(Boolean),
     hiddenTransitions: Array.from(hiddenTransitionIds)
       .map(serializeHiddenTransitionEntry)
       .filter(Boolean),
