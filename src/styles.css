@@ -2017,8 +2017,7 @@ h1 {
 }
 
 .inspector-metadata {
-  display: grid;
-  gap: 12px;
+  display: block;
   margin-top: 12px;
 }
 
@@ -2027,6 +2026,8 @@ h1 {
   grid-template-columns: auto 1fr;
   gap: 6px 10px;
   margin: 0;
+  align-items: start;
+  min-width: 0;
 }
 
 .tooltip dt {
@@ -2087,11 +2088,16 @@ h1 {
 }
 
 .metadata-section-block {
-  display: grid;
-  gap: 8px;
+  display: block;
+  min-width: 0;
+}
+
+.metadata-section-block + .metadata-section-block {
+  margin-top: 12px;
 }
 
 .metadata-section-heading {
+  display: block;
   padding-top: 10px;
   border-top: 1px solid var(--panel-border);
   font-size: 0.76rem;
@@ -2105,6 +2111,16 @@ h1 {
   margin-top: 0;
   padding-top: 0;
   border-top: 0;
+}
+
+.metadata-section-grid > dt {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.metadata-section-grid > dd {
+  grid-column: 2;
+  min-width: 0;
 }
 
 .metadata-value-lines {
