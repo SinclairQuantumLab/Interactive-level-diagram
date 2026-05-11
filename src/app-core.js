@@ -34,6 +34,7 @@ const chooseDiagramToggleButton = document.getElementById("choose-diagram-toggle
 const referencesToggleButton = document.getElementById("references-toggle");
 const measureToggleButton = document.getElementById("measure-toggle");
 const hideToggleButton = document.getElementById("hide-toggle");
+const moveToggleButton = document.getElementById("move-toggle");
 const layoutEditorModal = document.getElementById("layout-editor-modal");
 const layoutEditorHighlight = document.getElementById("layout-editor-highlight");
 const layoutEditorText = document.getElementById("layout-editor-text");
@@ -1627,6 +1628,7 @@ const defaultBFieldEnabled = true;
 const defaultReferencesVisible = false;
 const defaultMeasureToolEnabled = false;
 const defaultHideToolEnabled = false;
+const defaultMoveToolEnabled = false;
 const bFieldVisualScaleSliderRange = { min: 0.1, max: 10 };
 const hyperfineScaleSliderRange = { min: 0.01, max: 100 };
 const MU_B_OVER_H_MHZ_PER_GAUSS = 1.3996246;
@@ -1659,6 +1661,64 @@ function selectConfiguredLayoutArray(configuredLayout, key, fallbackValue) {
   return Array.isArray(configuredLayout?.[key]) ? configuredLayout[key] : fallbackValue;
 }
 
+function normalizeFineDisplacementEntry(entry) {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+    return null;
+  }
+
+  const x = Number.isFinite(entry.x) ? entry.x : 0;
+  const y = Number.isFinite(entry.y) ? entry.y : 0;
+
+  if (Math.abs(x) < 1e-9 && Math.abs(y) < 1e-9) {
+    return null;
+  }
+
+  return { x, y };
+}
+
+function normalizeFineDisplacements(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([stateId, entry]) => {
+        const normalizedStateId = String(stateId || "").trim();
+        const normalizedEntry = normalizeFineDisplacementEntry(entry);
+
+        if (!normalizedStateId || !normalizedEntry) {
+          return null;
+        }
+
+        return [normalizedStateId, normalizedEntry];
+      })
+      .filter(Boolean),
+  );
+}
+
+function getFineStateDisplacement(stateId) {
+  const entry = currentFineDisplacements?.[stateId];
+  return normalizeFineDisplacementEntry(entry) || { x: 0, y: 0 };
+}
+
+function setFineStateDisplacement(stateId, displacement) {
+  const normalizedStateId = String(stateId || "").trim();
+
+  if (!normalizedStateId) {
+    return;
+  }
+
+  const normalizedEntry = normalizeFineDisplacementEntry(displacement);
+
+  if (!normalizedEntry) {
+    delete currentFineDisplacements[normalizedStateId];
+    return;
+  }
+
+  currentFineDisplacements[normalizedStateId] = normalizedEntry;
+}
+
 function stateObjectHasHiddenItems(stateObject) {
   if (!stateObject || typeof stateObject !== "object" || Array.isArray(stateObject)) {
     return false;
@@ -1682,10 +1742,12 @@ function buildBaseLayoutStateObject({ expansionMode = "collapsed" } = {}) {
     referencesVisible: defaultReferencesVisible,
     measureToolEnabled: defaultMeasureToolEnabled,
     hideToolEnabled: defaultHideToolEnabled,
+    moveToolEnabled: defaultMoveToolEnabled,
     measureSelection: [],
     measurements: [],
     hiddenStates: [],
     hiddenTransitions: [],
+    fineDisplacements: {},
     controls: {
       hyperfineScaleByFineState: createDefaultHyperfineScaleMap(),
       transitionLabels: [],
@@ -1720,6 +1782,7 @@ function buildDiagramDefaultStateObject() {
     measurements: selectConfiguredLayoutArray(configuredLayout, "measurements", baseState.measurements),
     hiddenStates: selectConfiguredLayoutArray(configuredLayout, "hiddenStates", baseState.hiddenStates),
     hiddenTransitions: selectConfiguredLayoutArray(configuredLayout, "hiddenTransitions", baseState.hiddenTransitions),
+    fineDisplacements: normalizeFineDisplacements(configuredLayout.fineDisplacements),
     controls: {
       ...baseState.controls,
       ...configuredControls,
@@ -1808,11 +1871,11 @@ function resolveDiagramPickerLayoutStateObject(layoutFlavor = "default") {
   }
 
   if (layoutFlavor === "collapsed") {
-    return buildBaseLayoutStateObject({ expansionMode: "collapsed" });
+    return buildExpansionOnlyStateObject("collapsed");
   }
 
   if (layoutFlavor === "expanded") {
-    return buildBaseLayoutStateObject({ expansionMode: "expanded" });
+    return buildExpansionOnlyStateObject("expanded");
   }
 
   return buildDiagramDefaultStateObject();
@@ -1822,12 +1885,16 @@ function buildDiagramPickerPreviewStateObject(layoutFlavor = "default") {
   const stateObject = resolveDiagramPickerLayoutStateObject(layoutFlavor);
 
   if (layoutFlavor !== "default" || !stateObjectHasHiddenItems(stateObject)) {
-    return stateObject;
+    return {
+      ...stateObject,
+      moveToolEnabled: false,
+    };
   }
 
   return {
     ...stateObject,
     hideToolEnabled: true,
+    moveToolEnabled: false,
   };
 }
 
@@ -1926,10 +1993,12 @@ let currentBFieldGaussMax = defaultBFieldGaussMax;
 let currentReferencesVisible = defaultReferencesVisible;
 let currentMeasureToolEnabled = defaultMeasureToolEnabled;
 let currentHideToolEnabled = defaultHideToolEnabled;
+let currentMoveToolEnabled = defaultMoveToolEnabled;
 let currentMeasureSelection = [];
 let currentMeasurements = [];
 let hiddenStateKeys = new Set();
 let hiddenTransitionIds = new Set();
+let currentFineDisplacements = {};
 const EXPAND_COLLAPSE_ANIMATION_MS = 260;
 const CONTROL_ANIMATION_MS = 180;
 const labelMeasureCanvas = document.createElement("canvas");
@@ -2669,6 +2738,7 @@ function syncDiagramUiAvailability() {
     referencesToggleButton,
     measureToggleButton,
     hideToggleButton,
+    moveToggleButton,
     editConfigButton,
     resetConfigButton,
     collapseConfigButton,

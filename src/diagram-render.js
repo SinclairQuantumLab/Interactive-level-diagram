@@ -547,6 +547,34 @@ function applyColumnPositions(positionedFineStates) {
   }));
 }
 
+function applyFineDisplacements(positionedFineStates) {
+  return positionedFineStates.map((state) => {
+    const displacement = getFineStateDisplacement(state.id);
+    const originLineX = state.lineX;
+    const originEnergyY = state.energyY;
+
+    if (Math.abs(displacement.x) < 1e-9 && Math.abs(displacement.y) < 1e-9) {
+      return {
+        ...state,
+        originLineX,
+        originEnergyY,
+        displacementX: 0,
+        displacementY: 0,
+      };
+    }
+
+    return {
+      ...state,
+      originLineX,
+      originEnergyY,
+      lineX: originLineX + displacement.x,
+      energyY: originEnergyY + displacement.y,
+      displacementX: displacement.x,
+      displacementY: displacement.y,
+    };
+  });
+}
+
 function computeCenteredTransitionAnchorsOnBar(x1, x2, count) {
   if (!Number.isFinite(x1) || !Number.isFinite(x2) || count <= 0) {
     return [];
@@ -1258,7 +1286,7 @@ function buildTransitionNodes(fineStateMap, hyperfineNodeMap, zeemanNodeMap, iss
 }
 
 function buildLayoutModel() {
-  const positionedFineStates = applyColumnPositions(computePositionedFineStates());
+  const positionedFineStates = applyFineDisplacements(applyColumnPositions(computePositionedFineStates()));
   const fineStateMap = new Map(positionedFineStates.map((state) => [state.id, state]));
   const hyperfineByFineId = new Map();
   const hyperfineNodes = [];
@@ -1365,6 +1393,90 @@ function hideTooltip() {
   tooltip.hidden = true;
   tooltip.classList.remove("is-reference-tooltip");
   renderTooltipControls(null);
+}
+
+let activeFineMoveDrag = null;
+const FINE_MOVE_SNAP_DISTANCE = 18;
+
+function beginFineMoveDrag(event, fineState) {
+  if (!currentMoveToolEnabled || !fineState || event.button !== 0) {
+    return;
+  }
+
+  const originScenePoint = getScreenPointScenePosition(event.clientX, event.clientY);
+  const originDisplacement = getFineStateDisplacement(fineState.id);
+
+  activeFineMoveDrag = {
+    stateId: fineState.id,
+    pointerId: event.pointerId,
+    originSceneX: originScenePoint.x,
+    originSceneY: originScenePoint.y,
+    originDisplacementX: originDisplacement.x,
+    originDisplacementY: originDisplacement.y,
+    moved: false,
+  };
+
+  hideTooltip();
+  event.preventDefault();
+  event.stopPropagation();
+  render(0);
+}
+
+function handleFineMoveDrag(event) {
+  if (!activeFineMoveDrag) {
+    return;
+  }
+
+  if (
+    Number.isFinite(activeFineMoveDrag.pointerId)
+    && Number.isFinite(event.pointerId)
+    && activeFineMoveDrag.pointerId !== event.pointerId
+  ) {
+    return;
+  }
+
+  const scenePoint = getScreenPointScenePosition(event.clientX, event.clientY);
+  const deltaX = scenePoint.x - activeFineMoveDrag.originSceneX;
+  const deltaY = scenePoint.y - activeFineMoveDrag.originSceneY;
+  const nextDisplacement = {
+    x: activeFineMoveDrag.originDisplacementX + deltaX,
+    y: activeFineMoveDrag.originDisplacementY + deltaY,
+  };
+
+  if (Math.hypot(nextDisplacement.x, nextDisplacement.y) <= FINE_MOVE_SNAP_DISTANCE) {
+    setFineStateDisplacement(activeFineMoveDrag.stateId, { x: 0, y: 0 });
+  } else {
+    setFineStateDisplacement(activeFineMoveDrag.stateId, nextDisplacement);
+  }
+  activeFineMoveDrag.moved = activeFineMoveDrag.moved || Math.hypot(deltaX, deltaY) >= 0.5;
+  render(0);
+}
+
+function endFineMoveDrag(event) {
+  if (!activeFineMoveDrag) {
+    return;
+  }
+
+  if (
+    event
+    && Number.isFinite(activeFineMoveDrag.pointerId)
+    && Number.isFinite(event.pointerId)
+    && activeFineMoveDrag.pointerId !== event.pointerId
+  ) {
+    return;
+  }
+
+  const finishedDrag = activeFineMoveDrag;
+  activeFineMoveDrag = null;
+  render(0);
+
+  if (finishedDrag.moved) {
+    persistState();
+  }
+}
+
+function hasVisibleFineDisplacement(fineState) {
+  return Math.hypot(fineState?.displacementX || 0, fineState?.displacementY || 0) >= 1e-6;
 }
 
 function createRenderTransition(durationMs) {
@@ -2242,6 +2354,15 @@ function renderFineStates(layout, transition) {
           .attr("opacity", 0);
 
         entered.append("line")
+          .attr("class", "fine-displacement-connector")
+          .attr("y1", 0)
+          .attr("y2", 0);
+
+        entered.append("circle")
+          .attr("class", "fine-origin-pointer")
+          .attr("r", 0);
+
+        entered.append("line")
           .attr("class", `state-line ${layoutConfig.fineStateLineClass}`)
           .attr("x1", 0)
           .attr("y1", 0)
@@ -2265,7 +2386,29 @@ function renderFineStates(layout, transition) {
     .classed("is-measure-selected", (d) => isMeasureSelectionActive("fine", d.id))
     .classed("is-hidden-item", (d) => isFineStateEffectivelyHidden(d))
     .classed("is-hide-mode", currentHideToolEnabled)
+    .classed("is-move-mode", currentMoveToolEnabled)
+    .classed("is-move-dragging", (d) => activeFineMoveDrag?.stateId === d.id)
+    .on("mousedown", (event) => {
+      if (!currentMoveToolEnabled) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+    })
+    .on("pointerdown", function (event, d) {
+      if (!currentMoveToolEnabled) {
+        return;
+      }
+
+      beginFineMoveDrag(event, d);
+      d3.select(this).classed("is-hovered", false);
+    })
     .on("click", (_, d) => {
+      if (currentMoveToolEnabled) {
+        return;
+      }
+
       if (currentHideToolEnabled) {
         const hidden = toggleStateHidden("fine", d.id);
         persistState();
@@ -2290,6 +2433,11 @@ function renderFineStates(layout, transition) {
     })
     .on("mouseenter", function (event, d) {
       d3.select(this).classed("is-hovered", true);
+
+      if (currentMoveToolEnabled) {
+        return;
+      }
+
       showTooltip(
         event,
         "Fine Structure",
@@ -2298,10 +2446,19 @@ function renderFineStates(layout, transition) {
         getFineDetail(d),
       );
     })
-    .on("mousemove", (event) => moveTooltip(event))
+    .on("mousemove", (event) => {
+      if (currentMoveToolEnabled) {
+        return;
+      }
+
+      moveTooltip(event);
+    })
     .on("mouseleave", function () {
       d3.select(this).classed("is-hovered", false);
-      hideTooltip();
+
+      if (!currentMoveToolEnabled) {
+        hideTooltip();
+      }
     })
     .on("contextmenu", (event, d) => {
       event.preventDefault();
@@ -2311,12 +2468,26 @@ function renderFineStates(layout, transition) {
   applyTransition(groups, transition)
     .attr("transform", (d) => `translate(${d.lineX},${d.energyY})`);
 
+  applyTransition(groups.select("line.fine-displacement-connector"), transition)
+    .attr("x1", (d) => ((fineBarEnd(d) - d.lineX) / 2) - d.displacementX)
+    .attr("x2", (d) => (fineBarEnd(d) - d.lineX) / 2)
+    .attr("y1", (d) => -d.displacementY)
+    .attr("y2", 0)
+    .style("display", (d) => (currentMoveToolEnabled && hasVisibleFineDisplacement(d) ? null : "none"));
+
+  applyTransition(groups.select("circle.fine-origin-pointer"), transition)
+    .attr("cx", (d) => ((fineBarEnd(d) - d.lineX) / 2) - d.displacementX)
+    .attr("cy", (d) => -d.displacementY)
+    .attr("r", (d) => (currentMoveToolEnabled && hasVisibleFineDisplacement(d) ? 4.2 : 0));
+
   groups.select("line.state-line")
     .attr("class", `state-line ${layoutConfig.fineStateLineClass}`);
 
   groups.classed("is-measure-selected", (d) => isMeasureSelectionActive("fine", d.id));
   groups.classed("is-hidden-item", (d) => isFineStateEffectivelyHidden(d));
   groups.classed("is-hide-mode", currentHideToolEnabled);
+  groups.classed("is-move-mode", currentMoveToolEnabled);
+  groups.classed("is-move-dragging", (d) => activeFineMoveDrag?.stateId === d.id);
 
   applyTransition(groups.select("line.state-line"), transition)
     .attr("x1", 0)
@@ -2669,6 +2840,8 @@ function render(animationDuration = 0, options = {}) {
     scene.selectAll("*").interrupt();
   }
 
+  appShell?.classList.toggle("is-move-mode", currentMoveToolEnabled);
+
   const layout = buildLayoutModel();
   currentLayout = layout;
   syncZoomExtent(layout);
@@ -2982,6 +3155,7 @@ measureToggleButton?.addEventListener("click", () => {
   currentMeasureToolEnabled = !currentMeasureToolEnabled;
   if (currentMeasureToolEnabled) {
     currentHideToolEnabled = false;
+    currentMoveToolEnabled = false;
   }
   currentMeasureSelection = [];
 
@@ -2996,6 +3170,7 @@ hideToggleButton?.addEventListener("click", () => {
 
   if (currentHideToolEnabled) {
     currentMeasureToolEnabled = false;
+    currentMoveToolEnabled = false;
     currentMeasureSelection = [];
   }
 
@@ -3003,6 +3178,26 @@ hideToggleButton?.addEventListener("click", () => {
   render(CONTROL_ANIMATION_MS);
   persistState();
   setStatus(currentHideToolEnabled ? "Hide tool enabled. Click states, fine labels, or transitions to toggle whether they stay visible." : "Hide tool hidden.");
+});
+
+moveToggleButton?.addEventListener("click", () => {
+  currentMoveToolEnabled = !currentMoveToolEnabled;
+
+  if (currentMoveToolEnabled) {
+    currentHideToolEnabled = false;
+    currentMeasureToolEnabled = false;
+    currentMeasureSelection = [];
+    hideTooltip();
+  } else {
+    activeFineMoveDrag = null;
+  }
+
+  syncControlUI();
+  render(CONTROL_ANIMATION_MS);
+  persistState();
+  setStatus(currentMoveToolEnabled
+    ? "Move tool enabled. Drag fine-state bars to offset them from the automatic layout."
+    : "Move tool hidden.");
 });
 
 referencesCloseButton?.addEventListener("click", () => {
@@ -3220,6 +3415,9 @@ diagramPicker?.addEventListener("mousedown", (event) => {
   beginDiagramPickerDrag(event);
 });
 
+window.addEventListener("pointermove", handleFineMoveDrag);
+window.addEventListener("pointerup", endFineMoveDrag);
+window.addEventListener("pointercancel", endFineMoveDrag);
 window.addEventListener("pointermove", handlePanelDrag);
 window.addEventListener("pointerup", endPanelDrag);
 window.addEventListener("pointercancel", endPanelDrag);

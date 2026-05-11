@@ -24,12 +24,14 @@ function buildSerializableState() {
     referencesVisible: currentReferencesVisible,
     measureToolEnabled: currentMeasureToolEnabled,
     hideToolEnabled: currentHideToolEnabled,
+    moveToolEnabled: currentMoveToolEnabled,
     measureSelection: currentMeasureSelection,
     measurements: currentMeasurements.map(serializeMeasurementEntry).filter(Boolean),
     hiddenStates: Array.from(hiddenStateKeys),
     hiddenTransitions: Array.from(hiddenTransitionIds)
       .map(serializeHiddenTransitionEntry)
       .filter(Boolean),
+    fineDisplacements: normalizeFineDisplacements(currentFineDisplacements),
     controls: {
       hyperfineScaleByFineState: currentHyperfineScaleByFineState,
       transitionLabels: serializeTransitionControlEntries(),
@@ -1261,6 +1263,10 @@ function syncControlUI() {
     hideToggleButton.setAttribute("aria-pressed", currentHideToolEnabled ? "true" : "false");
   }
 
+  if (moveToggleButton) {
+    moveToggleButton.setAttribute("aria-pressed", currentMoveToolEnabled ? "true" : "false");
+  }
+
   updateHistoryButtons();
 }
 
@@ -2074,6 +2080,9 @@ function applyStateObject(stateObject, options = {}) {
   currentHideToolEnabled = typeof stateObject.hideToolEnabled === "boolean"
     ? stateObject.hideToolEnabled
     : defaultHideToolEnabled;
+  currentMoveToolEnabled = typeof stateObject.moveToolEnabled === "boolean"
+    ? stateObject.moveToolEnabled
+    : defaultMoveToolEnabled;
   currentMeasureSelection = Array.isArray(stateObject.measureSelection)
     ? stateObject.measureSelection
       .map(normalizeMeasureSelection)
@@ -2100,8 +2109,13 @@ function applyStateObject(stateObject, options = {}) {
         .filter(Boolean)
       : [],
   );
+  currentFineDisplacements = normalizeFineDisplacements(stateObject.fineDisplacements);
 
-  if (currentHideToolEnabled && currentMeasureToolEnabled) {
+  if (currentMoveToolEnabled) {
+    currentHideToolEnabled = false;
+    currentMeasureToolEnabled = false;
+    currentMeasureSelection = [];
+  } else if (currentHideToolEnabled && currentMeasureToolEnabled) {
     currentMeasureToolEnabled = false;
     currentMeasureSelection = [];
   }
