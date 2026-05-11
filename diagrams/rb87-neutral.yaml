@@ -253,126 +253,112 @@ transitions:
       - Upper leg of the familiar 780 nm + 776 nm ladder to 5D5/2 used in coherent excitation and cascade-light generation.\cite{Mar04}
 
 default_layout:
-  expandedFine:
-    - 5P3/2
-    - 5S1/2
-    - 6P3/2
-    - 4D5/2
-    - 4D3/2
-  expandedHyperfine:
-    - 5P3/2[F=3]
-    - 5P3/2[F=0]
-    - 5S1/2[F=2]
-    - 5P3/2[F=2]
-    - 4D3/2[F=3]
-    - 4D3/2[F=2]
-    - 4D5/2[F=4]
-  theme: dark
-  referencesVisible: false
-  measureToolEnabled: false
-  hideToolEnabled: false
-  measureSelection: []
-  measurements:
-    - between: [5D3/2, 5D5/2]
-      show: [fine:frequency]
-      precision: {fine:frequency: 1}
-      notes: []
-    - between: ['5P3/2[F=2]', '5P3/2[F=3]']
-      show: [hyperfine:frequency]
-      precision: {hyperfine:frequency: 0}
-      notes: []
-    - between: ['5D5/2[F=3]', '5D5/2[F=4]']
-      show: [hyperfine:frequency]
-      precision: {}
-      notes: []
-    - between: ['5D5/2[F=2]', '5D5/2[F=3]']
-      show: [hyperfine:frequency]
-      precision: {}
-      notes: []
-    - between: [6P1/2, 6P3/2]
-      show: [fine:frequency]
-      precision: {fine:frequency: 1}
-      notes: []
-    - between: ['5D5/2[F=2,mF=-1]', '5P3/2[F=3,mF=3]']
-      show: [fine:wavelength, hyperfine:frequency, zeeman:frequency, note:0]
-      precision: {}
-      notes:
-        - reer
-    - between: [4D3/2, 4D5/2]
-      show: [fine:frequency, note:0]
-      precision: {fine:frequency: null}
-      notes:
-        - '$J=2 \pm \frac12 = \frac{3}{2}, \frac{5}{2}$'
-  hiddenStates:
-    - hyperfine:5D5/2[F=3]
-    - hyperfine:5D5/2[F=1]
-    - zeeman:5D5/2[F=4,mF=-2]
-    - zeeman:5D5/2[F=4,mF=-1]
-    - zeeman:5D5/2[F=4,mF=0]
-    - zeeman:5D5/2[F=4,mF=1]
-    - zeeman:5D5/2[F=4,mF=2]
-    - zeeman:4D5/2[F=4,mF=-1]
-    - zeeman:4D5/2[F=4,mF=1]
-    - zeeman:4D5/2[F=4,mF=-3]
-    - zeeman:4D5/2[F=4,mF=-2]
-    - zeeman:4D5/2[F=4,mF=2]
-    - zeeman:4D5/2[F=4,mF=3]
-    - hyperfine:4D5/2[F=2]
-    - hyperfine:4D5/2[F=3]
-  hiddenTransitions:
-    - {between: ['5P3/2[F=3]', '5S1/2[F=2]']}
-    - {between: ['5P1/2[F=1]', '5S1/2[F=2]']}
-    - {between: ['5P3/2[F=2]', '5S1/2[F=1]']}
-    - {between: ['5P1/2[F=2]', '5S1/2[F=2]']}
-    - {between: [5S1/2, 6P1/2]}
-    - {between: [4D3/2, 5P1/2]}
-    - {between: [4D5/2, 5P3/2]}
-    - {between: ['5P3/2[F=3,mF=3]', '5S1/2[F=2,mF=2]']}
-    - {between: [5D5/2, 5P3/2]}
-  controls:
-    hyperfineScaleByFineState:
-      5S1/2: 0.13677288255958486
-      5P1/2: 1.2133888504649775
-      5P3/2: 3.076096814740708
-      4D3/2: 9.549925860214358
-      4D5/2: 8.871560120379607
-      5D3/2: 34.99451670283573
-      5D5/2: 23.33458062281002
-      6S1/2: 1
-      6P1/2: 1
-      6P3/2: 6.367955209079155
-    transitionLabels:
-      - {between: ['5S1/2[F=1]', '5S1/2[F=2]'], show: [frequency], precision: {wavelength: null, frequency: null}}
-      - {between: ['5S1/2[F=1,mF=0]', '5S1/2[F=2,mF=0]'], show: [frequency], precision: {wavelength: null, frequency: null}}
-      - {between: [5P1/2, 5S1/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
-      - {between: ['5P1/2[F=1]', '5S1/2[F=2]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
-      - {between: ['5P1/2[F=2]', '5S1/2[F=2]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
-      - {between: [5P3/2, 5S1/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
-      - {between: ['5P3/2[F=2]', '5S1/2[F=1]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
-      - {between: ['5P3/2[F=3]', '5S1/2[F=2]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
-      - {between: ['5P3/2[F=3,mF=3]', '5S1/2[F=2,mF=2]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
-      - {between: [4D3/2, 5P1/2], show: [wavelength], precision: {wavelength: null, frequency: null}}
-      - {between: [4D3/2, 5P3/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
-      - {between: [4D5/2, 5P3/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
-      - {between: [5S1/2, 6P3/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
-      - {between: [5S1/2, 6P1/2], show: [wavelength], precision: {wavelength: 0, frequency: null}}
-      - {between: [5P1/2, 6S1/2], show: [wavelength], precision: {wavelength: 0, frequency: null}}
-      - {between: [5D5/2, 5P3/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
-    bFieldEnabled: true
-    bFieldVisualScale: 0.5997910762555094
-    bFieldGauss: 2.38
-    bFieldGaussMin: 0
-    bFieldGaussMax: 10
-  zoom:
-    x: 391.8580678018711
-    'y': 336.8247400410984
-    k: 0.6313408161152462
-
-# Each state uses:
-# - id: stable internal key
-# - notation: display notation, which may use TeX-like math wrapped in $...$
-# - energy: fine-state centroid energy with unit written in the value
-
+  view:
+    theme: dark
+    referencesVisible: false
+    zoom:
+      x: 391.8580678018711
+      'y': 336.8247400410984
+      k: 0.6313408161152462
+  layout:
+    expanded:
+      fine:
+        - 5P3/2
+        - 5S1/2
+        - 6P3/2
+        - 4D5/2
+        - 4D3/2
+      hyperfine:
+        - 5P3/2[F=3]
+        - 5P3/2[F=0]
+        - 5S1/2[F=2]
+        - 5P3/2[F=2]
+        - 4D3/2[F=3]
+        - 4D3/2[F=2]
+        - 4D5/2[F=4]
+    hidden:
+      states:
+        - hyperfine:5D5/2[F=3]
+        - hyperfine:5D5/2[F=1]
+        - zeeman:5D5/2[F=4,mF=-2]
+        - zeeman:5D5/2[F=4,mF=-1]
+        - zeeman:5D5/2[F=4,mF=0]
+        - zeeman:5D5/2[F=4,mF=1]
+        - zeeman:5D5/2[F=4,mF=2]
+        - zeeman:4D5/2[F=4,mF=-1]
+        - zeeman:4D5/2[F=4,mF=1]
+        - zeeman:4D5/2[F=4,mF=-3]
+        - zeeman:4D5/2[F=4,mF=-2]
+        - zeeman:4D5/2[F=4,mF=2]
+        - zeeman:4D5/2[F=4,mF=3]
+        - hyperfine:4D5/2[F=2]
+        - hyperfine:4D5/2[F=3]
+      transitions:
+        - {between: ['5P3/2[F=3]', '5S1/2[F=2]']}
+        - {between: ['5P1/2[F=1]', '5S1/2[F=2]']}
+        - {between: ['5P3/2[F=2]', '5S1/2[F=1]']}
+        - {between: ['5P1/2[F=2]', '5S1/2[F=2]']}
+        - {between: [5S1/2, 6P1/2]}
+        - {between: [4D3/2, 5P1/2]}
+        - {between: [4D5/2, 5P3/2]}
+        - {between: ['5P3/2[F=3,mF=3]', '5S1/2[F=2,mF=2]']}
+        - {between: [5D5/2, 5P3/2]}
+    fineDisplacements: {}
+    pinnedPanels: []
+  tools:
+    hide:
+      enabled: false
+    measure:
+      enabled: false
+      selection: []
+      measurements:
+        - {between: [5D3/2, 5D5/2], show: [fine:frequency], precision: {fine:frequency: 1}, notes: []}
+        - {between: ['5P3/2[F=2]', '5P3/2[F=3]'], show: [hyperfine:frequency], precision: {hyperfine:frequency: 0}, notes: []}
+        - {between: ['5D5/2[F=3]', '5D5/2[F=4]'], show: [hyperfine:frequency], precision: {}, notes: []}
+        - {between: ['5D5/2[F=2]', '5D5/2[F=3]'], show: [hyperfine:frequency], precision: {}, notes: []}
+        - {between: [6P1/2, 6P3/2], show: [fine:frequency], precision: {fine:frequency: 1}, notes: []}
+        - {between: ['5D5/2[F=2,mF=-1]', '5P3/2[F=3,mF=3]'], show: [fine:wavelength, hyperfine:frequency, zeeman:frequency, note:0], precision: {}, notes: [reer]}
+        - {between: [4D3/2, 4D5/2], show: [fine:frequency, note:0], precision: {fine:frequency: null}, notes: ['$J=2 \pm \frac12 = \frac{3}{2}, \frac{5}{2}$']}
+    move:
+      enabled: false
+  diagram:
+    hyperfine:
+      scaleByFineState:
+        5S1/2: 0.13677288255958486
+        5P1/2: 1.2133888504649775
+        5P3/2: 3.076096814740708
+        4D3/2: 9.549925860214358
+        4D5/2: 8.871560120379607
+        5D3/2: 34.99451670283573
+        5D5/2: 23.33458062281002
+        6S1/2: 1
+        6P1/2: 1
+        6P3/2: 6.367955209079155
+    transitions:
+      labels:
+        - {between: ['5S1/2[F=1]', '5S1/2[F=2]'], show: [frequency], precision: {wavelength: null, frequency: null}}
+        - {between: ['5S1/2[F=1,mF=0]', '5S1/2[F=2,mF=0]'], show: [frequency], precision: {wavelength: null, frequency: null}}
+        - {between: [5P1/2, 5S1/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+        - {between: ['5P1/2[F=1]', '5S1/2[F=2]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
+        - {between: ['5P1/2[F=2]', '5S1/2[F=2]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
+        - {between: [5P3/2, 5S1/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+        - {between: ['5P3/2[F=2]', '5S1/2[F=1]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
+        - {between: ['5P3/2[F=3]', '5S1/2[F=2]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
+        - {between: ['5P3/2[F=3,mF=3]', '5S1/2[F=2,mF=2]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
+        - {between: [4D3/2, 5P1/2], show: [wavelength], precision: {wavelength: null, frequency: null}}
+        - {between: [4D3/2, 5P3/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+        - {between: [4D5/2, 5P3/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+        - {between: [5S1/2, 6P3/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+        - {between: [5S1/2, 6P1/2], show: [wavelength], precision: {wavelength: 0, frequency: null}}
+        - {between: [5P1/2, 6S1/2], show: [wavelength], precision: {wavelength: 0, frequency: null}}
+        - {between: [5D5/2, 5P3/2], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+    magneticField:
+      enabled: true
+      visualScale: 0.5997910762555094
+      gauss: 2.38
+      range:
+        min: 0
+        max: 10
 bibliography: |
   @misc{NIST25,
     author = {Kramida, A. and Ralchenko, Yu. and Reader, J. and NIST ASD Team},
