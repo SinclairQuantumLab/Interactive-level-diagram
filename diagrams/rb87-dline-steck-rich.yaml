@@ -357,7 +357,7 @@ default_layout:
     'y': -421.6934208546079
     k: 1.4520243676482156
 
-bibliography_bibtex: |
+bibliography: |
   @misc{Ste03,
     author = {Steck, Daniel A.},
     title = {Rubidium 87 D Line Data},

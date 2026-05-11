@@ -501,7 +501,7 @@ default_layout:
     'y': 261.4237109901381
     k: 0.6826032012969743
 
-bibliography_bibtex: |
+bibliography: |
   @phdthesis{Hur22,
     author = {Hur, Joonseok},
     title = {Precision optical spectroscopy and isotope shifts in trapped ytterbium ions},

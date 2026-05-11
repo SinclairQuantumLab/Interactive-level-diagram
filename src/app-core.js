@@ -453,6 +453,7 @@ function parseDiagramConfig(text) {
 
 function extractInlineBibliographyText(rawConfig = {}) {
   const candidateKeys = [
+    "bibliography",
     "bibliography_bibtex",
     "references_bibtex",
   ];
