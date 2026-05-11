@@ -801,6 +801,79 @@ function buildTransitionLabelPrecisionControls(node) {
   return controlCard;
 }
 
+function syncPinnedHyperfineScaleControls(fineStateId, scale) {
+  const normalizedFineStateId = String(fineStateId || "").trim();
+
+  if (!normalizedFineStateId || !pinnedPanelLayer) {
+    return;
+  }
+
+  const sliderValue = String(hyperfineScaleToSliderValue(scale));
+  const scaleText = `${formatFieldScale(scale, 2)}x`;
+
+  pinnedPanelLayer.querySelectorAll("[data-hyperfine-scale-fine-id]").forEach((control) => {
+    if (control.dataset.hyperfineScaleFineId !== normalizedFineStateId) {
+      return;
+    }
+
+    const value = control.querySelector("[data-hyperfine-scale-value]");
+    const slider = control.querySelector("input[type=\"range\"]");
+
+    if (value) {
+      value.textContent = scaleText;
+    }
+
+    if (slider && slider.value !== sliderValue) {
+      slider.value = sliderValue;
+    }
+  });
+}
+
+function buildHyperfineScaleEditorFragment(editor) {
+  const fineStateId = String(editor?.fineStateId || "").trim();
+
+  if (!fineStateId) {
+    return null;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "hyperfine-scale-editor";
+  wrapper.dataset.hyperfineScaleFineId = fineStateId;
+
+  const value = document.createElement("span");
+  value.className = "hyperfine-scale-editor-value";
+  value.dataset.hyperfineScaleValue = "true";
+
+  const sliderLabel = document.createElement("label");
+  sliderLabel.className = "slider-control metadata-slider-control";
+
+  const slider = document.createElement("input");
+  const initialScale = getHyperfineScaleForFineState(fineStateId);
+  slider.type = "range";
+  slider.min = "0";
+  slider.max = "1";
+  slider.step = "0.001";
+  slider.value = String(hyperfineScaleToSliderValue(initialScale));
+  value.textContent = `${formatFieldScale(initialScale, 2)}x`;
+
+  slider.addEventListener("input", () => {
+    const scale = sliderValueToHyperfineScale(slider.value);
+    currentHyperfineScaleByFineState[fineStateId] = scale;
+    syncPinnedHyperfineScaleControls(fineStateId, scale);
+    render(CONTROL_ANIMATION_MS, { skipPinnedPanels: true });
+    persistState({ recordHistory: false, announce: false, preserveHistorySnapshot: true });
+  });
+
+  slider.addEventListener("change", () => {
+    persistState();
+    renderPinnedPanels();
+  });
+
+  sliderLabel.append(slider);
+  wrapper.append(value, sliderLabel);
+  return wrapper;
+}
+
 function getVisibleMeasurementSectionFormatFields(node, sectionId) {
   const activeFields = new Set(getSelectedMeasurementLabelFieldsForNode(node, []));
   const section = getMeasurementSectionDefinitions(node).sections
@@ -987,12 +1060,24 @@ function buildMetadataEntryFragment(row, options = {}) {
   const dd = document.createElement("dd");
   const showSelectors = Boolean(options.showSelectors);
   const showEditors = Boolean(options.showEditors);
+  const showInlineControls = Boolean(options.showInlineControls);
   const isCompactNoteRow = isCompactNoteMetadataLabel(normalized.label);
   const formatEditor = normalized.editor?.type === "measurement-format"
     ? buildMeasurementSectionFormatEditorFragment(normalized.editor)
     : null;
+  const hyperfineScaleEditor = showInlineControls && normalized.editor?.type === "hyperfine-scale"
+    ? buildHyperfineScaleEditorFragment(normalized.editor)
+    : null;
 
   if (normalized.editor?.type === "measurement-format" && !formatEditor) {
+    return fragment;
+  }
+
+  if (showInlineControls && normalized.editor?.type === "hyperfine-scale" && !hyperfineScaleEditor) {
+    return fragment;
+  }
+
+  if (!showInlineControls && normalized.editor?.type === "hyperfine-scale") {
     return fragment;
   }
 
@@ -1010,6 +1095,12 @@ function buildMetadataEntryFragment(row, options = {}) {
 
   if (formatEditor) {
     dd.append(formatEditor);
+    fragment.append(dt, dd);
+    return fragment;
+  }
+
+  if (hyperfineScaleEditor) {
+    dd.append(hyperfineScaleEditor);
     fragment.append(dt, dd);
     return fragment;
   }
@@ -1740,46 +1831,13 @@ function buildPinnedPanelContent(panel, layout) {
     setMixedTextContent(title, node.label);
     subtitle.textContent = "";
     metadata.append(buildMetadataFragment(getFineDetail(node)));
-
-    if (expandedFine.has(node.id)) {
-      const controlCard = document.createElement("div");
-      controlCard.className = "inspector-control-card";
-      const controlHeader = document.createElement("div");
-      controlHeader.className = "hyperfine-scale-header";
-      const controlTitle = document.createElement("strong");
-      controlTitle.textContent = "Hyperfine scale";
-      const controlValue = document.createElement("span");
-      const sliderLabel = document.createElement("label");
-      sliderLabel.className = "slider-control";
-      const slider = document.createElement("input");
-      const initialScale = getHyperfineScaleForFineState(node.id);
-      slider.type = "range";
-      slider.min = "0";
-      slider.max = "1";
-      slider.step = "0.001";
-      slider.value = String(hyperfineScaleToSliderValue(initialScale));
-      controlValue.textContent = `${formatFieldScale(initialScale, 2)}x`;
-      slider.addEventListener("input", () => {
-        const scale = sliderValueToHyperfineScale(slider.value);
-        currentHyperfineScaleByFineState[node.id] = scale;
-        controlValue.textContent = `${formatFieldScale(scale, 2)}x`;
-        render(CONTROL_ANIMATION_MS, { skipPinnedPanels: true });
-        persistState({ recordHistory: false, announce: false, preserveHistorySnapshot: true });
-      });
-      slider.addEventListener("change", () => {
-        persistState();
-        renderPinnedPanels();
-      });
-      controlHeader.append(controlTitle, controlValue);
-      sliderLabel.append(slider);
-      controlCard.append(controlHeader, sliderLabel);
-      controls.append(controlCard);
-    }
   } else if (panel.type === "hyperfine") {
     kicker.textContent = "Hyperfine Level";
     setMixedTextContent(title, `${node.parentLabel}  ${hyperfineLabel(node)}`);
     subtitle.textContent = "";
-    metadata.append(buildMetadataFragment(getHyperfineDetail(node)));
+    metadata.append(buildMetadataFragment(getHyperfineDetail(node), {
+      showInlineControls: true,
+    }));
   } else if (panel.type === "zeeman") {
     kicker.textContent = "Zeeman Sublevel";
     setZeemanTitleContent(title, node);

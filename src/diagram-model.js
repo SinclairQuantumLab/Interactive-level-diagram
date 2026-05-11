@@ -1166,13 +1166,22 @@ function resolveConstantRowValue(configuredText, valueMHz) {
   return configuredText || formatConstantValueDisplay(valueMHz) || "";
 }
 
-function buildFineStructureRows(state) {
+function buildFineEnergyRows(state) {
   if (!state) {
     return [];
   }
 
   return [
     createDetailRow("Energy", state.energyText || withUnknownUncertainty(formatTHz(state.energyTHz)), getReferenceKeysForField(state, "energy")),
+  ];
+}
+
+function buildFineStructureRows(state) {
+  if (!state) {
+    return [];
+  }
+
+  return [
     createDetailRow({ type: "subscript-token", base: "g", subscript: "J", suffix: "" }, formatGroupedNumberToken(state.gJ.toFixed(4))),
   ];
 }
@@ -1261,7 +1270,12 @@ function createZeemanLevels(hyperfineState) {
 }
 
 function getFineDetail(state) {
-  const rows = buildFineStructureRows(state);
+  const rows = [
+    createDetailSectionRow("Energy"),
+    ...buildFineEnergyRows(state),
+    createDetailSectionRow("Fine structure"),
+    ...buildFineStructureRows(state),
+  ];
 
   appendConfiguredPropertyRows(rows, state.properties);
   return appendNoteRows(rows, state.notes, getReferenceKeysForField(state, "notes"));
@@ -1269,18 +1283,17 @@ function getFineDetail(state) {
 
 function getHyperfineDetail(node) {
   const fineState = getFineStateById(node.parentFineId);
-  const hyperfineReferences = getReferenceKeysForField(node, "constants");
-  const rows = [
-    createDetailSectionRow("Fine structure"),
-    ...buildFineStructureRows(fineState),
-    createDetailSectionRow("Hyperfine structure"),
-  ];
-
-  rows.push(...buildHyperfineConstantRows(fineState?.hyperfineConstants, getReferenceKeysForField(fineState, "constants")));
-  rows.push(
-    createDetailRow({ type: "subscript-token", base: "g", subscript: "F", suffix: "" }, formatGroupedNumberToken(node.gF.toFixed(4)), hyperfineReferences),
-    createDetailRow("Shift", withUnknownUncertainty(formatSignedMHz(node.shiftMHz, 3)), hyperfineReferences),
+  const fineEnergyRows = buildFineEnergyRows(fineState);
+  const fineConstantReferences = getReferenceKeysForField(fineState, "constants");
+  const hyperfineReferences = mergeReferenceKeys(
+    fineConstantReferences,
+    getReferenceKeysForField(node, "constants"),
   );
+  const rows = [
+    createDetailSectionRow("Energy"),
+    ...fineEnergyRows,
+    createDetailRow("Shift", withUnknownUncertainty(formatSignedMHz(node.shiftMHz, 3)), hyperfineReferences),
+  ];
 
   if (Math.abs(node.shiftFromLowestMHz) > 1e-9) {
     rows.push(createDetailRow("From lowest", withUnknownUncertainty(formatMHz(node.shiftFromLowestMHz, 3)), hyperfineReferences));
@@ -1288,6 +1301,21 @@ function getHyperfineDetail(node) {
 
   if (node.intervalBelowMHz !== null) {
     rows.push(createDetailRow("Interval below", withUnknownUncertainty(formatMHz(node.intervalBelowMHz, 3)), hyperfineReferences));
+  }
+
+  rows.push(
+    createDetailSectionRow("Hyperfine structure"),
+    ...buildHyperfineConstantRows(fineState?.hyperfineConstants, fineConstantReferences),
+    createDetailRow({ type: "subscript-token", base: "g", subscript: "F", suffix: "" }, formatGroupedNumberToken(node.gF.toFixed(4)), hyperfineReferences),
+  );
+
+  if (fineState && expandedFine.has(fineState.id)) {
+    rows.push(createDetailRow("Scale", "", [], {
+      editor: {
+        type: "hyperfine-scale",
+        fineStateId: fineState.id,
+      },
+    }));
   }
 
   rows.push(...buildInheritedRadiativePropertyRows([

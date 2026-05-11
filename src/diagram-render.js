@@ -1337,44 +1337,6 @@ function buildLayoutModel() {
   };
 }
 
-function buildTooltipHyperfineScalePreview(fineState) {
-  if (!expandedFine.has(fineState.id)) {
-    return null;
-  }
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "inspector-control-card tooltip-control-card";
-
-  const header = document.createElement("div");
-  header.className = "hyperfine-scale-header";
-
-  const label = document.createElement("strong");
-  label.textContent = "Hyperfine scale";
-
-  const value = document.createElement("span");
-  value.textContent = `${formatFieldScale(getHyperfineScaleForFineState(fineState.id), 2)}x`;
-
-  const sliderLabel = document.createElement("label");
-  sliderLabel.className = "slider-control tooltip-slider-preview";
-
-  const slider = document.createElement("input");
-  slider.type = "range";
-  slider.min = "0";
-  slider.max = "1";
-  slider.step = "0.001";
-  slider.value = String(hyperfineScaleToSliderValue(getHyperfineScaleForFineState(fineState.id)));
-  slider.disabled = true;
-
-  const hint = document.createElement("p");
-  hint.className = "tooltip-control-hint";
-  hint.textContent = "Right-click to pin this panel and adjust the slider.";
-
-  header.append(label, value);
-  sliderLabel.append(slider);
-  wrapper.append(header, sliderLabel, hint);
-  return wrapper;
-}
-
 function showTooltip(event, kicker, title, subtitle, rows, controlMarkup = null) {
   tooltip.hidden = false;
   tooltip.classList.remove("is-reference-tooltip");
@@ -2336,7 +2298,6 @@ function renderFineStates(layout, transition) {
         d.label,
         "",
         getFineDetail(d),
-        buildTooltipHyperfineScalePreview(d),
       );
     })
     .on("mousemove", (event) => moveTooltip(event))
