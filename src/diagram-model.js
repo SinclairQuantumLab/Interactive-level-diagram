@@ -816,7 +816,7 @@ function enumerateFLevels(nuclearSpin, j) {
   return levels;
 }
 
-function normalizeExplicitHyperfineLevels(levels, fineState) {
+function normalizeExplicitHyperfineLevels(levels, fineState, nuclearSpin, gJ) {
   const mapped = levels.map((level) => ({
     ...level,
     id: createStateReferenceId({
@@ -829,6 +829,8 @@ function normalizeExplicitHyperfineLevels(levels, fineState) {
     referenceMap: level.referenceMap || fineState.referenceMap || {},
     shiftMHz: Number.isFinite(level.relMHz) ? level.relMHz : 0,
     shiftMeasurement: level.relMeasurement || createUnknownMeasurementValue(Number.isFinite(level.relMHz) ? level.relMHz : 0, "MHz"),
+    gF: computeLandegF(nuclearSpin, fineState.j, level.F, gJ),
+    properties: Array.isArray(level.properties) ? [...level.properties] : [],
   }));
   const sorted = [...mapped].sort((a, b) => a.shiftMHz - b.shiftMHz);
   const minShift = sorted[0]?.shiftMHz ?? 0;
@@ -841,9 +843,9 @@ function normalizeExplicitHyperfineLevels(levels, fineState) {
   return mapped;
 }
 
-function buildHyperfineLevels(state, nuclearSpin) {
+function buildHyperfineLevels(state, nuclearSpin, gJ) {
   if (!state.hyperfineConstants) {
-    return normalizeExplicitHyperfineLevels(state.hyperfine || [], state);
+    return normalizeExplicitHyperfineLevels(state.hyperfine || [], state, nuclearSpin, gJ);
   }
 
   const constants = state.hyperfineConstants;
@@ -863,6 +865,8 @@ function buildHyperfineLevels(state, nuclearSpin) {
       scaleMeasurementValue(constants.bMeasurement, hyperfineCoefficient(nuclearSpin, state.j, F).bTerm),
       scaleMeasurementValue(constants.cMeasurement, 0),
     ], "MHz"),
+    gF: computeLandegF(nuclearSpin, state.j, F, gJ),
+    properties: [],
   }));
   const sortedByShift = [...rawLevels].sort((a, b) => a.shiftMHz - b.shiftMHz);
   const minShift = sortedByShift[0]?.shiftMHz ?? 0;
@@ -915,12 +919,15 @@ function rebuildReferenceState() {
 }
 
 function rebuildDerivedDiagramState() {
-  fineStates = config.states.map((state) => ({
-    ...state,
-    columnId: parseOrbitalLetter(state.id),
-    gJ: Number.isFinite(state.gJConfigured) ? state.gJConfigured : computeLandegJ(state),
-    hyperfine: buildHyperfineLevels(state, config.species.nuclearSpin),
-  }));
+  fineStates = config.states.map((state) => {
+    const gJ = Number.isFinite(state.gJConfigured) ? state.gJConfigured : computeLandegJ(state);
+    return {
+      ...state,
+      columnId: parseOrbitalLetter(state.id),
+      gJ,
+      hyperfine: buildHyperfineLevels(state, config.species.nuclearSpin, gJ),
+    };
+  });
   rebuildReferenceState();
 
   return fineStates;
@@ -1072,6 +1079,70 @@ function appendConfiguredPropertyRows(rows, properties) {
   return rows;
 }
 
+function normalizePropertyLabelKey(label) {
+  return String(label || "")
+    .trim()
+    .replaceAll("$", "")
+    .replaceAll("{", "")
+    .replaceAll("}", "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
+function findPropertyEntryByAliases(properties, aliases = []) {
+  const normalizedAliases = new Set(
+    (Array.isArray(aliases) ? aliases : [])
+      .map((alias) => normalizePropertyLabelKey(alias))
+      .filter(Boolean),
+  );
+
+  if (normalizedAliases.size === 0) {
+    return null;
+  }
+
+  return (Array.isArray(properties) ? properties : []).find((property) => {
+    if (!property || typeof property !== "object" || property.section) {
+      return false;
+    }
+
+    return normalizedAliases.has(normalizePropertyLabelKey(property.label));
+  }) || null;
+}
+
+function buildInheritedRadiativePropertyRows(propertySources = []) {
+  const specs = [
+    {
+      displayLabel: "$\\tau$",
+      aliases: ["Lifetime", "$\\tau=\\Gamma^{-1}$", "\\tau=\\Gamma^{-1}", "τ=Γ^{-1}", "$\\tau$", "\\tau", "τ"],
+    },
+    {
+      displayLabel: "$\\frac{\\Gamma}{2\\pi}$",
+      aliases: ["$\\frac{\\Gamma}{2\\pi}$", "\\frac{\\Gamma}{2\\pi}", "$\\Gamma/2\\pi$", "\\Gamma/2\\pi", "Γ/2π", "Natural linewidth"],
+    },
+  ];
+  const rows = [];
+  let sectionAdded = false;
+
+  specs.forEach((spec) => {
+    const entry = (Array.isArray(propertySources) ? propertySources : [])
+      .map((source) => findPropertyEntryByAliases(source, spec.aliases))
+      .find(Boolean);
+
+    if (!entry) {
+      return;
+    }
+
+    if (!sectionAdded) {
+      rows.push(createDetailSectionRow("Lifetime"));
+      sectionAdded = true;
+    }
+
+    rows.push(createDetailRow(spec.displayLabel, entry.value ?? "", Array.isArray(entry.references) ? entry.references : []));
+  });
+
+  return rows;
+}
+
 function withUnknownUncertainty(value) {
   if (typeof value !== "string") {
     return value;
@@ -1141,6 +1212,7 @@ function createZeemanLevels(hyperfineState) {
       parentId: hyperfineState.id,
       parentF: hyperfineState.F,
       notes: [],
+      properties: [],
       referenceMap: hyperfineState.referenceMap || {},
     });
   }
@@ -1158,6 +1230,7 @@ function getFineDetail(state) {
 
   const rows = [
     createDetailRow("Energy", state.energyText || withUnknownUncertainty(formatTHz(state.energyTHz)), getReferenceKeysForField(state, "energy")),
+    createDetailRow({ type: "subscript-token", base: "g", subscript: "J", suffix: "" }, formatGroupedNumberToken(state.gJ.toFixed(4))),
     createDetailRow("Constants", constantParts.join(", ") || "not configured", constantParts.length > 0 ? getReferenceKeysForField(state, "constants") : []),
   ];
 
@@ -1167,7 +1240,9 @@ function getFineDetail(state) {
 
 function getHyperfineDetail(node) {
   const references = getReferenceKeysForField(node, "constants");
+  const fineState = getFineStateById(node.parentFineId);
   const rows = [
+    createDetailRow({ type: "subscript-token", base: "g", subscript: "F", suffix: "" }, formatGroupedNumberToken(node.gF.toFixed(4)), references),
     createDetailRow("Shift", withUnknownUncertainty(formatSignedMHz(node.shiftMHz, 3)), references),
   ];
 
@@ -1179,15 +1254,27 @@ function getHyperfineDetail(node) {
     rows.push(createDetailRow("Interval below", withUnknownUncertainty(formatMHz(node.intervalBelowMHz, 3)), references));
   }
 
+  rows.push(...buildInheritedRadiativePropertyRows([
+    node.properties,
+    fineState?.properties,
+  ]));
+
   return appendNoteRows(rows, node.notes, getReferenceKeysForField(node, "notes"));
 }
 
 function getZeemanDetail(node) {
   const references = getReferenceKeysForField(node, "constants");
+  const fineState = getFineStateById(node.parentId);
+  const hyperfineState = fineState?.hyperfine?.find((level) => level.id === node.parentHyperfineId) || null;
   const rows = [
-    createDetailRow({ type: "subscript-token", base: "g", subscript: "F", suffix: "" }, withUnknownUncertainty(formatGroupedNumberToken(node.gF.toFixed(4))), references),
     createDetailRow("Shift", withUnknownUncertainty(formatSignedMHz(node.zeemanShiftMHz, 3)), references),
   ];
+
+  rows.push(...buildInheritedRadiativePropertyRows([
+    node.properties,
+    hyperfineState?.properties,
+    fineState?.properties,
+  ]));
 
   return appendNoteRows(rows, node.notes, getReferenceKeysForField(node, "notes"));
 }

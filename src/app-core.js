@@ -1312,6 +1312,7 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
             relText: relMeasurement.displayText,
             relMeasurement: relMeasurement.measurement,
             notes: Array.isArray(level.notes) ? level.notes : [],
+            properties: normalizePropertyEntries(level.properties),
             referenceMap: level.references && typeof level.references === "object" && !Array.isArray(level.references)
               ? level.references
               : {},

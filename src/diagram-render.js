@@ -31,13 +31,9 @@ function getZeemanScalePxPerMHz() {
   return ZEEMAN_VISUAL_MHZ_TO_PX * currentBFieldVisualScale;
 }
 
-function computeZeemanShiftMHz(fineState, hyperfineLevel, mF) {
-  const gF = computeLandegF(config.species.nuclearSpin, fineState.j, hyperfineLevel.F, fineState.gJ);
-
-  return {
-    gF,
-    shiftMHz: currentBFieldEnabled ? gF * mF * MU_B_OVER_H_MHZ_PER_GAUSS * currentBFieldGauss : 0,
-  };
+function computeZeemanShiftMHz(hyperfineLevel, mF) {
+  const gF = Number.isFinite(hyperfineLevel?.gF) ? hyperfineLevel.gF : 0;
+  return currentBFieldEnabled ? gF * mF * MU_B_OVER_H_MHZ_PER_GAUSS * currentBFieldGauss : 0;
 }
 
 function getRelativeStateSpan(fineState) {
@@ -458,23 +454,22 @@ function buildExpandedStateLayout(fineState, { parentEndX = 0, parentEnergyY = 0
       createZeemanLevels(node).forEach((level) => {
         const columnIndex = Math.round(level.mF - minMF);
         const x1 = zeemanOriginX + columnIndex * layoutConfig.zeemanGapX;
-        const zeemanShift = computeZeemanShiftMHz(fineState, node, level.mF);
+        const zeemanShiftMHz = computeZeemanShiftMHz(node, level.mF);
 
         allZeemanNodes.push({
           ...level,
           type: "zeeman",
           x1,
           x2: x1 + layoutConfig.zeemanBarWidth,
-          y: node.y - zeemanShift.shiftMHz * getZeemanScalePxPerMHz(),
+          y: node.y - zeemanShiftMHz * getZeemanScalePxPerMHz(),
           parentId: fineState.id,
           parentHyperfineId: node.id,
           parentLabel: node.parentLabel,
           parentLabelPlain: node.parentLabelPlain,
           parentShiftMHz: node.shiftMHz,
           hyperfineShiftMeasurement: node.shiftMeasurement,
-          gF: zeemanShift.gF,
-          zeemanShiftMHz: zeemanShift.shiftMHz,
-          absoluteEnergyTHz: fineState.energyTHz + node.shiftMHz * 1e-6 + zeemanShift.shiftMHz * 1e-6,
+          zeemanShiftMHz,
+          absoluteEnergyTHz: fineState.energyTHz + node.shiftMHz * 1e-6 + zeemanShiftMHz * 1e-6,
         });
       });
     });

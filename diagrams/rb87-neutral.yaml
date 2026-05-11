@@ -149,6 +149,12 @@ states:
     notation: $5p\,{}^{2}P_{1/2}$
     hyperfine_constants:
       a: 406.2(?) MHz\cite{Ste21}
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '27.70(4) ns\cite{Ste21}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '5.746(8) MHz\cite{Ste21}'
 
   - id: 5P3/2
     j: 1.5
@@ -157,6 +163,12 @@ states:
     hyperfine_constants:
       a: 84.72(?) MHz\cite{Ste21}
       b: 12.5(?) MHz\cite{Ste21}
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '26.24(4) ns\cite{Ste21}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '6.065(9) MHz\cite{Ste21}'
 
   - id: 4D3/2
     j: 1.5
@@ -187,6 +199,10 @@ states:
     hyperfine_constants:
       a: 7.4(?) MHz\cite{NIST25}
       b: 2.2(?) MHz\cite{NIST25}
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '246.3(1.6) ns\cite{She08}'
 
   - id: 5D5/2
     j: 2.5
@@ -197,6 +213,10 @@ states:
     hyperfine_constants:
       a: 7.47(?) MHz\cite{NIST25}
       b: -1.1(?) MHz\cite{NIST25}
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '238.5(2.3) ns\cite{She08}'
 
   - id: 6S1/2
     j: 0.5
@@ -204,6 +224,10 @@ states:
     notation: $6s\,{}^{2}S_{1/2}$
     hyperfine_constants:
       a: 239.18(?) MHz\cite{Ste21}
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '45.57(17) ns\cite{Gom05}'
 
   - id: 6P1/2
     j: 0.5
@@ -250,6 +274,10 @@ transitions:
     type: E1
     strength: 2.992(3) ea0\cite{Ste21}
     frequency: 377107463.226(98) MHz\cite{Mar08}
+    properties:
+      - section: Dipole and drive scales
+      - label: Reduced dipole matrix element
+        value: '2.992(3) ea0 = 2.537(3) x 10^-29 C m\cite{Ste21}'
     notes:
       - Direct fine-centroid frequency from comb spectroscopy of laser-cooled 87Rb.\cite{Mar08}
       - Frequently used for optical pumping and Raman schemes.
@@ -270,6 +298,10 @@ transitions:
     type: E1
     strength: 4.227(5) ea0\cite{Ste21}
     frequency: 384230484.469(6) MHz\cite{Ye96}
+    properties:
+      - section: Dipole and drive scales
+      - label: Reduced dipole matrix element
+        value: '4.227(5) ea0 = 3.584(4) x 10^-29 C m\cite{Ste21}'
     notes:
       - Fine-centroid frequency inferred from the measured D2 crossover resonance and 5P3/2 hyperfine constants.\cite{Ye96}
       - Common laser-cooling transition in rubidium experiments.
@@ -290,6 +322,10 @@ transitions:
   - between: ["5S1/2[F=2,mF=2]", "5P3/2[F=3,mF=3]"]
     type: E1
     strength: 2.989(3) ea0\cite{Ste21}
+    properties:
+      - section: Cycling branch
+      - label: Dipole moment
+        value: '2.989(3) ea0 = 2.534(3) x 10^-29 C m\cite{Ste21}'
     notes:
       - Cycling-stretched transition example. Appears when the referenced Zeeman branches are expanded.
 
@@ -330,6 +366,10 @@ transitions:
   - between: [5P3/2, 5D5/2]
     type: E1
     strength: 1.81(2) ea0\cite{Ham23}
+    properties:
+      - section: Dipole and drive scales
+      - label: Reduced dipole matrix element
+        value: '1.81(2) ea0\cite{Ham23}'
     notes:
       - Upper leg of the familiar 780 nm + 776 nm ladder to 5D5/2 used in coherent excitation and cascade-light generation.\cite{Mar04}
 
@@ -482,4 +522,26 @@ bibliography_bibtex: |
     year = {2023},
     doi = {10.1103/PhysRevApplied.19.054059},
     url = {https://doi.org/10.1103/PhysRevApplied.19.054059}
+  }
+
+  @article{She08,
+    author = {Sheng, D. and Galvan, A. and Orozco, L. A.},
+    title = {Lifetime measurements of the 5d states of rubidium},
+    journal = {Physical Review A},
+    volume = {78},
+    pages = {062506},
+    year = {2008},
+    doi = {10.1103/PhysRevA.78.062506},
+    url = {https://doi.org/10.1103/PhysRevA.78.062506}
+  }
+
+  @article{Gom05,
+    author = {Gomez, E. and Baumer, F. and McAteer, M. M. and De, S. and Zakharov, V. and Orozco, L. A.},
+    title = {Lifetime Measurement of the 6s Level of Rubidium},
+    journal = {Physical Review A},
+    volume = {72},
+    pages = {012502},
+    year = {2005},
+    doi = {10.1103/PhysRevA.72.012502},
+    url = {https://doi.org/10.1103/PhysRevA.72.012502}
   }

@@ -56,9 +56,9 @@ states:
       - label: Hyperfine splitting
         value: 'F=0 -> 1: +2104.9(1.3) MHz\cite{Martensson94,Hur22}'
       - section: Radiative properties
-      - label: Lifetime
+      - label: '$\tau$'
         value: '8.12(2) ns\cite{Olmschenk09,Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '19.6(5) MHz\cite{Hur22}'
       - label: Branching from $2P_{1/2}$
         value: 'to $2D_{3/2}$: 0.501(15)%; to $2F_{7/2}$: very small\cite{Meyer12,Olmschenk07,Hur22}'
@@ -105,9 +105,9 @@ states:
       - label: Hyperfine splitting
         value: 'F=2 -> 3: -190.104(3) MHz\cite{Tan21,Hur22}'
       - section: Radiative properties
-      - label: Lifetime
+      - label: '$\tau$'
         value: '7.1(3) ms\cite{Yu00,Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '22.3(8) Hz\cite{Hur22}'
       - label: Branching from $2D_{5/2}$
         value: 'to $2F_{7/2}$: 83(3)% of all known decay channels\cite{Taylor97,Hur22}'
@@ -133,9 +133,9 @@ states:
       - label: Hyperfine splitting
         value: 'F=3 -> 4: +3620.5(1) MHz\cite{Roman21,Hur22}'
       - section: Radiative properties
-      - label: Lifetime
+      - label: '$\tau$'
         value: '1.58(8) yr in $^{171}$Yb$^+$; older literature value 10^(+7)_(-4) yr\cite{Lange21,Roberts97,Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '3.19(16) nHz in $^{171}$Yb$^+$; older literature value 0.50^(+0.33)_(-0.21) nHz\cite{Lange21,Roberts97,Hur22}'
       - section: Role
       - label: Experimental role
@@ -159,9 +159,9 @@ states:
       - label: Hyperfine splitting
         value: 'F=0 -> 1: -2209.5(1.1) MHz\cite{Olmschenk07,Hur22}'
       - section: Radiative properties
-      - label: Lifetime
+      - label: '$\tau$'
         value: '37.7(5) ns\cite{Berends93,Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '4.22(6) MHz\cite{Hur22}'
       - label: Branching from ${}^{3}D[3/2]_{1/2}$
         value: 'to $2S_{1/2}$: 98.2%; back to $2D_{3/2}$: 1.8%\cite{Meyer12,Hur22}'
@@ -187,9 +187,9 @@ states:
       - label: Hyperfine splitting
         value: 'F=1 -> 2: +8880(10) MHz\cite{Roman21,Hur22}'
       - section: Radiative properties
-      - label: Lifetime
+      - label: '$\tau$'
         value: '28.6(4) ns\cite{Berends93,Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '5.56(8) MHz\cite{Hur22}'
       - label: Branching from ${}^{1}D[3/2]_{3/2}$'
         value: 'to $2S_{1/2}$: >=96%; to $2D_{5/2}$: 4.2%; to $2D_{3/2}$: <=0.66%\cite{Hur22}'
@@ -233,7 +233,7 @@ transitions:
         value: '811.29274(10) THz\cite{Hur22}'
       - label: Lifetime of $2P_{1/2}$
         value: '8.12(2) ns\cite{Olmschenk09,Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '19.6(5) MHz\cite{Hur22}'
       - label: Saturation intensity
         value: '~510 uW/mm^2\cite{Hur22}'
@@ -278,7 +278,7 @@ transitions:
         value: '729.4768670272068(44) THz\cite{Hur22,Roberts99}'
       - label: Lifetime of $2D_{5/2}$
         value: '7.1(3) ms\cite{Yu00,Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '22.3(8) Hz\cite{Hur22}'
       - label: Saturation intensity
         value: '~410 pW/mm^2\cite{Hur22}'
@@ -305,7 +305,7 @@ transitions:
         value: '688.347837(20) THz and 688.34790(10) THz\cite{Hur22,Godun14}'
       - label: Lifetime of $2D_{3/2}$
         value: '52.7(2.4) ms\cite{Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '3.02(14) Hz\cite{Hur22}'
       - label: Saturation intensity
         value: '~48 pW/mm^2\cite{Hur22}'
@@ -330,7 +330,7 @@ transitions:
         value: '642.1167851508795(24) THz\cite{Hur22}'
       - label: Lifetime of $2F_{7/2}$
         value: '1.58(8) yr in $^{171}$Yb$^+$; older literature value 10^(+7)_(-4) yr\cite{Lange21,Roberts97,Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '3.19(16) nHz in $^{171}$Yb$^+$; older literature value 0.50^(+0.33)_(-0.21) nHz\cite{Lange21,Roberts97,Hur22}'
       - label: Saturation intensity
         value: '~6 x 10^-16 W/mm^2\cite{Hur22}'
@@ -355,7 +355,7 @@ transitions:
         value: 'F=1 -> 0: 320.56930(7) THz\cite{Hur22,McLoughlin11}'
       - label: Lifetime of ${}^{3}D[3/2]_{1/2}$
         value: '37.7(5) ns\cite{Berends93,Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '4.22(6) MHz\cite{Hur22}'
       - label: Saturation intensity
         value: '~375 uW/mm^2\cite{Hur22}'
@@ -382,7 +382,7 @@ transitions:
         value: 'F=3 -> 1: 394.424700 THz; F=4 -> 2: 394.429957 THz\cite{Hur22,Ransford20}'
       - label: Lifetime of ${}^{1}D[3/2]_{3/2}$
         value: '28.6(4) ns\cite{Berends93,Hur22}'
-      - label: Natural linewidth
+      - label: '$\frac{\Gamma}{2\pi}$'
         value: '5.56(8) MHz\cite{Hur22}'
       - label: Saturation intensity
         value: '~2000 uW/mm^2\cite{Hur22}'

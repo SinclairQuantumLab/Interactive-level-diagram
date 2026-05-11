@@ -65,11 +65,11 @@ states:
       - section: Electric response
       - label: 'Scalar polarizability shift $\alpha_0(5P_{1/2})-\alpha_0(5S_{1/2})$'
         value: 'h * 0.122306(16) Hz/(V/cm)^2\cite{Mil94,Ste03}'
-      - section: Radiative response
-      - label: Lifetime
+      - section: Lifetime
+      - label: '$\tau$'
         value: '27.70(4) ns\cite{Volz96,Ste03}'
-      - label: Natural linewidth
-        value: '2pi x 5.746(8) MHz\cite{Volz96,Ste03}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '5.746(8) MHz\cite{Volz96,Ste03}'
 
   - id: 5P3/2
     j: 1.5
@@ -93,11 +93,11 @@ states:
         value: 'h * 0.1340(8) Hz/(V/cm)^2\cite{Kre97,Ste03}'
       - label: 'Tensor polarizability $\alpha_2(5P_{3/2})$'
         value: 'h * -0.0406(8) Hz/(V/cm)^2\cite{Kre97,Ste03}'
-      - section: Radiative response
-      - label: Lifetime
+      - section: Lifetime
+      - label: '$\tau$'
         value: '26.24(4) ns\cite{Volz96,Ste03}'
-      - label: Natural linewidth
-        value: '2pi x 6.065(9) MHz\cite{Volz96,Ste03}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '6.065(9) MHz\cite{Volz96,Ste03}'
 
 transitions:
   - between: ['5S1/2[F=1]', '5S1/2[F=2]']
@@ -129,8 +129,8 @@ transitions:
         value: '27.70(4) ns\cite{Volz96,Ste03}'
       - label: 'Decay rate $\Gamma$'
         value: '36.10(5) x 10^6 s^-1\cite{Volz96,Ste03}'
-      - label: Natural linewidth
-        value: '2pi x 5.746(8) MHz\cite{Volz96,Ste03}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '5.746(8) MHz\cite{Volz96,Ste03}'
       - label: Absorption oscillator strength
         value: '0.3420(14)\cite{Ste03}'
       - section: Dipole and drive scales
@@ -174,8 +174,8 @@ transitions:
         value: '26.24(4) ns\cite{Volz96,Ste03}'
       - label: 'Decay rate $\Gamma$'
         value: '38.11(6) x 10^6 s^-1\cite{Volz96,Ste03}'
-      - label: Natural linewidth
-        value: '2pi x 6.065(9) MHz\cite{Volz96,Ste03}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '6.065(9) MHz\cite{Volz96,Ste03}'
       - label: Absorption oscillator strength
         value: '0.6956(15)\cite{Ste03}'
       - section: Dipole and drive scales
