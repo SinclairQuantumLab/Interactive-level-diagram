@@ -438,6 +438,8 @@ function normalizeMetadataRow(row) {
       references: [],
       selector: null,
       editor: null,
+      spanAll: false,
+      noteItem: false,
     };
   }
 
@@ -449,6 +451,8 @@ function normalizeMetadataRow(row) {
       references: Array.isArray(row[2]) ? row[2] : [],
       selector: null,
       editor: null,
+      spanAll: false,
+      noteItem: false,
     };
   }
 
@@ -459,6 +463,8 @@ function normalizeMetadataRow(row) {
     references: Array.isArray(row?.references) ? row.references : [],
     selector: row?.selector || null,
     editor: row?.editor || null,
+    spanAll: Boolean(row?.spanAll),
+    noteItem: Boolean(row?.noteItem),
   };
 }
 
@@ -790,6 +796,52 @@ function createTransitionVisibilityToggleButton(panel) {
   return button;
 }
 
+function renderTransitionInspectorContent(parts, node, options = {}) {
+  const {
+    kicker,
+    title,
+    subtitle,
+    metadata,
+    controls = null,
+    headerActions = null,
+  } = parts;
+  const content = getTransitionInspectorContent(node);
+
+  kicker.textContent = content.kicker;
+  setMixedTextContent(title, content.title);
+  subtitle.textContent = content.subtitle;
+  renderMetadataContent(metadata, content.rows, {
+    showSelectors: Boolean(options.showSelectors),
+  });
+
+  if (controls) {
+    controls.innerHTML = "";
+    if (options.showSelectors) {
+      controls.append(buildTransitionLabelPrecisionControls(node));
+    }
+  }
+
+  if (headerActions && options.visibilityPanel) {
+    headerActions.append(createTransitionVisibilityToggleButton(options.visibilityPanel));
+  }
+}
+
+function showTransitionTooltip(event, node) {
+  tooltip.hidden = false;
+  tooltip.classList.remove("is-reference-tooltip");
+  tooltip.classList.add("is-transition-tooltip");
+  renderTransitionInspectorContent({
+    kicker: tooltipKicker,
+    title: tooltipTitle,
+    subtitle: tooltipSubtitle,
+    metadata: tooltipMetadata,
+  }, node);
+  tooltipTitle.hidden = !String(tooltipTitle.textContent || "").trim();
+  tooltipSubtitle.hidden = !tooltipSubtitle.textContent;
+  renderTooltipControls(null);
+  moveTooltip(event);
+}
+
 function createMeasurementVisibilityToggleButton(panel) {
   const button = document.createElement("button");
   button.type = "button";
@@ -1037,6 +1089,8 @@ function buildMetadataValueFragment(value, referenceKeys) {
     : (typeof value === "string" && value.includes("\n")
       ? value.split("\n")
       : [value]);
+  const content = document.createElement("span");
+  content.className = "metadata-value-content";
   const valueContainer = document.createElement("span");
   valueContainer.className = normalizedLines.length > 1 ? "metadata-value-lines" : "metadata-value-inline";
 
@@ -1047,7 +1101,7 @@ function buildMetadataValueFragment(value, referenceKeys) {
     valueContainer.append(valueSpan);
   });
 
-  fragment.append(valueContainer);
+  content.append(valueContainer);
 
   const mergedReferenceKeys = uniqueReferenceKeys([
     ...(referenceKeys || []),
@@ -1089,16 +1143,13 @@ function buildMetadataValueFragment(value, referenceKeys) {
     });
 
     if (citations.childElementCount > 0) {
-      fragment.append(citations);
+      content.append(citations);
     }
   }
 
-  return fragment;
-}
+  fragment.append(content);
 
-function isCompactNoteMetadataLabel(label) {
-  const normalizedLabelText = typeof label === "string" ? label.trim() : "";
-  return /^Note(?:\s+\d+)?$/i.test(normalizedLabelText);
+  return fragment;
 }
 
 function buildMetadataEntryFragment(row, options = {}) {
@@ -1120,7 +1171,7 @@ function buildMetadataEntryFragment(row, options = {}) {
   const showSelectors = Boolean(options.showSelectors);
   const showEditors = Boolean(options.showEditors);
   const showInlineControls = Boolean(options.showInlineControls);
-  const isCompactNoteRow = isCompactNoteMetadataLabel(normalized.label);
+  const isNoteItemRow = Boolean(normalized.noteItem);
   const formatEditor = normalized.editor?.type === "measurement-format"
     ? buildMeasurementSectionFormatEditorFragment(normalized.editor)
     : null;
@@ -1164,12 +1215,17 @@ function buildMetadataEntryFragment(row, options = {}) {
     return fragment;
   }
 
-  if (isCompactNoteRow) {
+  if (isNoteItemRow) {
     dt.classList.add("metadata-label-hidden");
     dd.classList.add("metadata-span-all", "metadata-note-item");
   }
 
-  const shouldRenderInteractiveRow = shouldShowSelector || shouldShowEditor || isCompactNoteRow;
+  if (normalized.spanAll) {
+    dt.classList.add("metadata-label-hidden");
+    dd.classList.add("metadata-span-all");
+  }
+
+  const shouldRenderInteractiveRow = shouldShowSelector || shouldShowEditor || isNoteItemRow;
 
   if (shouldRenderInteractiveRow) {
     const valueRow = document.createElement("div");
@@ -1179,11 +1235,11 @@ function buildMetadataEntryFragment(row, options = {}) {
       valueRow.classList.add("is-note-editor-row");
     }
 
-    if (isCompactNoteRow) {
+    if (isNoteItemRow) {
       valueRow.classList.add("is-note-bullet-row");
     }
 
-    if (shouldShowEditor || isCompactNoteRow) {
+    if (shouldShowEditor || isNoteItemRow) {
       dt.classList.add("metadata-label-hidden");
       dd.classList.add("metadata-span-all");
     }
@@ -1199,11 +1255,11 @@ function buildMetadataEntryFragment(row, options = {}) {
       valueRow.append(checkbox);
     }
 
-    if (isCompactNoteRow) {
+    if (isNoteItemRow) {
       const bullet = document.createElement("span");
       bullet.className = "metadata-note-bullet";
       bullet.setAttribute("aria-hidden", "true");
-      bullet.textContent = "•";
+      bullet.textContent = "\u2022";
       valueRow.append(bullet);
     }
 
@@ -1893,30 +1949,31 @@ function buildPinnedPanelContent(panel, layout) {
     kicker.textContent = "Fine Structure";
     setMixedTextContent(title, node.label);
     subtitle.textContent = "";
-    renderMetadataContent(metadata, getFineDetail(node));
+    renderMetadataContent(metadata, getFineDetail(node), {
+      showInlineControls: true,
+    });
   } else if (panel.type === "hyperfine") {
     kicker.textContent = "Hyperfine Level";
     setMixedTextContent(title, `${node.parentLabel}  ${hyperfineLabel(node)}`);
     subtitle.textContent = "";
-    renderMetadataContent(metadata, getHyperfineDetail(node), {
-      showInlineControls: true,
-    });
+    renderMetadataContent(metadata, getHyperfineDetail(node));
   } else if (panel.type === "zeeman") {
     kicker.textContent = "Zeeman Sublevel";
     setZeemanTitleContent(title, node);
     subtitle.textContent = "";
     renderMetadataContent(metadata, getZeemanDetail(node));
   } else if (panel.type === "transition") {
-    kicker.textContent = "Transition";
-    setMixedTextContent(title, buildTransitionTitle(node));
-    subtitle.textContent = "";
-    renderMetadataContent(metadata, getTransitionDetail(node), {
+    renderTransitionInspectorContent({
+      kicker,
+      title,
+      subtitle,
+      metadata,
+      controls,
+      headerActions,
+    }, node, {
       showSelectors: Boolean(panel.showTransitionLabelSelectors),
+      visibilityPanel: panel,
     });
-    if (panel.showTransitionLabelSelectors) {
-      controls.append(buildTransitionLabelPrecisionControls(node));
-    }
-    headerActions.append(createTransitionVisibilityToggleButton(panel));
   } else if (panel.type === "measurement") {
     kicker.textContent = "Measurement";
     title.textContent = "";
@@ -2062,6 +2119,7 @@ function pinInspector(event, type, id) {
   }
 
   const tooltipRect = !tooltip.hidden ? tooltip.getBoundingClientRect() : null;
+  hideTooltip();
   const desiredLeft = tooltipRect ? tooltipRect.left : event.clientX + 18;
   const desiredTop = tooltipRect ? tooltipRect.top : event.clientY + 18;
   const scenePoint = getScreenPointScenePosition(desiredLeft, desiredTop);

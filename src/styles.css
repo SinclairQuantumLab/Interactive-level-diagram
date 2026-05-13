@@ -532,14 +532,14 @@ h1 {
 
 .control-sections {
   display: grid;
-  gap: 14px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 .control-group {
   display: grid;
-  gap: 8px;
-  padding-top: 12px;
+  gap: 6px;
+  padding-top: 10px;
   border-top: 1px solid var(--panel-border);
 }
 
@@ -560,29 +560,29 @@ h1 {
 .control-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin-top: 0;
 }
 
 .control-row-layout-actions {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .control-stack {
   display: grid;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .diagram-picker {
   position: absolute;
   z-index: 11;
   display: grid;
-  gap: 12px;
+  gap: 10px;
   width: min(620px, calc(100vw - 48px));
   max-height: min(72vh, 720px);
   overflow: auto;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid var(--panel-border);
   border-radius: 18px;
   background: rgba(255, 252, 247, 0.92);
@@ -616,8 +616,8 @@ h1 {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding-top: 10px;
+  gap: 10px;
+  padding-top: 8px;
   border-top: 1px solid var(--panel-border);
 }
 
@@ -634,8 +634,8 @@ h1 {
   align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 6px;
-  padding: 4px;
+  gap: 4px;
+  padding: 3px;
   border: 1px solid rgba(25, 36, 31, 0.12);
   border-radius: 999px;
   background: rgba(255, 252, 247, 0.68);
@@ -648,7 +648,7 @@ h1 {
 
 .diagram-picker-layout-toggle button {
   appearance: none;
-  padding: 7px 12px;
+  padding: 6px 10px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -676,15 +676,15 @@ h1 {
 .diagram-picker-browse-controls {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
-  gap: 12px;
+  gap: 10px;
   align-items: end;
-  padding-top: 12px;
+  padding-top: 10px;
 }
 
 .diagram-picker-search,
 .diagram-picker-sort {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .diagram-picker-search input,
@@ -693,7 +693,7 @@ h1 {
   appearance: none;
   border: 1px solid rgba(25, 36, 31, 0.14);
   border-radius: 12px;
-  padding: 9px 12px;
+  padding: 8px 10px;
   background: rgba(255, 252, 247, 0.88);
   color: var(--text-main);
   font: inherit;
@@ -715,8 +715,8 @@ h1 {
 
 .diagram-picker-source {
   display: grid;
-  gap: 8px;
-  padding-top: 10px;
+  gap: 6px;
+  padding-top: 8px;
   border-top: 1px solid var(--panel-border);
 }
 
@@ -729,7 +729,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .diagram-picker-source-title {
@@ -781,12 +781,12 @@ h1 {
 
 .diagram-picker-source-body {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .diagram-picker-action {
   appearance: none;
-  padding: 7px 11px;
+  padding: 6px 10px;
   border: 1px solid rgba(147, 90, 47, 0.34);
   border-radius: 999px;
   background: rgba(255, 252, 247, 0.88);
@@ -808,15 +808,15 @@ h1 {
 }
 
 .diagram-picker-hint {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   color: var(--text-muted);
   font-size: 0.88rem;
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 .diagram-picker-path {
-  margin: 8px 0 0;
-  padding: 7px 10px;
+  margin: 6px 0 0;
+  padding: 6px 9px;
   border-radius: 12px;
   background: rgba(255, 252, 247, 0.7);
   color: var(--text-muted);
@@ -832,8 +832,8 @@ h1 {
 
 .diagram-picker-list {
   display: grid;
-  gap: 8px;
-  margin: 12px 0 0;
+  gap: 6px;
+  margin: 10px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -850,7 +850,7 @@ h1 {
 .diagram-picker-card {
   display: grid;
   gap: 3px;
-  padding: 9px 12px;
+  padding: 8px 10px;
   border: 1px solid rgba(25, 36, 31, 0.14);
   border-radius: 12px;
   background: rgba(255, 252, 247, 0.86);
@@ -891,7 +891,7 @@ h1 {
   display: inline-flex;
   justify-self: start;
   width: fit-content;
-  margin-left: 12px;
+  margin-left: 10px;
   font-size: 0.82rem;
   color: var(--text-muted);
   text-decoration: none;
@@ -902,7 +902,7 @@ h1 {
 }
 
 .control-panel {
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid var(--panel-border);
   border-radius: 18px;
   background: rgba(255, 252, 247, 0.52);
@@ -916,7 +916,7 @@ h1 {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .control-panel-toggle {
@@ -959,7 +959,7 @@ h1 {
 }
 
 .control-subheader {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .control-subheader:first-of-type {
@@ -987,8 +987,8 @@ h1 {
 
 .slider-control {
   display: grid;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 8px;
   color: var(--text-muted);
 }
 
@@ -1001,13 +1001,13 @@ h1 {
 .range-bounds {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .bound-control {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   color: var(--text-muted);
 }
 
@@ -1019,7 +1019,7 @@ h1 {
   width: 100%;
   border: 1px solid var(--panel-border);
   border-radius: 10px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   background: rgba(255, 252, 247, 0.88);
   color: var(--text-main);
   font: inherit;
@@ -1030,7 +1030,7 @@ h1 {
 }
 
 .hyperfine-scale-item {
-  padding-top: 10px;
+  padding-top: 8px;
   border-top: 1px solid var(--panel-border);
 }
 
@@ -1043,7 +1043,7 @@ h1 {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .hyperfine-scale-header strong {
@@ -1065,7 +1065,7 @@ h1 {
 
 .hyperfine-scale-editor {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .hyperfine-scale-editor-value {
@@ -1088,7 +1088,7 @@ h1 {
   appearance: none;
   border: 1px solid rgba(25, 36, 31, 0.14);
   border-radius: 999px;
-  padding: 9px 14px;
+  padding: 8px 12px;
   background: rgba(255, 252, 247, 0.88);
   color: var(--text-main);
   font: inherit;
@@ -1590,16 +1590,18 @@ h1 {
 
 .citation-cluster {
   display: inline-flex;
-  gap: 4px;
-  margin-left: 2px;
+  gap: 3px;
+  margin-left: 0;
   line-height: 1;
   vertical-align: text-top;
   pointer-events: auto;
+  white-space: nowrap;
+  align-self: flex-start;
 }
 
 .citation-chip {
   pointer-events: auto;
-  font-size: 0.62em;
+  font-size: 0.58em;
   line-height: 1;
 }
 
@@ -1684,8 +1686,8 @@ h1 {
 .tooltip {
   position: absolute;
   z-index: 12;
-  width: min(290px, calc(100vw - 32px));
-  padding: 14px 16px;
+  width: min(360px, calc(100vw - 32px));
+  padding: 12px 14px;
   border: 1px solid var(--panel-border);
   border-radius: 18px;
   background: rgba(255, 252, 247, 0.94);
@@ -1867,8 +1869,8 @@ h1 {
 .inspector {
   position: absolute;
   z-index: 1;
-  width: min(290px, calc(100vw - 32px));
-  padding: 14px 16px;
+  width: min(320px, calc(100vw - 32px));
+  padding: 12px 14px;
   border: 1px solid var(--panel-border);
   border-radius: 18px;
   background: rgba(255, 252, 247, 0.94);
@@ -1900,7 +1902,7 @@ h1 {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   cursor: grab;
   user-select: none;
 }
@@ -1916,7 +1918,7 @@ h1 {
 .inspector-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 0 0 auto;
 }
 
@@ -1972,12 +1974,12 @@ h1 {
 
 .inspector-controls {
   display: grid;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 6px;
 }
 
 .inspector-control-card {
-  padding-top: 10px;
+  padding-top: 8px;
   border-top: 1px solid var(--panel-border);
 }
 
@@ -1994,25 +1996,25 @@ h1 {
 }
 
 .tooltip h2 {
-  margin: 6px 0 4px;
-  font-size: 1.15rem;
+  margin: 4px 0 2px;
+  font-size: 1.12rem;
 }
 
 .inspector h2 {
-  margin: 6px 0 4px;
-  font-size: 1.15rem;
+  margin: 4px 0 2px;
+  font-size: 1.12rem;
 }
 
 .tooltip p {
   margin: 0;
   color: var(--text-muted);
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 .inspector p {
   margin: 0;
   color: var(--text-muted);
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 [data-theme="dark"] .inspector p,
@@ -2034,8 +2036,8 @@ h1 {
 }
 
 .tooltip-controls {
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: 6px;
+  padding-top: 4px;
   border-top: 1px solid var(--panel-border);
 }
 
@@ -2049,7 +2051,7 @@ h1 {
 }
 
 .tooltip-slider-preview {
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .tooltip-slider-preview input[type="range"] {
@@ -2058,20 +2060,20 @@ h1 {
 }
 
 .tooltip-control-hint {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 0.82rem;
   color: var(--text-muted);
 }
 
 .inspector-metadata {
   display: block;
-  margin-top: 12px;
+  margin-top: 6px;
 }
 
 .metadata-section-grid {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 6px 10px;
+  gap: 3px 10px;
   margin: 0;
   align-items: start;
   min-width: 0;
@@ -2082,7 +2084,7 @@ h1 {
 .metadata-value-row {
   display: flex;
   align-items: start;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
 }
 
@@ -2096,7 +2098,14 @@ h1 {
 }
 
 .metadata-value-row.is-note-bullet-row {
-  gap: 10px;
+  gap: 7px;
+  width: 100%;
+}
+
+.metadata-value-row.is-note-bullet-row .metadata-value-inline,
+.metadata-value-row.is-note-bullet-row .metadata-value-lines {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .metadata-label-hidden {
@@ -2108,16 +2117,14 @@ h1 {
 }
 
 .metadata-note-item {
-  margin-top: -2px;
+  margin-top: 0;
 }
 
 .metadata-note-bullet {
   flex: 0 0 auto;
-  width: 0.8rem;
   color: var(--text-muted);
   font-size: 1rem;
-  line-height: 1.2;
-  text-align: center;
+  line-height: inherit;
 }
 
 .metadata-section-block {
@@ -2126,20 +2133,22 @@ h1 {
 }
 
 .tooltip .metadata-section-block:first-child {
-  margin-top: 12px;
+  margin-top: 6px;
 }
 
 .metadata-section-block + .metadata-section-block {
-  margin-top: 12px;
+  margin-top: 9px;
 }
 
 .metadata-section-heading {
   display: block;
-  padding-top: 10px;
+  margin-top: 9px;
+  padding-top: 7px;
+  margin-bottom: 3px;
   border-top: 1px solid var(--panel-border);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--accent);
 }
@@ -2165,6 +2174,8 @@ h1 {
   color: var(--text-main);
   text-align: left;
   justify-self: start;
+  overflow-wrap: anywhere;
+  line-height: 1.14;
 }
 
 .metadata-entry-value {
@@ -2172,15 +2183,37 @@ h1 {
   color: var(--text-muted);
   text-align: left;
   justify-self: stretch;
+  overflow-wrap: anywhere;
+  line-height: 1.18;
+}
+
+.metadata-value-content {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1px 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.metadata-value-inline,
+.metadata-value-lines {
+  min-width: 0;
+}
+
+.metadata-value-inline {
+  display: inline-block;
 }
 
 .metadata-value-lines {
-  display: grid;
-  gap: 2px;
+  display: inline-grid;
+  gap: 1px;
+  align-content: start;
 }
 
 .metadata-value-line {
   display: block;
+  line-height: inherit;
 }
 
 .metadata-selector {
@@ -2191,8 +2224,8 @@ h1 {
 
 .precision-input-grid {
   display: grid;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .precision-input {
@@ -2224,14 +2257,14 @@ h1 {
 
 .note-editor-list {
   display: grid;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .note-editor-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: 6px;
   align-items: start;
   min-width: 0;
 }

@@ -1059,6 +1059,25 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
     return typeof text === "string" ? text.replace(/\\cite\{[^}]+\}/g, "").trim() : text;
   }
 
+  function extractInlineCitationKeys(text) {
+    if (typeof text !== "string") {
+      return [];
+    }
+
+    return [...new Set(
+      [...text.matchAll(/\\cite\{([^}]+)\}/g)]
+        .flatMap((match) => match[1].split(","))
+        .map((key) => key.trim())
+        .filter(Boolean),
+    )];
+  }
+
+  function mergeReferenceKeyLists(...groups) {
+    return [...new Set(
+      groups.flatMap((group) => (Array.isArray(group) ? group : [])).map((key) => String(key || "").trim()).filter(Boolean),
+    )];
+  }
+
   function pushMeasurementIssue(key, title, message) {
     issues.push({ key, title, message });
   }
@@ -1170,6 +1189,7 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
       return {
         numericValue: Number.NaN,
         displayText: "",
+        referenceKeys: [],
       };
     }
 
@@ -1188,12 +1208,18 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
       return {
         numericValue: Number.NaN,
         displayText: rawText,
+        referenceKeys: extractInlineCitationKeys(rawText),
       };
     }
 
+    const normalizedDisplayToken = parsedNumber.uncertaintyToken
+      ? strippedText
+      : `${strippedText}(?)`;
+
     return {
       numericValue: parsedNumber.numericValue,
-      displayText: `${formatGroupedNumberToken(strippedText)}${citationSuffix}`,
+      displayText: `${formatGroupedNumberToken(normalizedDisplayToken)}${citationSuffix}`,
+      referenceKeys: extractInlineCitationKeys(rawText),
     };
   }
 
@@ -1238,6 +1264,21 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
     });
   }
 
+  function normalizeDefinedGroundEnergy(energyMeasurement) {
+    if (!Number.isFinite(energyMeasurement?.numericValue) || Math.abs(energyMeasurement.numericValue) > 1e-12) {
+      return energyMeasurement;
+    }
+
+    const displayText = "0 (def.)";
+    const unitLabel = energyMeasurement.measurement?.unitLabel || "THz";
+
+    return {
+      numericValue: 0,
+      displayText,
+      measurement: createExactMeasurementValue(0, unitLabel, displayText),
+    };
+  }
+
   function parseTransitionMeasurement(transitionId, fieldLabel, value, targetUnitScale, assumedUnitLabel) {
     return parseConfiguredMeasurement(value, {
       issueKey: `transition:${transitionId}:${fieldLabel.toLowerCase()}`,
@@ -1259,11 +1300,26 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
     },
     diagramIssues: issues,
     states: (Array.isArray(rawConfig.states) ? rawConfig.states : []).map((state) => {
-      const energyMeasurement = parseStateMeasurement(state.id, "energy", state.energy, 1e12, "THz");
+      const energyMeasurement = normalizeDefinedGroundEnergy(
+        parseStateMeasurement(state.id, "energy", state.energy, 1e12, "THz"),
+      );
       const gJValue = parseConfiguredScalar(state.g_j, {
         issueKey: `state:${state.id}:g_j`,
         fieldLabel: `${state.id} g_J`,
       });
+      const stateReferenceMap = state.references && typeof state.references === "object" && !Array.isArray(state.references)
+        ? { ...state.references }
+        : {};
+      const gJReferences = mergeReferenceKeyLists(
+        stateReferenceMap.gJ,
+        stateReferenceMap.g_j,
+        gJValue.referenceKeys,
+      );
+
+      if (gJReferences.length > 0) {
+        stateReferenceMap.gJ = gJReferences;
+      }
+
       const hyperfineConstants = state.hyperfine_constants && typeof state.hyperfine_constants === "object"
         ? {
           a: parseStateMeasurement(state.id, "A", state.hyperfine_constants.a, 1e6, "MHz"),
@@ -1279,14 +1335,13 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
         labelPlain: state.id,
         j: state.j,
         gJConfigured: gJValue.numericValue,
+        gJText: gJValue.displayText,
         energyTHz: energyMeasurement.numericValue,
         energyText: energyMeasurement.displayText,
         energyMeasurement: energyMeasurement.measurement,
         notes: Array.isArray(state.notes) ? state.notes : [],
         properties: normalizePropertyEntries(state.properties),
-        referenceMap: state.references && typeof state.references === "object" && !Array.isArray(state.references)
-          ? state.references
-          : {},
+        referenceMap: stateReferenceMap,
         references: [],
         hyperfineConstants: hyperfineConstants ? {
           aMHz: hyperfineConstants.a.numericValue,
@@ -1306,6 +1361,22 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
             targetUnitScale: 1e6,
             assumedUnitLabel: "MHz",
           });
+          const gFValue = parseConfiguredScalar(level.g_f, {
+            issueKey: `state:${state.id}:hyperfine:${level.id || level.f}:g_f`,
+            fieldLabel: `${state.id} hyperfine g_F`,
+          });
+          const levelReferenceMap = level.references && typeof level.references === "object" && !Array.isArray(level.references)
+            ? { ...level.references }
+            : {};
+          const gFReferences = mergeReferenceKeyLists(
+            levelReferenceMap.gF,
+            levelReferenceMap.g_f,
+            gFValue.referenceKeys,
+          );
+
+          if (gFReferences.length > 0) {
+            levelReferenceMap.gF = gFReferences;
+          }
 
           return {
             id: level.id,
@@ -1313,11 +1384,11 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
             relMHz: relMeasurement.numericValue,
             relText: relMeasurement.displayText,
             relMeasurement: relMeasurement.measurement,
+            gFConfigured: gFValue.numericValue,
+            gFText: gFValue.displayText,
             notes: Array.isArray(level.notes) ? level.notes : [],
             properties: normalizePropertyEntries(level.properties),
-            referenceMap: level.references && typeof level.references === "object" && !Array.isArray(level.references)
-              ? level.references
-              : {},
+            referenceMap: levelReferenceMap,
           };
         }),
       };

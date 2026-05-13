@@ -29,6 +29,7 @@ states:
     references:
       energy: [Ste03]
       constants: [Bize99]
+      gFCalculation: [Ste03]
     hyperfine_constants:
       a: '3417.34130545215(5) MHz\cite{Bize99}'
     properties:
@@ -54,6 +55,7 @@ states:
     references:
       energy: [Bar91]
       constants: [Bar91]
+      gFCalculation: [Ste03]
     hyperfine_constants:
       a: '408.328(15) MHz\cite{Bar91}'
     properties:
@@ -79,6 +81,7 @@ states:
     references:
       energy: [Ye96]
       constants: [Ye96]
+      gFCalculation: [Ste03]
     hyperfine_constants:
       a: '84.7185(20) MHz\cite{Ye96}'
       b: '12.4965(37) MHz\cite{Ye96}'
@@ -133,15 +136,6 @@ transitions:
         value: '5.746(8) MHz\cite{Volz96,Ste03}'
       - label: Absorption oscillator strength
         value: '0.3420(14)\cite{Ste03}'
-      - section: Dipole and drive scales
-      - label: Reduced dipole matrix element
-        value: '2.992(3) ea0 = 2.537(3) x 10^-29 C m\cite{Ste03}'
-      - label: Far-detuned effective dipole moment
-        value: '1.727(2) ea0 = 1.4646(15) x 10^-29 C m\cite{Ste03}'
-      - label: Far-detuned saturation intensity
-        value: '4.484(5) mW/cm^2\cite{Ste03}'
-      - label: Far-detuned resonant cross section
-        value: '1.082 x 10^-9 cm^2\cite{Ste03}'
       - section: Atomic motion
       - label: Recoil velocity
         value: '5.7754 mm/s\cite{Ste03}'
@@ -178,21 +172,6 @@ transitions:
         value: '6.065(9) MHz\cite{Volz96,Ste03}'
       - label: Absorption oscillator strength
         value: '0.6956(15)\cite{Ste03}'
-      - section: Dipole and drive scales
-      - label: Reduced dipole matrix element
-        value: '4.227(5) ea0 = 3.584(4) x 10^-29 C m\cite{Ste03}'
-      - label: Isotropic effective dipole moment
-        value: '2.042(2) ea0 = 1.731(2) x 10^-29 C m\cite{Ste03}'
-      - label: Isotropic saturation intensity
-        value: '3.576(4) mW/cm^2\cite{Ste03}'
-      - label: Isotropic resonant cross section
-        value: '1.356 x 10^-9 cm^2\cite{Ste03}'
-      - label: Far-detuned effective dipole moment
-        value: '2.441(3) ea0 = 2.069(2) x 10^-29 C m\cite{Ste03}'
-      - label: Far-detuned saturation intensity
-        value: '2.503(3) mW/cm^2\cite{Ste03}'
-      - label: Far-detuned resonant cross section
-        value: '1.938 x 10^-9 cm^2\cite{Ste03}'
       - section: Atomic motion
       - label: Recoil velocity
         value: '5.8845 mm/s\cite{Ste03}'
@@ -285,8 +264,6 @@ transitions:
       derived: [Bize99, Ye96]
     properties:
       - section: Cycling branch
-      - label: Dipole moment
-        value: '2.989(3) ea0 = 2.534(3) x 10^-29 C m\cite{Ste03}'
       - label: Saturation intensity
         value: '1.669(2) mW/cm^2\cite{Ste03}'
       - label: Resonant cross section

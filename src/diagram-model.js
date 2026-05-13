@@ -825,11 +825,13 @@ function normalizeExplicitHyperfineLevels(levels, fineState, nuclearSpin, gJ) {
       mF: null,
     }),
     parentFineId: fineState.id,
-    notes: Array.isArray(level.notes) ? [...level.notes] : (Array.isArray(fineState.notes) ? [...fineState.notes] : []),
+    notes: Array.isArray(level.notes) ? [...level.notes] : [],
     referenceMap: level.referenceMap || fineState.referenceMap || {},
     shiftMHz: Number.isFinite(level.relMHz) ? level.relMHz : 0,
     shiftMeasurement: level.relMeasurement || createUnknownMeasurementValue(Number.isFinite(level.relMHz) ? level.relMHz : 0, "MHz"),
-    gF: computeLandegF(nuclearSpin, fineState.j, level.F, gJ),
+    gF: Number.isFinite(level.gFConfigured) ? level.gFConfigured : computeLandegF(nuclearSpin, fineState.j, level.F, gJ),
+    gFText: level.gFText || "",
+    gFSourceType: Number.isFinite(level.gFConfigured) ? "configured" : "calculated",
     properties: Array.isArray(level.properties) ? [...level.properties] : [],
   }));
 
@@ -850,7 +852,7 @@ function buildHyperfineLevels(state, nuclearSpin, gJ) {
     }),
     parentFineId: state.id,
     F,
-    notes: Array.isArray(state.notes) ? [...state.notes] : [],
+    notes: [],
     referenceMap: state.referenceMap || {},
     shiftMHz: computeHyperfineShiftMHz(nuclearSpin, state.j, F, state.hyperfineConstants),
     shiftMeasurement: combineMeasurementValues([
@@ -859,6 +861,8 @@ function buildHyperfineLevels(state, nuclearSpin, gJ) {
       scaleMeasurementValue(constants.cMeasurement, 0),
     ], "MHz"),
     gF: computeLandegF(nuclearSpin, state.j, F, gJ),
+    gFText: "",
+    gFSourceType: "calculated",
     properties: [],
   }));
 
@@ -990,6 +994,41 @@ function mergeReferenceKeys(...referenceGroups) {
   return uniqueReferenceKeys(referenceGroups.flat());
 }
 
+function formatGFactorDisplay(value, digits = 4) {
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+
+  const roundedText = Number(value).toFixed(digits).replace(/\.?0+$/, "");
+
+  if (Math.abs(Number(roundedText)) < 1e-12) {
+    return "0";
+  }
+
+  return value > 0 ? `+${roundedText}` : roundedText;
+}
+
+function formatSignedGFactorText(valueText) {
+  const strippedText = stripInlineCitations(valueText);
+  const normalizedText = String(strippedText || "").trim();
+
+  if (!normalizedText || normalizedText.startsWith("+") || normalizedText.startsWith("-")) {
+    return normalizedText;
+  }
+
+  const numericPrefix = normalizedText.match(/^(\d+(?:[\d\s]*)(?:\.\d+(?:[\d\s]*)?)?(?:\([^)]*\))?)/);
+
+  if (!numericPrefix) {
+    return normalizedText;
+  }
+
+  const numericValue = Number(numericPrefix[1].replace(/\s+/g, "").replace(/\([^)]*\)/g, ""));
+
+  return Number.isFinite(numericValue) && Math.abs(numericValue) > 1e-12
+    ? `+${normalizedText}`
+    : normalizedText;
+}
+
 function extractInlineCitationKeys(text) {
   if (typeof text !== "string") {
     return [];
@@ -1016,6 +1055,8 @@ function createDetailRow(label, value, references = [], options = {}) {
     references: uniqueReferenceKeys(references),
     selector: options.selector || null,
     editor: options.editor || null,
+    spanAll: Boolean(options.spanAll),
+    noteItem: Boolean(options.noteItem),
   };
 }
 
@@ -1032,10 +1073,26 @@ function appendNoteRows(rows, notes, references = []) {
     : [];
 
   if (normalizedNotes.length > 0) {
-    rows.push(createDetailRow("Note", normalizedNotes.join(" "), references));
+    rows.push(createDetailSectionRow("Notes"));
+    normalizedNotes.forEach((note) => {
+      rows.push(createDetailRow("", note, references, {
+        spanAll: true,
+        noteItem: true,
+      }));
+    });
   }
 
   return rows;
+}
+
+function getCurrentDetailSectionTitle(rows) {
+  for (let index = rows.length - 1; index >= 0; index -= 1) {
+    if (rows[index]?.type === "section") {
+      return rows[index].title || "";
+    }
+  }
+
+  return "";
 }
 
 function appendConfiguredPropertyRows(rows, properties) {
@@ -1047,7 +1104,12 @@ function appendConfiguredPropertyRows(rows, properties) {
     }
 
     if (typeof property.section === "string" && property.section.trim()) {
-      rows.push(createDetailSectionRow(property.section.trim()));
+      const sectionTitle = property.section.trim();
+
+      if (getCurrentDetailSectionTitle(rows) !== sectionTitle) {
+        rows.push(createDetailSectionRow(sectionTitle));
+      }
+
       return;
     }
 
@@ -1152,13 +1214,84 @@ function resolveConstantRowValue(configuredText, valueMHz) {
   return configuredText || formatConstantValueDisplay(valueMHz) || "";
 }
 
+function getFineEnergyDisplayText(state) {
+  if (!state) {
+    return "";
+  }
+
+  return state.energyText || withUnknownUncertainty(formatTHz(state.energyTHz));
+}
+
+function isDefinedGroundEnergy(state) {
+  return Boolean(state)
+    && Number.isFinite(state.energyTHz)
+    && Math.abs(state.energyTHz) < 1e-12
+    && state.energyText === "0 (def.)";
+}
+
+function getFineEnergyReferenceKeys(state) {
+  return isDefinedGroundEnergy(state) ? [] : getReferenceKeysForField(state, "energy");
+}
+
+function formatComponentFrequencyText(measurement, fallbackValueMHz) {
+  if (measurement && Number.isFinite(measurement.nominalValue)) {
+    if (Math.abs(measurement.nominalValue) < 1e-12) {
+      return `0 ${measurement.unitLabel || ""}`.trim();
+    }
+
+    return formatBestFrequencyMeasurementValue(measurement);
+  }
+
+  return withUnknownUncertainty(formatMHz(fallbackValueMHz, 3));
+}
+
+function appendEnergyComponentLabel(valueText, componentLabel) {
+  const normalizedValueText = String(valueText || "").trim();
+
+  if (!normalizedValueText) {
+    return "";
+  }
+
+  return `${normalizedValueText} (${componentLabel}) +`;
+}
+
+function buildStateEnergyValueLines(fineState, hyperfineState = null, zeemanState = null) {
+  const fineEnergyText = getFineEnergyDisplayText(fineState);
+
+  if (!fineEnergyText) {
+    return [];
+  }
+
+  if (!hyperfineState) {
+    return [fineEnergyText];
+  }
+
+  const hyperfineEnergyText = formatComponentFrequencyText(hyperfineState.shiftMeasurement, hyperfineState.shiftMHz);
+
+  if (!zeemanState) {
+    return [
+      appendEnergyComponentLabel(fineEnergyText, "fine"),
+      hyperfineEnergyText,
+    ];
+  }
+
+  return [
+    appendEnergyComponentLabel(fineEnergyText, "fine"),
+    appendEnergyComponentLabel(hyperfineEnergyText, "HF"),
+    formatComponentFrequencyText(
+      createExactMeasurementValue(zeemanState.zeemanShiftMHz ?? 0, "MHz"),
+      zeemanState.zeemanShiftMHz,
+    ),
+  ];
+}
+
 function buildFineEnergyRows(state) {
   if (!state) {
     return [];
   }
 
   return [
-    createDetailRow("Energy", state.energyText || withUnknownUncertainty(formatTHz(state.energyTHz)), getReferenceKeysForField(state, "energy")),
+    createDetailRow("Energy", buildStateEnergyValueLines(state), getFineEnergyReferenceKeys(state)),
   ];
 }
 
@@ -1167,8 +1300,24 @@ function buildFineStructureRows(state) {
     return [];
   }
 
+  const gJReferences = mergeReferenceKeys(
+    Number.isFinite(state.gJConfigured)
+      ? mergeReferenceKeys(
+        getReferenceKeysForField(state, "gJ"),
+        getReferenceKeysForField(state, "g_j"),
+      )
+      : getReferenceKeysForField(state, "gJCalculation"),
+  );
+  const gJDisplayValue = state.gJText
+    ? formatSignedGFactorText(state.gJText)
+    : `${formatGFactorDisplay(state.gJ)} (cal.)`;
+
   return [
-    createDetailRow({ type: "subscript-token", base: "g", subscript: "J", suffix: "" }, formatGroupedNumberToken(state.gJ.toFixed(4))),
+    createDetailRow(
+      { type: "subscript-token", base: "g", subscript: "J", suffix: "" },
+      gJDisplayValue,
+      gJReferences,
+    ),
   ];
 }
 
@@ -1195,6 +1344,55 @@ function buildHyperfineConstantRows(constants, references = []) {
   });
 
   return rows;
+}
+
+function buildFineHyperfineStructureRows(state) {
+  if (!state) {
+    return [];
+  }
+
+  const rows = [
+    ...buildHyperfineConstantRows(state.hyperfineConstants, getReferenceKeysForField(state, "constants")),
+  ];
+
+  if (Array.isArray(state.hyperfine) && state.hyperfine.length > 0) {
+    rows.push(createDetailRow("Scale", "", [], {
+      editor: {
+        type: "hyperfine-scale",
+        fineStateId: state.id,
+      },
+    }));
+  }
+
+  return rows;
+}
+
+function getHyperfineGFactorReferences(fineState, node) {
+  if (!node) {
+    return [];
+  }
+
+  if (node?.gFSourceType === "configured") {
+    return mergeReferenceKeys(
+      getReferenceKeysForField(node, "gF"),
+      getReferenceKeysForField(node, "g_f"),
+    );
+  }
+
+  return mergeReferenceKeys(
+    getReferenceKeysForField(node, "gFCalculation"),
+    getReferenceKeysForField(fineState, "gFCalculation"),
+  );
+}
+
+function getHyperfineGFactorDisplayValue(node) {
+  if (!node) {
+    return "";
+  }
+
+  return node?.gFSourceType === "configured" && node.gFText
+    ? formatSignedGFactorText(node.gFText)
+    : `${formatGFactorDisplay(node?.gF)} (cal.)`;
 }
 
 function getHyperfineScaleForFineState(fineStateId) {
@@ -1256,12 +1454,19 @@ function createZeemanLevels(hyperfineState) {
 }
 
 function getFineDetail(state) {
+  const hyperfineStructureRows = buildFineHyperfineStructureRows(state);
   const rows = [
-    createDetailSectionRow("Energy"),
     ...buildFineEnergyRows(state),
     createDetailSectionRow("Fine structure"),
     ...buildFineStructureRows(state),
   ];
+
+  if (hyperfineStructureRows.length > 0) {
+    rows.push(
+      createDetailSectionRow("Hyperfine structure"),
+      ...hyperfineStructureRows,
+    );
+  }
 
   appendConfiguredPropertyRows(rows, state.properties);
   return appendNoteRows(rows, state.notes, getReferenceKeysForField(state, "notes"));
@@ -1269,37 +1474,31 @@ function getFineDetail(state) {
 
 function getHyperfineDetail(node) {
   const fineState = getFineStateById(node.parentFineId);
-  const fineEnergyRows = buildFineEnergyRows(fineState);
   const fineConstantReferences = getReferenceKeysForField(fineState, "constants");
   const hyperfineReferences = mergeReferenceKeys(
     fineConstantReferences,
     getReferenceKeysForField(node, "constants"),
   );
+  const gFactorReferences = getHyperfineGFactorReferences(fineState, node);
+  const gFDisplayValue = getHyperfineGFactorDisplayValue(node);
   const rows = [
-    createDetailSectionRow("Energy"),
-    ...fineEnergyRows,
-    createDetailRow("Shift", withUnknownUncertainty(formatSignedMHz(node.shiftMHz, 3)), hyperfineReferences),
+    createDetailRow(
+      "Energy",
+      buildStateEnergyValueLines(fineState, node),
+      mergeReferenceKeys(getFineEnergyReferenceKeys(fineState), hyperfineReferences),
+    ),
   ];
 
   rows.push(
-    createDetailSectionRow("Hyperfine structure"),
-    ...buildHyperfineConstantRows(fineState?.hyperfineConstants, fineConstantReferences),
-    createDetailRow({ type: "subscript-token", base: "g", subscript: "F", suffix: "" }, formatGroupedNumberToken(node.gF.toFixed(4)), hyperfineReferences),
+    createDetailSectionRow("Hyperfine level"),
+    createDetailRow(
+      { type: "subscript-token", base: "g", subscript: "F", suffix: "" },
+      gFDisplayValue,
+      gFactorReferences,
+    ),
   );
 
-  if (fineState && expandedFine.has(fineState.id)) {
-    rows.push(createDetailRow("Scale", "", [], {
-      editor: {
-        type: "hyperfine-scale",
-        fineStateId: fineState.id,
-      },
-    }));
-  }
-
-  rows.push(...buildInheritedRadiativePropertyRows([
-    node.properties,
-    fineState?.properties,
-  ]));
+  appendConfiguredPropertyRows(rows, node.properties);
 
   return appendNoteRows(rows, node.notes, getReferenceKeysForField(node, "notes"));
 }
@@ -1308,15 +1507,20 @@ function getZeemanDetail(node) {
   const references = getReferenceKeysForField(node, "constants");
   const fineState = getFineStateById(node.parentId);
   const hyperfineState = fineState?.hyperfine?.find((level) => level.id === node.parentHyperfineId) || null;
+  const hyperfineReferences = mergeReferenceKeys(
+    getReferenceKeysForField(fineState, "constants"),
+    getReferenceKeysForField(hyperfineState, "constants"),
+    getHyperfineGFactorReferences(fineState, hyperfineState),
+  );
   const rows = [
-    createDetailRow("Shift", withUnknownUncertainty(formatSignedMHz(node.zeemanShiftMHz, 3)), references),
+    createDetailRow(
+      "Energy",
+      buildStateEnergyValueLines(fineState, hyperfineState, node),
+      mergeReferenceKeys(getFineEnergyReferenceKeys(fineState), hyperfineReferences, references),
+    ),
   ];
 
-  rows.push(...buildInheritedRadiativePropertyRows([
-    node.properties,
-    hyperfineState?.properties,
-    fineState?.properties,
-  ]));
+  appendConfiguredPropertyRows(rows, node.properties);
 
   return appendNoteRows(rows, node.notes, getReferenceKeysForField(node, "notes"));
 }
@@ -1841,8 +2045,14 @@ function getMeasurementDetail(node, options = {}) {
     ? node.notes.filter((note) => typeof note === "string")
     : [];
 
+  if (notes.length > 0 || options.includeEmptyNoteRow) {
+    rows.push(createDetailSectionRow("Notes"));
+  }
+
   notes.forEach((note, index) => {
-    rows.push(createDetailRow(`Note ${index + 1}`, note, [], {
+    rows.push(createDetailRow("", note, [], {
+      spanAll: true,
+      noteItem: true,
       selector: {
         measurementId: node.id,
         fieldKey: `note:${index}`,
@@ -1856,7 +2066,9 @@ function getMeasurementDetail(node, options = {}) {
   });
 
   if (options.includeEmptyNoteRow && notes.length === 0) {
-    rows.push(createDetailRow("Note 1", "", [], {
+    rows.push(createDetailRow("", "", [], {
+      spanAll: true,
+      noteItem: true,
       selector: {
         measurementId: node.id,
         fieldKey: "note:0",
@@ -1980,6 +2192,15 @@ function buildTransitionTitle(transition) {
   return `${transition.endpointOneLabel} ↔ ${transition.endpointTwoLabel}`;
 }
 
+function getTransitionInspectorContent(node) {
+  return {
+    kicker: "Transition",
+    title: buildTransitionTitle(node),
+    subtitle: "",
+    rows: getTransitionDetail(node),
+  };
+}
+
 function getLegacyTransitionDetail(node) {
   return getTransitionDetail(node);
   /*
@@ -2042,14 +2263,19 @@ function getTransitionDetail(node) {
     ? node.notes.filter((note) => typeof note === "string" && note.trim())
     : [];
 
-  notes.forEach((note, index) => {
-    rows.push(createDetailRow(`Note ${index + 1}`, stripInlineCitations(note), noteReferences, {
-      selector: {
-        transitionId: node.id,
-        fieldKey: `note:${index}`,
-      },
-    }));
-  });
+  if (notes.length > 0) {
+    rows.push(createDetailSectionRow("Notes"));
+    notes.forEach((note, index) => {
+      rows.push(createDetailRow("", stripInlineCitations(note), noteReferences, {
+        spanAll: true,
+        noteItem: true,
+        selector: {
+          transitionId: node.id,
+          fieldKey: `note:${index}`,
+        },
+      }));
+    });
+  }
 
   return rows;
 }

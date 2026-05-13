@@ -1391,7 +1391,7 @@ function moveTooltip(event) {
 
 function hideTooltip() {
   tooltip.hidden = true;
-  tooltip.classList.remove("is-reference-tooltip");
+  tooltip.classList.remove("is-reference-tooltip", "is-transition-tooltip");
   renderTooltipControls(null);
 }
 
@@ -1515,6 +1515,24 @@ function ensureTransitionMarkerDefinition() {
     .data([null])
     .join("path")
     .attr("d", "M 0 -5.1 L 11.8 0 L 0 5.1 z")
+    .attr("fill", "context-stroke");
+
+  const moveMarker = defs.selectAll("marker#fine-displacement-arrowhead")
+    .data([null])
+    .join("marker")
+    .attr("id", "fine-displacement-arrowhead")
+    .attr("viewBox", "0 -4 10 8")
+    .attr("refX", 7.4)
+    .attr("refY", 0)
+    .attr("markerWidth", 7)
+    .attr("markerHeight", 7)
+    .attr("markerUnits", "userSpaceOnUse")
+    .attr("orient", "auto");
+
+  moveMarker.selectAll("path")
+    .data([null])
+    .join("path")
+    .attr("d", "M 0 -3.3 L 8.4 0 L 0 3.3 z")
     .attr("fill", "context-stroke");
 }
 
@@ -1647,13 +1665,7 @@ function renderTransitions(layout, transition) {
     })
     .on("mouseenter", function (event, d) {
       d3.select(this).classed("is-hovered", true);
-      showTooltip(
-        event,
-        "Transition",
-        buildTransitionTitle(d),
-        "",
-        getTransitionDetail(d),
-      );
+      showTransitionTooltip(event, d);
     })
     .on("mousemove", (event) => moveTooltip(event))
     .on("mouseleave", function () {
@@ -2355,6 +2367,7 @@ function renderFineStates(layout, transition) {
 
         entered.append("line")
           .attr("class", "fine-displacement-connector")
+          .attr("marker-end", "url(#fine-displacement-arrowhead)")
           .attr("y1", 0)
           .attr("y2", 0);
 
