@@ -71,7 +71,7 @@ function buildSerializableState() {
         states: currentLayoutState.hiddenStates,
         transitions: currentLayoutState.hiddenTransitions,
       },
-      fineDisplacements: currentLayoutState.fineDisplacements,
+      displacements: currentLayoutState.fineDisplacements,
       pinnedPanels: currentLayoutState.pinnedPanels,
     },
     tools: {

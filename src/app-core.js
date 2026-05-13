@@ -1834,12 +1834,16 @@ function normalizeLayoutStateObject(stateObject, { expansionMode = "collapsed" }
     measureToolEnabled: pickFirstBoolean(measureToolState.enabled, sourceState.measureToolEnabled) ?? baseState.measureToolEnabled,
     hideToolEnabled: pickFirstBoolean(hideToolState.enabled, sourceState.hideToolEnabled) ?? baseState.hideToolEnabled,
     moveToolEnabled: pickFirstBoolean(moveToolState.enabled, sourceState.moveToolEnabled) ?? baseState.moveToolEnabled,
-    measureSelection: pickFirstArray(measureToolState.selection, sourceState.measureSelection) || baseState.measureSelection,
-    measurements: pickFirstArray(measureToolState.measurements, sourceState.measurements) || baseState.measurements,
-    hiddenStates: pickFirstArray(hiddenState.states, sourceState.hiddenStates) || baseState.hiddenStates,
-    hiddenTransitions: pickFirstArray(hiddenState.transitions, sourceState.hiddenTransitions) || baseState.hiddenTransitions,
-    fineDisplacements: normalizeFineDisplacements(layoutState.fineDisplacements ?? sourceState.fineDisplacements),
-    controls: {
+      measureSelection: pickFirstArray(measureToolState.selection, sourceState.measureSelection) || baseState.measureSelection,
+      measurements: pickFirstArray(measureToolState.measurements, sourceState.measurements) || baseState.measurements,
+      hiddenStates: pickFirstArray(hiddenState.states, sourceState.hiddenStates) || baseState.hiddenStates,
+      hiddenTransitions: pickFirstArray(hiddenState.transitions, sourceState.hiddenTransitions) || baseState.hiddenTransitions,
+      fineDisplacements: normalizeFineDisplacements(
+        layoutState.displacements
+          ?? layoutState.fineDisplacements
+          ?? sourceState.fineDisplacements,
+      ),
+      controls: {
       ...baseState.controls,
       hyperfineScaleByFineState: getLayoutRecord(diagramHyperfineState.scaleByFineState)
         || getLayoutRecord(legacyControlsState.hyperfineScaleByFineState)

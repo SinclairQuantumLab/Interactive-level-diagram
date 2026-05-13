@@ -307,7 +307,7 @@ default_layout:
         - {between: ['5P3/2[F=0]', '5S1/2[F=1]']}
         - {between: ['5P3/2[F=1]', '5S1/2[F=1]']}
         - {between: ['5P1/2[F=1]', '5S1/2[F=1]']}
-    fineDisplacements: {}
+    displacements: {}
     pinnedPanels: []
   tools:
     hide:
