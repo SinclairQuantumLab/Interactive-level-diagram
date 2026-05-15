@@ -833,6 +833,7 @@ function normalizeExplicitHyperfineLevels(levels, fineState, nuclearSpin, gJ) {
     gFText: level.gFText || "",
     gFSourceType: Number.isFinite(level.gFConfigured) ? "configured" : "calculated",
     properties: Array.isArray(level.properties) ? [...level.properties] : [],
+    labelFields: Array.isArray(level.labelFields) ? [...level.labelFields] : [],
   }));
 
   return mapped;
@@ -927,6 +928,48 @@ rebuildDerivedDiagramState();
 
 function createDefaultHyperfineScaleMap(scaleValue = defaultHyperfineScale) {
   return Object.fromEntries(fineStates.map((state) => [state.id, scaleValue]));
+}
+
+function createDefaultStateLabelFieldMap() {
+  const entries = [];
+
+  (Array.isArray(config.states) ? config.states : []).forEach((state) => {
+    entries.push([
+      state.id,
+      Array.isArray(state.labelFields) && state.labelFields.length > 0
+        ? [...state.labelFields]
+        : [],
+    ]);
+
+    (Array.isArray(state.hyperfine) ? state.hyperfine : []).forEach((level) => {
+      entries.push([
+        createStateReferenceId({
+          fineStateId: state.id,
+          F: level.F,
+          mF: null,
+        }),
+        Array.isArray(level.labelFields) && level.labelFields.length > 0
+          ? [...level.labelFields]
+          : [],
+      ]);
+    });
+  });
+
+  return Object.fromEntries(entries);
+}
+
+function resolveStateLabelFields(stateId, fallbackFields = []) {
+  if (Object.prototype.hasOwnProperty.call(currentStateLabelFieldsById, stateId)) {
+    return Array.isArray(currentStateLabelFieldsById[stateId])
+      ? [...currentStateLabelFieldsById[stateId]]
+      : [];
+  }
+
+  return Array.isArray(fallbackFields) ? [...fallbackFields] : [];
+}
+
+function resolveFineStateLabelFields(stateId, fallbackFields = []) {
+  return resolveStateLabelFields(stateId, fallbackFields);
 }
 
 function createDefaultTransitionLabelFieldMap() {
@@ -1067,17 +1110,20 @@ function createDetailSectionRow(title) {
   };
 }
 
-function appendNoteRows(rows, notes, references = []) {
+function appendNoteRows(rows, notes, references = [], options = {}) {
   const normalizedNotes = Array.isArray(notes)
     ? notes.filter((note) => typeof note === "string" && note.trim())
     : [];
 
   if (normalizedNotes.length > 0) {
     rows.push(createDetailSectionRow("Notes"));
-    normalizedNotes.forEach((note) => {
+    normalizedNotes.forEach((note, index) => {
       rows.push(createDetailRow("", note, references, {
         spanAll: true,
         noteItem: true,
+        selector: typeof options.selectorFactory === "function"
+          ? options.selectorFactory(note, index)
+          : null,
       }));
     });
   }
@@ -1095,10 +1141,10 @@ function getCurrentDetailSectionTitle(rows) {
   return "";
 }
 
-function appendConfiguredPropertyRows(rows, properties) {
+function appendConfiguredPropertyRows(rows, properties, options = {}) {
   const normalizedProperties = Array.isArray(properties) ? properties : [];
 
-  normalizedProperties.forEach((property) => {
+  normalizedProperties.forEach((property, index) => {
     if (!property || typeof property !== "object") {
       return;
     }
@@ -1121,7 +1167,11 @@ function appendConfiguredPropertyRows(rows, properties) {
       return;
     }
 
-    rows.push(createDetailRow(label, value, references));
+    rows.push(createDetailRow(label, value, references, {
+      selector: typeof options.selectorFactory === "function"
+        ? options.selectorFactory(property, index)
+        : null,
+    }));
   });
 
   return rows;
@@ -1285,17 +1335,24 @@ function buildStateEnergyValueLines(fineState, hyperfineState = null, zeemanStat
   ];
 }
 
-function buildFineEnergyRows(state) {
+function buildFineEnergyRows(state, options = {}) {
   if (!state) {
     return [];
   }
 
   return [
-    createDetailRow("Energy", buildStateEnergyValueLines(state), getFineEnergyReferenceKeys(state)),
+    createDetailRow("Energy", buildStateEnergyValueLines(state), getFineEnergyReferenceKeys(state), {
+      selector: options.includeLabelSelectors
+        ? {
+          stateId: state.id,
+          fieldKey: "energy",
+        }
+        : null,
+    }),
   ];
 }
 
-function buildFineStructureRows(state) {
+function buildFineStructureRows(state, options = {}) {
   if (!state) {
     return [];
   }
@@ -1317,11 +1374,19 @@ function buildFineStructureRows(state) {
       { type: "subscript-token", base: "g", subscript: "J", suffix: "" },
       gJDisplayValue,
       gJReferences,
+      {
+        selector: options.includeLabelSelectors
+          ? {
+            stateId: state.id,
+            fieldKey: "g_j",
+          }
+          : null,
+      },
     ),
   ];
 }
 
-function buildHyperfineConstantRows(constants, references = []) {
+function buildHyperfineConstantRows(constants, references = [], options = {}) {
   if (!constants || typeof constants !== "object") {
     return [];
   }
@@ -1340,19 +1405,30 @@ function buildHyperfineConstantRows(constants, references = []) {
       return;
     }
 
-    rows.push(createDetailRow(label, displayValue, references));
+    rows.push(createDetailRow(label, displayValue, references, {
+      selector: typeof options.selectorFactory === "function"
+        ? options.selectorFactory(label)
+        : null,
+    }));
   });
 
   return rows;
 }
 
-function buildFineHyperfineStructureRows(state) {
+function buildFineHyperfineStructureRows(state, options = {}) {
   if (!state) {
     return [];
   }
 
   const rows = [
-    ...buildHyperfineConstantRows(state.hyperfineConstants, getReferenceKeysForField(state, "constants")),
+    ...buildHyperfineConstantRows(state.hyperfineConstants, getReferenceKeysForField(state, "constants"), {
+      selectorFactory: options.includeLabelSelectors
+        ? (label) => ({
+          stateId: state.id,
+          fieldKey: `constant:${String(label || "").trim().toLowerCase()}`,
+        })
+        : null,
+    }),
   ];
 
   if (Array.isArray(state.hyperfine) && state.hyperfine.length > 0) {
@@ -1453,12 +1529,13 @@ function createZeemanLevels(hyperfineState) {
   return levels;
 }
 
-function getFineDetail(state) {
-  const hyperfineStructureRows = buildFineHyperfineStructureRows(state);
+function getFineDetail(state, options = {}) {
+  const includeLabelSelectors = Boolean(options.includeLabelSelectors);
+  const hyperfineStructureRows = buildFineHyperfineStructureRows(state, { includeLabelSelectors });
   const rows = [
-    ...buildFineEnergyRows(state),
+    ...buildFineEnergyRows(state, { includeLabelSelectors }),
     createDetailSectionRow("Fine structure"),
-    ...buildFineStructureRows(state),
+    ...buildFineStructureRows(state, { includeLabelSelectors }),
   ];
 
   if (hyperfineStructureRows.length > 0) {
@@ -1468,11 +1545,222 @@ function getFineDetail(state) {
     );
   }
 
-  appendConfiguredPropertyRows(rows, state.properties);
-  return appendNoteRows(rows, state.notes, getReferenceKeysForField(state, "notes"));
+  appendConfiguredPropertyRows(rows, state.properties, {
+    selectorFactory: includeLabelSelectors
+      ? (property) => ({
+        stateId: state.id,
+        fieldKey: `property:${normalizePropertyLabelKey(property?.label)}`,
+      })
+      : null,
+  });
+  return appendNoteRows(rows, state.notes, getReferenceKeysForField(state, "notes"), {
+    selectorFactory: includeLabelSelectors
+      ? (_, index) => ({
+        stateId: state.id,
+        fieldKey: `note:${index}`,
+      })
+      : null,
+  });
 }
 
-function getHyperfineDetail(node) {
+function isZeemanStateNode(node) {
+  return Boolean(node)
+    && Object.prototype.hasOwnProperty.call(node, "mF")
+    && Object.prototype.hasOwnProperty.call(node, "parentHyperfineId");
+}
+
+function isHyperfineStateNode(node) {
+  return Boolean(node)
+    && Object.prototype.hasOwnProperty.call(node, "F")
+    && Object.prototype.hasOwnProperty.call(node, "parentFineId")
+    && !isZeemanStateNode(node);
+}
+
+function getStateNodeById(stateId) {
+  const normalizedStateId = String(stateId || "").trim();
+
+  if (!normalizedStateId) {
+    return null;
+  }
+
+  return currentLayout?.fineStateMap?.get(normalizedStateId)
+    || currentLayout?.hyperfineNodeMap?.get(normalizedStateId)
+    || currentLayout?.zeemanNodeMap?.get(normalizedStateId)
+    || getFineStateById(normalizedStateId)
+    || null;
+}
+
+function getStateDetail(node, options = {}) {
+  if (!node) {
+    return [];
+  }
+
+  if (isZeemanStateNode(node)) {
+    return getZeemanDetail(node, options);
+  }
+
+  if (isHyperfineStateNode(node)) {
+    return getHyperfineDetail(node, options);
+  }
+
+  return getFineDetail(node, options);
+}
+
+function getStateFieldEntriesByKey(node) {
+  const entries = new Map();
+
+  getStateDetail(node, { includeLabelSelectors: true }).forEach((row) => {
+    if (!row || row.type === "section" || !row.selector?.stateId || !row.selector?.fieldKey) {
+      return;
+    }
+
+    if (row.selector.stateId !== node?.id) {
+      return;
+    }
+
+    entries.set(String(row.selector.fieldKey || "").trim().toLowerCase(), row);
+  });
+
+  return entries;
+}
+
+function getFineStateFieldEntriesByKey(state) {
+  return getStateFieldEntriesByKey(state);
+}
+
+function getStateCanonicalFieldKey(node, fieldKey) {
+  const normalizedFieldKey = String(fieldKey || "").trim().toLowerCase();
+
+  if (!normalizedFieldKey || normalizedFieldKey === "value") {
+    return null;
+  }
+
+  const fieldEntriesByKey = getStateFieldEntriesByKey(node);
+  return fieldEntriesByKey.has(normalizedFieldKey)
+    ? normalizedFieldKey
+    : null;
+}
+
+function getFineStateCanonicalFieldKey(state, fieldKey) {
+  return getStateCanonicalFieldKey(state, fieldKey);
+}
+
+function normalizeStateSelectedFieldKeys(node, sourceFields = null, fallback = []) {
+  const configuredFields = Array.isArray(sourceFields)
+    ? sourceFields
+    : resolveStateLabelFields(node?.id, fallback);
+  const normalizedFields = [];
+  const seenFields = new Set();
+
+  configuredFields.forEach((fieldKey) => {
+    const canonicalFieldKey = getStateCanonicalFieldKey(node, fieldKey);
+
+    if (!canonicalFieldKey || seenFields.has(canonicalFieldKey)) {
+      return;
+    }
+
+    seenFields.add(canonicalFieldKey);
+    normalizedFields.push(canonicalFieldKey);
+  });
+
+  return normalizedFields;
+}
+
+function normalizeFineStateSelectedFieldKeys(state, sourceFields = null, fallback = []) {
+  return normalizeStateSelectedFieldKeys(state, sourceFields, fallback);
+}
+
+function normalizeStateLabelDisplayValue(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => stripInlineCitations(entry))
+      .map((entry) => String(entry || "").trim())
+      .filter(Boolean);
+  }
+
+  return stripInlineCitations(value);
+}
+
+function getFineStateLabelValue(state, fieldKey) {
+  const canonicalFieldKey = getStateCanonicalFieldKey(state, fieldKey);
+
+  if (!canonicalFieldKey) {
+    return "";
+  }
+
+  return normalizeStateLabelDisplayValue(
+    getStateFieldEntriesByKey(state).get(canonicalFieldKey)?.value ?? "",
+  );
+}
+
+function getDetailRowLabelDisplayValue(label) {
+  if (label && typeof label === "object" && label.type === "subscript-token") {
+    return `${label.base ?? ""}_${label.subscript ?? ""}${label.suffix ?? ""}`;
+  }
+
+  return label ?? "";
+}
+
+function getStateLabelEntries(node) {
+  const configuredFields = normalizeStateSelectedFieldKeys(node);
+  const fieldEntriesByKey = getStateFieldEntriesByKey(node);
+  const entries = [];
+
+  configuredFields.forEach((fieldKey) => {
+    const canonicalFieldKey = getStateCanonicalFieldKey(node, fieldKey);
+
+    if (!canonicalFieldKey) {
+      return;
+    }
+
+    const row = fieldEntriesByKey.get(canonicalFieldKey);
+
+    if (!row || row.type === "section") {
+      return;
+    }
+
+    const normalizedValue = normalizeStateLabelDisplayValue(row.value);
+    const valueLines = Array.isArray(normalizedValue)
+      ? normalizedValue
+      : [normalizedValue];
+
+    valueLines.forEach((line, index) => {
+      const trimmedLine = String(line || "").trim();
+
+      if (!trimmedLine) {
+        return;
+      }
+
+      entries.push({
+        label: row.noteItem || !row.label || index > 0 ? null : row.label,
+        value: trimmedLine,
+      });
+    });
+  });
+
+  return entries;
+}
+
+function getFineStateLabelEntries(state) {
+  return getStateLabelEntries(state);
+}
+
+function getStateLabelLines(node) {
+  return getStateLabelEntries(node).map((entry) => {
+    if (!entry?.label) {
+      return entry?.value ?? "";
+    }
+
+    return `${getDetailRowLabelDisplayValue(entry.label)}: ${entry.value ?? ""}`;
+  });
+}
+
+function getFineStateLabelLines(state) {
+  return getStateLabelLines(state);
+}
+
+function getHyperfineDetail(node, options = {}) {
+  const includeLabelSelectors = Boolean(options.includeLabelSelectors);
   const fineState = getFineStateById(node.parentFineId);
   const fineConstantReferences = getReferenceKeysForField(fineState, "constants");
   const hyperfineReferences = mergeReferenceKeys(
@@ -1486,6 +1774,14 @@ function getHyperfineDetail(node) {
       "Energy",
       buildStateEnergyValueLines(fineState, node),
       mergeReferenceKeys(getFineEnergyReferenceKeys(fineState), hyperfineReferences),
+      {
+        selector: includeLabelSelectors
+          ? {
+            stateId: node.id,
+            fieldKey: "energy",
+          }
+          : null,
+      },
     ),
   ];
 
@@ -1495,15 +1791,38 @@ function getHyperfineDetail(node) {
       { type: "subscript-token", base: "g", subscript: "F", suffix: "" },
       gFDisplayValue,
       gFactorReferences,
+      {
+        selector: includeLabelSelectors
+          ? {
+            stateId: node.id,
+            fieldKey: "g_f",
+          }
+          : null,
+      },
     ),
   );
 
-  appendConfiguredPropertyRows(rows, node.properties);
+  appendConfiguredPropertyRows(rows, node.properties, {
+    selectorFactory: includeLabelSelectors
+      ? (property) => ({
+        stateId: node.id,
+        fieldKey: `property:${normalizePropertyLabelKey(property?.label)}`,
+      })
+      : null,
+  });
 
-  return appendNoteRows(rows, node.notes, getReferenceKeysForField(node, "notes"));
+  return appendNoteRows(rows, node.notes, getReferenceKeysForField(node, "notes"), {
+    selectorFactory: includeLabelSelectors
+      ? (_, index) => ({
+        stateId: node.id,
+        fieldKey: `note:${index}`,
+      })
+      : null,
+  });
 }
 
-function getZeemanDetail(node) {
+function getZeemanDetail(node, options = {}) {
+  const includeLabelSelectors = Boolean(options.includeLabelSelectors);
   const references = getReferenceKeysForField(node, "constants");
   const fineState = getFineStateById(node.parentId);
   const hyperfineState = fineState?.hyperfine?.find((level) => level.id === node.parentHyperfineId) || null;
@@ -1517,12 +1836,34 @@ function getZeemanDetail(node) {
       "Energy",
       buildStateEnergyValueLines(fineState, hyperfineState, node),
       mergeReferenceKeys(getFineEnergyReferenceKeys(fineState), hyperfineReferences, references),
+      {
+        selector: includeLabelSelectors
+          ? {
+            stateId: node.id,
+            fieldKey: "energy",
+          }
+          : null,
+      },
     ),
   ];
 
-  appendConfiguredPropertyRows(rows, node.properties);
+  appendConfiguredPropertyRows(rows, node.properties, {
+    selectorFactory: includeLabelSelectors
+      ? (property) => ({
+        stateId: node.id,
+        fieldKey: `property:${normalizePropertyLabelKey(property?.label)}`,
+      })
+      : null,
+  });
 
-  return appendNoteRows(rows, node.notes, getReferenceKeysForField(node, "notes"));
+  return appendNoteRows(rows, node.notes, getReferenceKeysForField(node, "notes"), {
+    selectorFactory: includeLabelSelectors
+      ? (_, index) => ({
+        stateId: node.id,
+        fieldKey: `note:${index}`,
+      })
+      : null,
+  });
 }
 
 function renderPlainSubscriptToken(base, subscript, suffix = "") {

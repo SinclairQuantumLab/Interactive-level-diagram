@@ -34,6 +34,7 @@ function buildCurrentLayoutStateObject() {
     fineDisplacements: normalizeFineDisplacements(currentFineDisplacements),
     controls: {
       hyperfineScaleByFineState: currentHyperfineScaleByFineState,
+      stateLabels: serializeStateLabelControlEntries(),
       transitionLabels: serializeTransitionControlEntries(),
       bFieldEnabled: currentBFieldEnabled,
       bFieldVisualScale: currentBFieldVisualScale,
@@ -88,6 +89,9 @@ function buildSerializableState() {
       },
     },
     diagram: {
+      states: {
+        labels: currentLayoutState.controls.stateLabels,
+      },
       hyperfine: {
         scaleByFineState: currentLayoutState.controls.hyperfineScaleByFineState,
       },
@@ -490,6 +494,32 @@ function updateTransitionLabelFieldSelection(transitionId, fieldKey, enabled) {
   persistState();
 }
 
+function updateStateLabelFieldSelection(stateId, fieldKey, enabled) {
+  const normalizedStateId = String(stateId || "").trim();
+  const stateNode = getStateNodeById(normalizedStateId);
+  const canonicalFieldKey = getStateCanonicalFieldKey(stateNode, fieldKey);
+
+  if (!normalizedStateId || !canonicalFieldKey) {
+    return;
+  }
+
+  const currentFields = new Set(normalizeStateSelectedFieldKeys(stateNode));
+
+  if (enabled) {
+    currentFields.add(canonicalFieldKey);
+  } else {
+    currentFields.delete(canonicalFieldKey);
+  }
+
+  currentStateLabelFieldsById[normalizedStateId] = [...currentFields];
+  render(CONTROL_ANIMATION_MS, { skipPinnedPanels: true });
+  persistState();
+}
+
+function updateFineStateLabelFieldSelection(stateId, fieldKey, enabled) {
+  updateStateLabelFieldSelection(stateId, fieldKey, enabled);
+}
+
 function updateTransitionLabelPrecision(transitionId, key, rawValue) {
   const normalizedTransitionId = String(transitionId || "").trim();
   const normalizedKey = String(key || "").trim();
@@ -745,6 +775,11 @@ function createMeasurementEditToggleButton(panel) {
 }
 
 function isMetadataSelectorEnabled(selector) {
+  if (selector?.stateId && selector?.fieldKey) {
+    return normalizeStateSelectedFieldKeys(getStateNodeById(selector.stateId))
+      .includes(String(selector.fieldKey || "").trim().toLowerCase());
+  }
+
   if (selector?.transitionId && selector?.fieldKey) {
     return resolveTransitionLabelFields(selector.transitionId, ["wavelength"])
       .includes(selector.fieldKey);
@@ -764,6 +799,11 @@ function isMetadataSelectorEnabled(selector) {
 }
 
 function updateMetadataSelectorSelection(selector, enabled) {
+  if (selector?.stateId && selector?.fieldKey) {
+    updateStateLabelFieldSelection(selector.stateId, selector.fieldKey, enabled);
+    return;
+  }
+
   if (selector?.transitionId && selector?.fieldKey) {
     updateTransitionLabelFieldSelection(selector.transitionId, selector.fieldKey, enabled);
     return;
@@ -791,6 +831,30 @@ function createTransitionVisibilityToggleButton(panel) {
     event.preventDefault();
     event.stopPropagation();
     panel.showTransitionLabelSelectors = !panel.showTransitionLabelSelectors;
+    renderPinnedPanels();
+  });
+  return button;
+}
+
+function createStateLabelVisibilityToggleButton(panel) {
+  const selectorsVisible = Boolean(panel.showStateLabelSelectors || panel.showFineLabelSelectors);
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "inspector-icon-button";
+  button.setAttribute("aria-label", selectorsVisible ? "Hide state label controls" : "Show state label controls");
+  button.setAttribute("title", selectorsVisible ? "Hide state label controls" : "Show state label controls");
+  button.setAttribute("aria-pressed", selectorsVisible ? "true" : "false");
+  button.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M1.5 12s3.6-6 10.5-6 10.5 6 10.5 6-3.6 6-10.5 6S1.5 12 1.5 12z"></path>
+      <circle cx="12" cy="12" r="3.2"></circle>
+    </svg>
+  `;
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    panel.showStateLabelSelectors = !selectorsVisible;
+    delete panel.showFineLabelSelectors;
     renderPinnedPanels();
   });
   return button;
@@ -1199,7 +1263,7 @@ function buildMetadataEntryFragment(row, options = {}) {
 
   const shouldShowSelector = showSelectors
     && normalized.selector?.fieldKey
-    && (normalized.selector?.transitionId || normalized.selector?.measurementId);
+    && (normalized.selector?.transitionId || normalized.selector?.measurementId || normalized.selector?.stateId);
   const shouldShowEditor = showEditors
     && normalized.editor?.type === "measurement-note";
 
@@ -1972,22 +2036,41 @@ function buildPinnedPanelContent(panel, layout) {
     subtitle.textContent = "";
     controls.append(createReferenceCitationMarkup(node, { linked: true }));
   } else if (panel.type === "fine") {
+    const showStateLabelSelectors = Boolean(panel.showStateLabelSelectors || panel.showFineLabelSelectors);
     kicker.textContent = "Fine Structure";
     setMixedTextContent(title, node.label);
     subtitle.textContent = "";
-    renderMetadataContent(metadata, getFineDetail(node), {
+    renderMetadataContent(metadata, getFineDetail(node, {
+      includeLabelSelectors: showStateLabelSelectors,
+    }), {
+      showSelectors: showStateLabelSelectors,
       showInlineControls: true,
     });
+    headerActions.append(createStateLabelVisibilityToggleButton(panel));
   } else if (panel.type === "hyperfine") {
+    const showStateLabelSelectors = Boolean(panel.showStateLabelSelectors || panel.showFineLabelSelectors);
     kicker.textContent = "Hyperfine Level";
     setMixedTextContent(title, `${node.parentLabel}  ${hyperfineLabel(node)}`);
     subtitle.textContent = "";
-    renderMetadataContent(metadata, getHyperfineDetail(node));
+    renderMetadataContent(metadata, getHyperfineDetail(node, {
+      includeLabelSelectors: showStateLabelSelectors,
+    }), {
+      showSelectors: showStateLabelSelectors,
+      showInlineControls: true,
+    });
+    headerActions.append(createStateLabelVisibilityToggleButton(panel));
   } else if (panel.type === "zeeman") {
+    const showStateLabelSelectors = Boolean(panel.showStateLabelSelectors || panel.showFineLabelSelectors);
     kicker.textContent = "Zeeman Sublevel";
     setZeemanTitleContent(title, node);
     subtitle.textContent = "";
-    renderMetadataContent(metadata, getZeemanDetail(node));
+    renderMetadataContent(metadata, getZeemanDetail(node, {
+      includeLabelSelectors: showStateLabelSelectors,
+    }), {
+      showSelectors: showStateLabelSelectors,
+      showInlineControls: true,
+    });
+    headerActions.append(createStateLabelVisibilityToggleButton(panel));
   } else if (panel.type === "transition") {
     renderTransitionInspectorContent({
       kicker,
@@ -2210,6 +2293,7 @@ function applyStateObject(stateObject, options = {}) {
         heightScreen: Number.isFinite(panel.heightScreen)
           ? panel.heightScreen
           : null,
+        showStateLabelSelectors: Boolean(panel.showStateLabelSelectors || panel.showFineLabelSelectors),
         showTransitionLabelSelectors: Boolean(panel.showTransitionLabelSelectors),
         showMeasurementLabelSelectors: Boolean(panel.showMeasurementLabelSelectors),
         editMeasurementNotes: Boolean(panel.editMeasurementNotes),
@@ -2267,8 +2351,10 @@ function applyStateObject(stateObject, options = {}) {
   }
   const controls = normalizedState.controls || {};
   const savedHyperfineScales = controls.hyperfineScaleByFineState;
+  const normalizedStateLabelControls = normalizeStateLabelControlEntries(controls.stateLabels);
   const normalizedTransitionControls = normalizeTransitionControlEntries(controls.transitionLabels);
   currentHyperfineScaleByFineState = createDefaultHyperfineScaleMap(defaultHyperfineScale);
+  currentStateLabelFieldsById = createDefaultStateLabelFieldMap();
   currentTransitionLabelFieldsById = createDefaultTransitionLabelFieldMap();
   currentTransitionLabelPrecisionById = createDefaultTransitionLabelPrecisionMap();
 
@@ -2292,6 +2378,18 @@ function applyStateObject(stateObject, options = {}) {
         .filter(Boolean);
 
       currentTransitionLabelFieldsById[transitionId] = normalizedFields;
+    });
+  }
+
+  if (normalizedStateLabelControls && typeof normalizedStateLabelControls === "object") {
+    Object.entries(normalizedStateLabelControls).forEach(([stateId, fields]) => {
+      if (!Array.isArray(fields)) {
+        return;
+      }
+
+      currentStateLabelFieldsById[stateId] = fields
+        .map((field) => String(field || "").trim())
+        .filter(Boolean);
     });
   }
 

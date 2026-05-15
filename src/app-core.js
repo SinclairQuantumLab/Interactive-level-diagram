@@ -1333,6 +1333,9 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
         label: state.notation || state.id,
         notation: state.notation || state.id,
         labelPlain: state.id,
+        labelFields: Array.isArray(state.show)
+          ? state.show.map((item) => String(item || "").trim()).filter(Boolean)
+          : (typeof state.show === "string" && state.show.trim() ? [state.show.trim()] : []),
         j: state.j,
         gJConfigured: gJValue.numericValue,
         gJText: gJValue.displayText,
@@ -1381,6 +1384,9 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
           return {
             id: level.id,
             F: level.f,
+            labelFields: Array.isArray(level.show)
+              ? level.show.map((item) => String(item || "").trim()).filter(Boolean)
+              : (typeof level.show === "string" && level.show.trim() ? [level.show.trim()] : []),
             relMHz: relMeasurement.numericValue,
             relText: relMeasurement.displayText,
             relMeasurement: relMeasurement.measurement,
@@ -1639,10 +1645,15 @@ async function loadDiagramCatalog() {
   };
 }
 
-function resolveSelectedDiagramPath(diagramCatalog) {
+function resolveSelectedDiagramPath(diagramCatalog, preferredPath = null) {
+  const normalizedPreferredPath = String(preferredPath || "").trim();
   const urlDiagramSelection = readUrlDiagramSelection();
   const urlPath = urlDiagramSelection.path;
   const storedPath = getStoredSelectedDiagramPath();
+
+  if (normalizedPreferredPath && diagramCatalog.entries.some((entry) => entry.fileName === normalizedPreferredPath)) {
+    return normalizedPreferredPath;
+  }
 
   if (urlPath && diagramCatalog.entries.some((entry) => entry.fileName === urlPath)) {
     return urlPath;
@@ -1657,8 +1668,8 @@ function resolveSelectedDiagramPath(diagramCatalog) {
     || null;
 }
 
-function loadInitialConfig(diagramCatalog) {
-  const selectedDiagramPath = resolveSelectedDiagramPath(diagramCatalog);
+function loadInitialConfig(diagramCatalog, preferredPath = null) {
+  const selectedDiagramPath = resolveSelectedDiagramPath(diagramCatalog, preferredPath);
   const selectedDiagram = diagramCatalog.entries.find((entry) => entry.fileName === selectedDiagramPath) || null;
   const rawYamlText = selectedDiagram?.text || null;
   const rawBibText = selectedDiagram?.bibliographyText || null;
@@ -1716,7 +1727,7 @@ function activateDiagramSelection(source, preferredPath = null, { layoutFlavor =
   });
   diagramCatalog = nextCatalog;
 
-  ({ config, hasLoadedDiagramSource, selectedDiagramPath } = loadInitialConfig(nextCatalog));
+  ({ config, hasLoadedDiagramSource, selectedDiagramPath } = loadInitialConfig(nextCatalog, preferredPath));
   if (selectedDiagramPath) {
     storeSelectedDiagramPath(selectedDiagramPath);
   }
@@ -1729,6 +1740,7 @@ function activateDiagramSelection(source, preferredPath = null, { layoutFlavor =
   hideTooltip();
 
   currentHyperfineScaleByFineState = createDefaultHyperfineScaleMap();
+  currentStateLabelFieldsById = createDefaultStateLabelFieldMap();
   currentTransitionLabelFieldsById = createDefaultTransitionLabelFieldMap();
   currentTransitionLabelPrecisionById = createDefaultTransitionLabelPrecisionMap();
 
@@ -1924,6 +1936,7 @@ function normalizeLayoutStateObject(stateObject, { expansionMode = "collapsed" }
   const measureToolState = getLayoutRecord(toolsState.measure) || {};
   const moveToolState = getLayoutRecord(toolsState.move) || {};
   const diagramState = getLayoutRecord(sourceState.diagram) || {};
+  const diagramStatesState = getLayoutRecord(diagramState.states) || {};
   const diagramHyperfineState = getLayoutRecord(diagramState.hyperfine) || {};
   const diagramTransitionsState = getLayoutRecord(diagramState.transitions) || {};
   const magneticFieldState = getLayoutRecord(diagramState.magneticField) || {};
@@ -1953,6 +1966,8 @@ function normalizeLayoutStateObject(stateObject, { expansionMode = "collapsed" }
       ),
       controls: {
       ...baseState.controls,
+      stateLabels: pickFirstArray(diagramStatesState.labels, legacyControlsState.stateLabels)
+        || baseState.controls.stateLabels,
       hyperfineScaleByFineState: getLayoutRecord(diagramHyperfineState.scaleByFineState)
         || getLayoutRecord(legacyControlsState.hyperfineScaleByFineState)
         || baseState.controls.hyperfineScaleByFineState,
@@ -2034,6 +2049,7 @@ function buildBaseLayoutStateObject({ expansionMode = "collapsed" } = {}) {
     fineDisplacements: {},
     controls: {
       hyperfineScaleByFineState: createDefaultHyperfineScaleMap(),
+      stateLabels: [],
       transitionLabels: [],
       bFieldEnabled: defaultBFieldEnabled,
       bFieldVisualScale: defaultBFieldVisualScale,
@@ -2236,6 +2252,7 @@ const ORBITAL_L_BY_LETTER = {
   H: 5,
 };
 let currentHyperfineScaleByFineState = {};
+let currentStateLabelFieldsById = {};
 let currentTransitionLabelFieldsById = {};
 let currentTransitionLabelPrecisionById = {};
 let currentBFieldEnabled = defaultBFieldEnabled;
@@ -2470,6 +2487,13 @@ function serializePinnedPanelEntry(panel) {
     return panel;
   }
 
+  if (panel.type === "fine" || panel.type === "hyperfine" || panel.type === "zeeman") {
+    return {
+      ...panel,
+      showStateLabelSelectors: Boolean(panel.showStateLabelSelectors || panel.showFineLabelSelectors),
+    };
+  }
+
   if (panel.type === "transition") {
     return {
       panelId: panel.panelId,
@@ -2543,6 +2567,25 @@ function serializeMeasurementEntry(measurement) {
   };
 }
 
+function serializeStateLabelControlEntries() {
+  return Object.entries(currentStateLabelFieldsById || {})
+    .map(([stateId, fields]) => {
+      const normalizedStateId = String(stateId || "").trim();
+
+      if (!normalizedStateId) {
+        return null;
+      }
+
+      return {
+        state: normalizedStateId,
+        show: Array.isArray(fields)
+          ? fields.map((field) => String(field || "").trim()).filter(Boolean)
+          : [],
+      };
+    })
+    .filter(Boolean);
+}
+
 function serializeTransitionControlEntries() {
   const transitionIds = new Set([
     ...Object.keys(currentTransitionLabelFieldsById || {}),
@@ -2570,6 +2613,32 @@ function serializeTransitionControlEntries() {
       };
     })
     .filter(Boolean);
+}
+
+function normalizeStateLabelControlEntries(value) {
+  const normalizedFieldsById = {};
+
+  if (!Array.isArray(value)) {
+    return normalizedFieldsById;
+  }
+
+  value.forEach((entry) => {
+    if (!entry || typeof entry !== "object") {
+      return;
+    }
+
+    const stateId = String(entry.state ?? entry.id ?? "").trim();
+
+    if (!stateId) {
+      return;
+    }
+
+    normalizedFieldsById[stateId] = Array.isArray(entry.show)
+      ? entry.show.map((field) => String(field || "").trim()).filter(Boolean)
+      : [];
+  });
+
+  return normalizedFieldsById;
 }
 
 function normalizeTransitionControlEntries(value) {

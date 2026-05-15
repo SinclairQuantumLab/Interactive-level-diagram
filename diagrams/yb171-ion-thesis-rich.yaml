@@ -351,99 +351,6 @@ transitions:
       - type
     notes:
       - Older 638 nm repumper from $2F_{7/2}$.\cite{Counts20,Hur22}
-default_layout:
-  view:
-    theme: dark
-    referencesVisible: false
-    zoom:
-      x: 258.2786436833051
-      'y': 261.4237109901381
-      k: 0.6826032012969743
-  layout:
-    expanded:
-      fine:
-        - 2S1/2
-        - 2D3/2
-        - 2D5/2
-        - 2F7/2
-        - 3D[3/2]1/2
-        - 1D[3/2]3/2
-        - 1D[5/2]5/2
-        - 2P1/2
-      hyperfine:
-        - 2S1/2[F=0]
-        - 2S1/2[F=1]
-        - 2D3/2[F=1]
-        - 2D3/2[F=2]
-        - 2D5/2[F=2]
-        - 2D5/2[F=3]
-        - 2F7/2[F=3]
-        - 2F7/2[F=4]
-        - 3D[3/2]1/2[F=0]
-        - 3D[3/2]1/2[F=1]
-        - 1D[3/2]3/2[F=1]
-        - 1D[3/2]3/2[F=2]
-        - 2P1/2[F=1]
-        - 2P1/2[F=0]
-    hidden:
-      states: []
-      transitions:
-        - {between: ['2D3/2[F=2]', '2S1/2[F=0]']}
-        - {between: ['2D5/2[F=2]', '2S1/2[F=0]']}
-        - {between: ['2F7/2[F=3]', '2S1/2[F=0]']}
-        - {between: ['2P1/2[F=1]', '2S1/2[F=0]']}
-        - {between: ['2D3/2[F=1]', '3D[3/2]1/2[F=0]']}
-        - {between: ['1D[3/2]3/2[F=1]', '2F7/2[F=3]']}
-        - {between: ['1D[3/2]3/2[F=2]', '2F7/2[F=4]']}
-        - {between: ['2P1/2[F=1]', '2S1/2[F=1]']}
-    displacements: {}
-    pinnedPanels: []
-  tools:
-    hide:
-      enabled: false
-    measure:
-      enabled: false
-      selection: []
-      measurements: []
-    move:
-      enabled: false
-  diagram:
-    hyperfine:
-      scaleByFineState:
-        2S1/2: 0.12133888504649774
-        2P1/2: 0.5445026528424212
-        2D3/2: 1
-        2D5/2: 1
-        2F7/2: 0.3341950400261143
-        3D[3/2]1/2: 0.3250872973854344
-        1D[3/2]3/2: 0.09204495717531712
-        1D[5/2]5/2: 1
-    transitions:
-      labels:
-        - {between: ['2S1/2[F=0]', '2S1/2[F=1]'], show: [frequency], precision: {wavelength: null, frequency: null}}
-        - {between: [2P1/2, 2S1/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
-        - {between: ['2P1/2[F=0]', '2S1/2[F=1]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
-        - {between: ['2P1/2[F=1]', '2S1/2[F=0]'], show: [wavelength], precision: {wavelength: 1, frequency: null}}
-        - {between: ['2P1/2[F=1]', '2S1/2[F=1]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
-        - {between: [2D5/2, 2S1/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
-        - {between: ['2D5/2[F=2]', '2S1/2[F=0]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
-        - {between: [2D3/2, 2S1/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
-        - {between: ['2D3/2[F=2]', '2S1/2[F=0]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
-        - {between: [2F7/2, 2S1/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
-        - {between: ['2F7/2[F=3]', '2S1/2[F=0]'], show: [wavelength], precision: {wavelength: null, frequency: null}}
-        - {between: [2D3/2, '3D[3/2]1/2'], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
-        - {between: ['2D3/2[F=1]', '3D[3/2]1/2[F=0]'], show: [frequency], precision: {wavelength: null, frequency: null}}
-        - {between: ['1D[3/2]3/2', 2F7/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
-        - {between: ['1D[3/2]3/2[F=1]', '2F7/2[F=3]'], show: [frequency], precision: {wavelength: 0, frequency: null}}
-        - {between: ['1D[3/2]3/2[F=2]', '2F7/2[F=4]'], show: [frequency], precision: {wavelength: null, frequency: null}}
-        - {between: ['1D[5/2]5/2', 2F7/2], show: [wavelength, type], precision: {wavelength: 1, frequency: null}}
-    magneticField:
-      enabled: true
-      visualScale: 1
-      gauss: 1
-      range:
-        min: 0
-        max: 10
 bibliography: |
   @phdthesis{Hur22,
     author = {Hur, Joonseok},
@@ -608,3 +515,149 @@ bibliography: |
     year = {2005},
     note = {Used here for the standard Lande g-factor expressions underlying calculated g_J and weak-field g_F values.}
   }
+
+default_layout:
+  version: 4
+  appVersion: '20260514.1'
+  view:
+    theme: dark
+    referencesVisible: false
+    zoom:
+      x: 358.90220959782823
+      'y': 170.8864830168544
+      k: 0.757542171912234
+  layout:
+    expanded:
+      fine:
+        - 2S1/2
+        - 2D3/2
+        - 2D5/2
+        - 2F7/2
+        - 1D[5/2]5/2
+        - 2P1/2
+      hyperfine:
+        - 2S1/2[F=0]
+        - 2S1/2[F=1]
+        - 2D3/2[F=1]
+        - 2D3/2[F=2]
+        - 2D5/2[F=2]
+        - 2D5/2[F=3]
+        - 2F7/2[F=3]
+        - 2F7/2[F=4]
+        - 2P1/2[F=1]
+        - 2P1/2[F=0]
+    hidden:
+      states: []
+      transitions:
+        - between: ['2D3/2[F=2]', '2S1/2[F=0]']
+        - between: ['2D5/2[F=2]', '2S1/2[F=0]']
+        - between: ['2F7/2[F=3]', '2S1/2[F=0]']
+        - between: ['2P1/2[F=1]', '2S1/2[F=0]']
+        - between: ['2D3/2[F=1]', '3D[3/2]1/2[F=0]']
+        - between: ['1D[3/2]3/2[F=1]', '2F7/2[F=3]']
+        - between: ['1D[3/2]3/2[F=2]', '2F7/2[F=4]']
+        - between: ['2P1/2[F=1]', '2S1/2[F=1]']
+        - between: ['2P1/2[F=0]', '2S1/2[F=1]']
+    displacements:
+      2F7/2:
+        x: -116.62248251465962
+        'y': 13.28610560293589
+    pinnedPanels: []
+  tools:
+    hide:
+      enabled: false
+    measure:
+      enabled: false
+      selection: []
+      measurements: []
+    move:
+      enabled: false
+  diagram:
+    states:
+      labels:
+        - state: 2S1/2
+          show: []
+        - state: 2P1/2
+          show: [property:\frac\gamma2\pi]
+        - state: 2D3/2
+          show: [property:\frac\gamma2\pi]
+        - state: 2D5/2
+          show: [property:\frac\gamma2\pi]
+        - state: 2F7/2
+          show: [property:\frac\gamma2\pi]
+        - state: 3D[3/2]1/2
+          show: []
+        - state: 1D[3/2]3/2
+          show: []
+        - state: 1D[5/2]5/2
+          show: []
+    hyperfine:
+      scaleByFineState:
+        2S1/2: 0.08090958991783821
+        2P1/2: 0.34673685045253166
+        2D3/2: 0.6081350012787179
+        2D5/2: 2.8840315031266055
+        2F7/2: 0.3341950400261143
+        3D[3/2]1/2: 0.3250872973854344
+        1D[3/2]3/2: 0.09204495717531712
+        1D[5/2]5/2: 1
+    transitions:
+      labels:
+        - between: ['2S1/2[F=0]', '2S1/2[F=1]']
+          show: [frequency]
+          precision: {wavelength: null, frequency: null}
+        - between: [2P1/2, 2S1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['2P1/2[F=0]', '2S1/2[F=1]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: ['2P1/2[F=1]', '2S1/2[F=0]']
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['2P1/2[F=1]', '2S1/2[F=1]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: [2D5/2, 2S1/2]
+          show: [wavelength, type]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['2D5/2[F=2]', '2S1/2[F=0]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: [2D3/2, 2S1/2]
+          show: [wavelength, type]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['2D3/2[F=2]', '2S1/2[F=0]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: [2F7/2, 2S1/2]
+          show: [wavelength, type]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['2F7/2[F=3]', '2S1/2[F=0]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: [2D3/2, '3D[3/2]1/2']
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['2D3/2[F=1]', '3D[3/2]1/2[F=0]']
+          show: [frequency]
+          precision: {wavelength: null, frequency: null}
+        - between: ['1D[3/2]3/2', 2F7/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['1D[3/2]3/2[F=1]', '2F7/2[F=3]']
+          show: [frequency]
+          precision: {wavelength: 0, frequency: null}
+        - between: ['1D[3/2]3/2[F=2]', '2F7/2[F=4]']
+          show: [frequency]
+          precision: {wavelength: null, frequency: null}
+        - between: ['1D[5/2]5/2', 2F7/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+    magneticField:
+      enabled: true
+      visualScale: 1
+      gauss: 0.5
+      range:
+        min: 0
+        max: 10

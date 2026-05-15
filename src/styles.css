@@ -1539,17 +1539,13 @@ h1 {
 
 .fine-state-label-html {
   position: absolute;
-  display: inline-flex;
-  align-items: flex-start;
-  gap: 4px;
+  display: block;
   color: var(--text-main);
-  white-space: nowrap;
   line-height: 1;
   pointer-events: none;
   font-family: "KaTeX_Main", "Cambria Math", "STIX Two Text", "Times New Roman", serif;
   font-size: 22px;
-  transform: translate(0, -100%);
-  transform-origin: left bottom;
+  transform-origin: left top;
   will-change: left, top;
 }
 
@@ -1567,8 +1563,52 @@ h1 {
   font-size: 1em;
 }
 
+.fine-state-label-html * {
+  pointer-events: none;
+}
+
+.fine-state-label-main,
 .fine-state-label-text {
   display: inline-block;
+  white-space: nowrap;
+}
+
+.fine-state-label-main {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateY(calc(-100% - var(--fine-label-offset, 0px)));
+}
+
+.fine-state-info-list {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.fine-state-info-line {
+  display: block;
+}
+
+.fine-state-info-label,
+.fine-state-info-separator,
+.fine-state-info-value {
+  display: inline;
+}
+
+.fine-state-info-label {
+  font-weight: 700;
+}
+
+.fine-state-info-line .katex {
+  font-size: 1em;
 }
 
 .reference-key,

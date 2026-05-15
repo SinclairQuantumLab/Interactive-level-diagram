@@ -1960,6 +1960,103 @@ function expandBounds(bounds, minX, minY, maxX, maxY) {
   bounds.maxY = Math.max(bounds.maxY, maxY);
 }
 
+function estimateStateLabelWidth(node, options = {}) {
+  const {
+    includeMainLabel = false,
+    minimumWidth = 0,
+  } = options;
+  const labelLines = [
+    ...(includeMainLabel
+      ? [String(node?.labelPlain || toPlainDisplayText(node?.label || "") || "")]
+      : []),
+    ...getStateLabelLines(node).map((line) => toPlainDisplayText(line)),
+  ].filter(Boolean);
+  const maxCharacters = d3.max(labelLines, (line) => String(line || "").length) || 0;
+  const estimatedTextWidth = maxCharacters * 7.25;
+  return Math.max(minimumWidth, estimatedTextWidth + 20);
+}
+
+function estimateStateLabelBottom(node, anchorY) {
+  const infoLines = getStateLabelEntries(node);
+
+  if (infoLines.length === 0) {
+    return anchorY + 14;
+  }
+
+  const infoListTop = 8;
+  const lineHeight = 15;
+  return anchorY + infoListTop + (infoLines.length * lineHeight);
+}
+
+function buildStateLabelOverlayItems(layout) {
+  const items = [];
+
+  layout.fineStates.forEach((state) => {
+    items.push({
+      type: "fine",
+      id: state.id,
+      node: state,
+      anchorX: state.lineX + layoutConfig.labelXOffset,
+      anchorY: state.energyY,
+      barEndX: fineBarEnd(state),
+      label: String(state.label || ""),
+      labelPlain: state.labelPlain,
+      showMainLabel: true,
+      hidden: isFineStateEffectivelyHidden(state),
+      mainLabelOffsetPx: layoutConfig.fineLabelYOffset,
+      infoEntries: getStateLabelEntries(state),
+    });
+  });
+
+  layout.hyperfineNodes.forEach((node) => {
+    const infoEntries = getStateLabelEntries(node);
+
+    if (infoEntries.length === 0) {
+      return;
+    }
+
+    items.push({
+      type: "hyperfine",
+      id: node.id,
+      node,
+      anchorX: node.x1 + layoutConfig.labelXOffset,
+      anchorY: node.y,
+      barEndX: node.x2,
+      label: "",
+      labelPlain: `${node.parentLabelPlain}  ${hyperfineLabel(node)}`,
+      showMainLabel: false,
+      hidden: isHyperfineStateEffectivelyHidden(node),
+      mainLabelOffsetPx: 0,
+      infoEntries,
+    });
+  });
+
+  layout.zeemanNodes.forEach((node) => {
+    const infoEntries = getStateLabelEntries(node);
+
+    if (infoEntries.length === 0) {
+      return;
+    }
+
+    items.push({
+      type: "zeeman",
+      id: node.id,
+      node,
+      anchorX: node.x1 + layoutConfig.labelXOffset,
+      anchorY: node.y,
+      barEndX: node.x2,
+      label: "",
+      labelPlain: `${node.parentLabelPlain}  F=${formatQuantumNumber(node.parentF)}  mF=${signedQuantumLabel(node.mF)}`,
+      showMainLabel: false,
+      hidden: isZeemanStateEffectivelyHidden(node),
+      mainLabelOffsetPx: 0,
+      infoEntries,
+    });
+  });
+
+  return items;
+}
+
 function computeLayoutBounds(layout) {
   const bounds = {
     minX: Number.POSITIVE_INFINITY,
@@ -1973,8 +2070,54 @@ function computeLayoutBounds(layout) {
       bounds,
       state.lineX - 4,
       state.energyY - 34,
-      fineBarEnd(state) + 16,
-      state.energyY + 14,
+      Math.max(
+        fineBarEnd(state) + 16,
+        state.lineX + layoutConfig.labelXOffset + estimateStateLabelWidth(state, {
+          includeMainLabel: true,
+          minimumWidth: fineBarWidth(state) + 16,
+        }),
+      ),
+      estimateStateLabelBottom(state, state.energyY),
+    );
+  });
+
+  layout.hyperfineNodes.forEach((node) => {
+    if (getStateLabelEntries(node).length === 0) {
+      return;
+    }
+
+    expandBounds(
+      bounds,
+      node.x1 - 4,
+      node.y - 4,
+      Math.max(
+        node.x2 + 12,
+        node.x1 + layoutConfig.labelXOffset + estimateStateLabelWidth(node, {
+          includeMainLabel: false,
+          minimumWidth: (node.x2 - node.x1) + 12,
+        }),
+      ),
+      estimateStateLabelBottom(node, node.y),
+    );
+  });
+
+  layout.zeemanNodes.forEach((node) => {
+    if (getStateLabelEntries(node).length === 0) {
+      return;
+    }
+
+    expandBounds(
+      bounds,
+      node.x1 - 4,
+      node.y - 4,
+      Math.max(
+        node.x2 + 12,
+        node.x1 + layoutConfig.labelXOffset + estimateStateLabelWidth(node, {
+          includeMainLabel: false,
+          minimumWidth: (node.x2 - node.x1) + 12,
+        }),
+      ),
+      estimateStateLabelBottom(node, node.y),
     );
   });
 
@@ -2285,56 +2428,113 @@ function renderFineLabelOverlay(layout, animationDuration = 0) {
   const shellRect = appShell.getBoundingClientRect();
   const sceneScale = getSceneScreenScale();
   const existingLabels = new Map(
-    Array.from(fineLabelLayer.querySelectorAll("[data-state-id]"))
-      .map((element) => [element.dataset.stateId, element]),
+    Array.from(fineLabelLayer.querySelectorAll("[data-state-key]"))
+      .map((element) => [element.dataset.stateKey, element]),
   );
-  const nextStateIds = new Set();
+  const nextStateKeys = new Set();
 
-  layout.fineStates.forEach((state) => {
-    nextStateIds.add(state.id);
-    let label = existingLabels.get(state.id);
+  buildStateLabelOverlayItems(layout).forEach((item) => {
+    const stateKey = `${item.type}:${item.id}`;
+    nextStateKeys.add(stateKey);
+    let label = existingLabels.get(stateKey);
 
     if (!label) {
       label = document.createElement("div");
       label.className = "fine-state-label fine-state-label-html";
-      label.dataset.stateId = state.id;
+      label.dataset.stateKey = stateKey;
+      label.dataset.stateId = item.id;
+      label.dataset.stateType = item.type;
       label.addEventListener("click", (event) => {
         if (!currentHideToolEnabled) {
           return;
         }
 
+        const stateType = label.dataset.stateType;
+        const stateId = label.dataset.stateId;
+
+        if (!stateType || !stateId) {
+          return;
+        }
+
         event.preventDefault();
         event.stopPropagation();
-        const hidden = toggleStateHidden("fine", state.id);
+        const hidden = toggleStateHidden(stateType, stateId);
         persistState();
         render(CONTROL_ANIMATION_MS);
-        setStatus(hidden ? `Hidden ${state.labelPlain}.` : `Shown ${state.labelPlain}.`);
+        setStatus(hidden ? `Hidden ${label.dataset.stateLabelPlain || stateId}.` : `Shown ${label.dataset.stateLabelPlain || stateId}.`);
       });
       fineLabelLayer.append(label);
     }
 
+    const mainLabel = item.showMainLabel ? String(item.label || "") : "";
+    const infoEntries = item.infoEntries;
+    const serializedInfoLines = JSON.stringify(infoEntries);
     const referenceKeys = "";
 
     if (
-      label.dataset.label !== state.label
+      label.dataset.label !== mainLabel
+      || label.dataset.infoLines !== serializedInfoLines
       || label.dataset.referenceKeys !== referenceKeys
       || label.dataset.referencesVisible !== String(currentReferencesVisible)
     ) {
       label.innerHTML = "";
 
-      const text = document.createElement("span");
-      text.className = "fine-state-label-text";
-      renderFineStateLabelHtml(text, state);
-      label.append(text);
+      if (item.showMainLabel) {
+        const main = document.createElement("div");
+        main.className = "fine-state-label-main";
 
-      label.dataset.label = state.label;
+        const text = document.createElement("span");
+        text.className = "fine-state-label-text";
+        renderFineStateLabelHtml(text, item.node);
+        main.append(text);
+        label.append(main);
+      }
+
+      const infoList = document.createElement("div");
+      infoList.className = "fine-state-info-list";
+      infoList.hidden = infoEntries.length === 0;
+
+      infoEntries.forEach((entry) => {
+        const lineElement = document.createElement("div");
+        lineElement.className = "fine-state-info-line";
+
+        if (entry?.label && typeof entry.label === "object" && entry.label.type === "subscript-token") {
+          const labelToken = document.createElement("span");
+          labelToken.className = "fine-state-info-label";
+          setSubscriptTokenContent(labelToken, entry.label.base, entry.label.subscript, entry.label.suffix || "");
+          lineElement.append(labelToken);
+        } else if (entry?.label) {
+          const labelText = document.createElement("span");
+          labelText.className = "fine-state-info-label";
+          setMixedTextContent(labelText, entry.label);
+          lineElement.append(labelText);
+        }
+
+        if (entry?.label) {
+          const separator = document.createElement("span");
+          separator.className = "fine-state-info-separator";
+          separator.textContent = ": ";
+          lineElement.append(separator);
+        }
+
+        const valueText = document.createElement("span");
+        valueText.className = "fine-state-info-value";
+        setMixedTextContent(valueText, entry?.value || "");
+        lineElement.append(valueText);
+        infoList.append(lineElement);
+      });
+
+      label.append(infoList);
+
+      label.dataset.label = mainLabel;
+      label.dataset.infoLines = serializedInfoLines;
       label.dataset.referenceKeys = referenceKeys;
       label.dataset.referencesVisible = String(currentReferencesVisible);
     }
 
     const screenPosition = getScenePointScreenPosition(
-      state.lineX + layoutConfig.labelXOffset,
-      state.energyY - layoutConfig.fineLabelYOffset,
+      item.anchorX,
+      item.anchorY,
     );
 
     label.style.transition = animationDuration > 0
@@ -2342,13 +2542,16 @@ function renderFineLabelOverlay(layout, animationDuration = 0) {
       : "none";
     label.style.left = `${screenPosition.x - shellRect.left}px`;
     label.style.top = `${screenPosition.y - shellRect.top}px`;
-    label.style.transform = `translate(0, -100%) scale(${sceneScale})`;
-    label.classList.toggle("is-hidden-state", isFineStateEffectivelyHidden(state));
+    label.style.transform = `scale(${sceneScale})`;
+    label.style.setProperty("--fine-label-offset", `${item.mainLabelOffsetPx}px`);
+    label.classList.toggle("has-main-label", item.showMainLabel);
+    label.classList.toggle("is-hidden-state", item.hidden);
     label.classList.toggle("is-hide-mode", currentHideToolEnabled);
+    label.dataset.stateLabelPlain = item.labelPlain;
   });
 
-  existingLabels.forEach((label, stateId) => {
-    if (!nextStateIds.has(stateId)) {
+  existingLabels.forEach((label, stateKey) => {
+    if (!nextStateKeys.has(stateKey)) {
       label.remove();
     }
   });
