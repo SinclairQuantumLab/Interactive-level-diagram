@@ -158,6 +158,7 @@ const DEFAULT_APP_CONFIG = {
 const BROWSER_DIAGRAMS_FOLDER_NAME = "diagrams";
 const DIAGRAMS_FOLDER_PICKER_ID = "interactive-level-diagram-folder";
 const HOSTED_DIAGRAM_MANIFEST_PATH = `${BROWSER_DIAGRAMS_FOLDER_NAME}/manifest.json`;
+const DEFAULT_HOME_DIAGRAM_FILE = "Rb87.yaml";
 
 function isPlainConfigObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
@@ -1478,11 +1479,64 @@ function normalizeDiagramSelectionSource(source) {
   return source === "folder" || source === "hosted" ? source : null;
 }
 
-function readUrlDiagramSelection() {
+function isHomeRouteUrl() {
   try {
     const locationUrl = new URL(window.location.href);
-    const rawPath = String(locationUrl.searchParams.get("diagram") || "").trim();
-    const rawSource = String(locationUrl.searchParams.get("source") || "").trim();
+    const pathSegments = locationUrl.pathname.split("/").filter(Boolean);
+    const lastSegment = pathSegments[pathSegments.length - 1] || "";
+
+    return !lastSegment || lastSegment.toLowerCase() === "index.html" || !lastSegment.includes(".");
+  } catch {
+    return false;
+  }
+}
+
+function readUrlQueryParam(name, { preservePlus = false } = {}) {
+  const normalizedName = String(name || "").trim();
+
+  if (!normalizedName) {
+    return "";
+  }
+
+  const rawSearch = String(window.location.search || "").replace(/^\?/, "");
+
+  if (!rawSearch) {
+    return "";
+  }
+
+  for (const segment of rawSearch.split("&")) {
+    if (!segment) {
+      continue;
+    }
+
+    const separatorIndex = segment.indexOf("=");
+    const rawKey = separatorIndex >= 0 ? segment.slice(0, separatorIndex) : segment;
+    const rawValue = separatorIndex >= 0 ? segment.slice(separatorIndex + 1) : "";
+
+    try {
+      const decodedKey = decodeURIComponent(rawKey.replace(/\+/g, "%20"));
+
+      if (decodedKey !== normalizedName) {
+        continue;
+      }
+
+      const valueForDecoding = preservePlus
+        ? rawValue.replace(/\+/g, "%2B")
+        : rawValue.replace(/\+/g, "%20");
+
+      return decodeURIComponent(valueForDecoding);
+    } catch {
+      continue;
+    }
+  }
+
+  return "";
+}
+
+function readUrlDiagramSelection() {
+  try {
+    const rawPath = String(readUrlQueryParam("diagram", { preservePlus: true }) || "").trim();
+    const rawSource = String(readUrlQueryParam("source") || "").trim();
     const path = isDiagramConfigFileName(rawPath) ? rawPath : null;
     const source = normalizeDiagramSelectionSource(rawSource);
 
@@ -1490,6 +1544,12 @@ function readUrlDiagramSelection() {
   } catch {
     return { path: null, source: null };
   }
+}
+
+function shouldUseDefaultHomeDiagramSelection() {
+  const urlDiagramSelection = readUrlDiagramSelection();
+
+  return !urlDiagramSelection.path && !urlDiagramSelection.source && isHomeRouteUrl();
 }
 
 function syncUrlDiagramSelection(path, source, { historyMode = "replace" } = {}) {
@@ -1508,7 +1568,7 @@ function syncUrlDiagramSelection(path, source, { historyMode = "replace" } = {})
       nextUrl.searchParams.delete("diagram");
     }
 
-    if (normalizedSource) {
+    if (normalizedSource === "folder") {
       nextUrl.searchParams.set("source", normalizedSource);
     } else {
       nextUrl.searchParams.delete("source");
@@ -1609,6 +1669,7 @@ async function loadDiagramCatalog() {
     : [];
   const preferredSource = getStoredSelectedDiagramSource();
   const urlDiagramSelection = readUrlDiagramSelection();
+  const shouldUseHomeDefault = shouldUseDefaultHomeDiagramSelection();
   const urlPreferredSource = resolveSourceForUrlDiagramSelection({
     hostedEntries: hostedCatalog.entries,
     folderEntries,
@@ -1618,6 +1679,10 @@ async function loadDiagramCatalog() {
   if (urlPreferredSource === "folder" && folderHandle && hasPermission) {
     activeSource = "folder";
   } else if (urlPreferredSource === "hosted" && hostedCatalog.available) {
+    activeSource = "hosted";
+  } else if (shouldUseHomeDefault
+    && hostedCatalog.available
+    && diagramCatalogEntriesContainPath(hostedCatalog.entries, DEFAULT_HOME_DIAGRAM_FILE)) {
     activeSource = "hosted";
   } else if (preferredSource === "folder" && folderHandle && hasPermission) {
     activeSource = "folder";
@@ -1657,6 +1722,11 @@ function resolveSelectedDiagramPath(diagramCatalog, preferredPath = null) {
 
   if (urlPath && diagramCatalog.entries.some((entry) => entry.fileName === urlPath)) {
     return urlPath;
+  }
+
+  if (shouldUseDefaultHomeDiagramSelection()
+    && diagramCatalog.entries.some((entry) => entry.fileName === DEFAULT_HOME_DIAGRAM_FILE)) {
+    return DEFAULT_HOME_DIAGRAM_FILE;
   }
 
   if (storedPath && diagramCatalog.entries.some((entry) => entry.fileName === storedPath)) {
@@ -1773,7 +1843,7 @@ let hasInteractiveDiagram = false;
 let diagramPickerLayoutFlavor = "default";
 let diagramPickerPreviewActive = false;
 let diagramPickerSearchQuery = "";
-let diagramPickerSortMode = "modified-desc";
+let diagramPickerSortMode = "alpha-asc";
 function syncDocumentTitle() {
   document.title = hasLoadedDiagramSource
     ? `${config.meta.title || `${config.species.species}-${config.species.atomic_mass_number}`} Diagram`

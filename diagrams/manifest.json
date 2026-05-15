@@ -1,13 +1,13 @@
 {
   "files": [
-    "ba133-ion.yaml",
-    "ba137-ion.yaml",
-    "ca43-ion.yaml",
-    "cs133-neutral.yaml",
-    "rb87-dline-steck.yaml",
-    "rb87-neutral.yaml",
-    "sr87-neutral.yaml",
-    "yb171-ion.yaml",
-    "yb171-neutral.yaml"
+    "Ba+133.yaml",
+    "Ba+137.yaml",
+    "Ca+43.yaml",
+    "Cs133.yaml",
+    "Rb87.yaml",
+    "Rb87_dline_steck.yaml",
+    "Sr87.yaml",
+    "Yb+171.yaml",
+    "Yb171.yaml"
   ]
 }

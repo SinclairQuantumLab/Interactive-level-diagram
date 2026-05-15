@@ -297,14 +297,14 @@ bibliography: |
 
 default_layout:
   version: 4
-  appVersion: '20260514.3'
+  appVersion: '20260515.1'
   view:
     theme: dark
     referencesVisible: false
     zoom:
-      x: 262.5610748556386
-      'y': 17.729296501374392
-      k: 0.928288043478261
+      x: 203.0739945652175
+      'y': -14.919223961297192
+      k: 1.0108899456521738
   layout:
     expanded:
       fine:
@@ -357,7 +357,7 @@ default_layout:
       scaleByFineState:
         6S1/2: 0.055975760149511014
         6P1/2: 0.3372873086588689
-        6P3/2: 2.355049283896009
+        6P3/2: 1.5275660582380732
         5D3/2: 0.9549925860214359
         5D5/2: 7.112135136533288
     transitions:
