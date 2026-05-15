@@ -1468,6 +1468,98 @@ function storeSelectedDiagramPath(path) {
   }
 }
 
+function normalizeDiagramSelectionSource(source) {
+  return source === "folder" || source === "hosted" ? source : null;
+}
+
+function readUrlDiagramSelection() {
+  try {
+    const locationUrl = new URL(window.location.href);
+    const rawPath = String(locationUrl.searchParams.get("diagram") || "").trim();
+    const rawSource = String(locationUrl.searchParams.get("source") || "").trim();
+    const path = isDiagramConfigFileName(rawPath) ? rawPath : null;
+    const source = normalizeDiagramSelectionSource(rawSource);
+
+    return { path, source };
+  } catch {
+    return { path: null, source: null };
+  }
+}
+
+function syncUrlDiagramSelection(path, source, { historyMode = "replace" } = {}) {
+  if (!window.history || typeof window.history.replaceState !== "function") {
+    return;
+  }
+
+  try {
+    const nextUrl = new URL(window.location.href);
+    const normalizedPath = String(path || "").trim();
+    const normalizedSource = normalizeDiagramSelectionSource(source);
+
+    if (normalizedPath && isDiagramConfigFileName(normalizedPath)) {
+      nextUrl.searchParams.set("diagram", normalizedPath);
+    } else {
+      nextUrl.searchParams.delete("diagram");
+    }
+
+    if (normalizedSource) {
+      nextUrl.searchParams.set("source", normalizedSource);
+    } else {
+      nextUrl.searchParams.delete("source");
+    }
+
+    if (nextUrl.toString() === window.location.href) {
+      return;
+    }
+
+    const historyMethod = historyMode === "push" && typeof window.history.pushState === "function"
+      ? "pushState"
+      : "replaceState";
+    window.history[historyMethod](null, "", nextUrl.toString());
+  } catch {
+    return;
+  }
+}
+
+function diagramCatalogEntriesContainPath(entries, fileName) {
+  const normalizedFileName = String(fileName || "").trim();
+
+  if (!normalizedFileName) {
+    return false;
+  }
+
+  return (Array.isArray(entries) ? entries : [])
+    .some((entry) => entry?.fileName === normalizedFileName);
+}
+
+function resolveSourceForUrlDiagramSelection({ hostedEntries = [], folderEntries = [] } = {}, selection = {}) {
+  const normalizedSource = normalizeDiagramSelectionSource(selection?.source);
+  const normalizedPath = String(selection?.path || "").trim();
+
+  if (normalizedPath) {
+    const hostedHasPath = diagramCatalogEntriesContainPath(hostedEntries, normalizedPath);
+    const folderHasPath = diagramCatalogEntriesContainPath(folderEntries, normalizedPath);
+
+    if (normalizedSource === "folder" && folderHasPath) {
+      return "folder";
+    }
+
+    if (normalizedSource === "hosted" && hostedHasPath) {
+      return "hosted";
+    }
+
+    if (hostedHasPath) {
+      return "hosted";
+    }
+
+    if (folderHasPath) {
+      return "folder";
+    }
+  }
+
+  return normalizedSource;
+}
+
 function getStoredSelectedDiagramSource() {
   const storageKey = APP_CONFIG.storage.selectedDiagramSourceKey
     || `${APP_CONFIG.storage.selectedDiagramKey}-source`;
@@ -1510,9 +1602,18 @@ async function loadDiagramCatalog() {
     ? await loadFolderDiagramCatalog(folderHandle)
     : [];
   const preferredSource = getStoredSelectedDiagramSource();
+  const urlDiagramSelection = readUrlDiagramSelection();
+  const urlPreferredSource = resolveSourceForUrlDiagramSelection({
+    hostedEntries: hostedCatalog.entries,
+    folderEntries,
+  }, urlDiagramSelection);
   let activeSource = "none";
 
-  if (preferredSource === "folder" && folderHandle && hasPermission) {
+  if (urlPreferredSource === "folder" && folderHandle && hasPermission) {
+    activeSource = "folder";
+  } else if (urlPreferredSource === "hosted" && hostedCatalog.available) {
+    activeSource = "hosted";
+  } else if (preferredSource === "folder" && folderHandle && hasPermission) {
     activeSource = "folder";
   } else if (preferredSource === "hosted" && hostedCatalog.available) {
     activeSource = "hosted";
@@ -1539,7 +1640,13 @@ async function loadDiagramCatalog() {
 }
 
 function resolveSelectedDiagramPath(diagramCatalog) {
+  const urlDiagramSelection = readUrlDiagramSelection();
+  const urlPath = urlDiagramSelection.path;
   const storedPath = getStoredSelectedDiagramPath();
+
+  if (urlPath && diagramCatalog.entries.some((entry) => entry.fileName === urlPath)) {
+    return urlPath;
+  }
 
   if (storedPath && diagramCatalog.entries.some((entry) => entry.fileName === storedPath)) {
     return storedPath;
@@ -1591,7 +1698,7 @@ function getDiagramEntriesForSource(source) {
   return [];
 }
 
-function activateDiagramSelection(source, preferredPath = null, { layoutFlavor = "saved" } = {}) {
+function activateDiagramSelection(source, preferredPath = null, { layoutFlavor = "saved", historyMode = "push" } = {}) {
   const normalizedSource = source === "folder" ? "folder" : "hosted";
   const sourceEntries = getDiagramEntriesForSource(normalizedSource);
   const nextCatalog = {
@@ -1613,6 +1720,7 @@ function activateDiagramSelection(source, preferredPath = null, { layoutFlavor =
   if (selectedDiagramPath) {
     storeSelectedDiagramPath(selectedDiagramPath);
   }
+  syncUrlDiagramSelection(selectedDiagramPath, normalizedSource, { historyMode });
   hasInteractiveDiagram = config.states.length > 0;
   storageKey = `${APP_CONFIG.storage.stateKeyPrefix}${config.meta.id}-v${APP_CONFIG.storage.stateVersion}`;
   syncDocumentTitle();
@@ -2951,6 +3059,33 @@ function renderHomePanel() {
   renderDiagramPicker();
 }
 
+function handleDiagramSelectionPopState() {
+  const urlDiagramSelection = readUrlDiagramSelection();
+  const sourceFromUrl = resolveSourceForUrlDiagramSelection({
+    hostedEntries: diagramCatalog.hostedEntries,
+    folderEntries: diagramCatalog.folderEntries,
+  }, urlDiagramSelection);
+
+  let nextSource = sourceFromUrl;
+
+  if (!nextSource) {
+    nextSource = browserDiagramSourceInfo.activeSource === "folder" ? "folder" : "hosted";
+  }
+
+  if (!getDiagramEntriesForSource(nextSource).length) {
+    nextSource = nextSource === "folder" ? "hosted" : "folder";
+  }
+
+  if (!getDiagramEntriesForSource(nextSource).length) {
+    return;
+  }
+
+  activateDiagramSelection(nextSource, urlDiagramSelection.path, {
+    layoutFlavor: "saved",
+    historyMode: "replace",
+  });
+}
+
 async function bootstrapConfig() {
   diagramCatalog = await loadDiagramCatalog();
   diagramsFolderHandle = diagramCatalog.folderHandle;
@@ -2963,8 +3098,15 @@ async function bootstrapConfig() {
   }
 
   storageKey = `${APP_CONFIG.storage.stateKeyPrefix}${config.meta.id}-v${APP_CONFIG.storage.stateVersion}`;
+  syncUrlDiagramSelection(selectedDiagramPath, browserDiagramSourceInfo.activeSource, { historyMode: "replace" });
   syncDocumentTitle();
   renderHomePanel();
 }
 
 const appBootstrapPromise = bootstrapConfig();
+
+window.addEventListener("popstate", () => {
+  void appBootstrapPromise.then(() => {
+    handleDiagramSelectionPopState();
+  });
+});

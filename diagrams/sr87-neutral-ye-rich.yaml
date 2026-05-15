@@ -1,0 +1,304 @@
+# Atomic species data only.
+# Keep app layout, UI copy, storage, and rendering rules in the app code.
+
+meta:
+  id: sr87-neutral-ye-rich
+  title: Strontium-87 Neutral Atom
+
+species:
+  species: Sr
+  atomic_mass_number: 87
+  ionization_number: 0
+  nuclear_spin: 4.5
+  notes:
+    - 'Ground-state configuration: [Kr]5$s^2$'
+    - 'Fermionic isotope with nuclear spin $I=9/2$.'
+
+states:
+  - id: 1S0
+    j: 0
+    g_j: 0
+    energy: '0 THz\cite{NISTSrI}'
+    notation: '$5s^2\,{}^{1}S_0$'
+    references:
+      energy: [NISTSrI]
+      constants: [Boyd07Thesis]
+    hyperfine_constants:
+      a: '-1000.5 MHz\cite{Boyd07Thesis}'
+
+  - id: 1P1
+    j: 1
+    g_j: 1
+    energy: '650.504125364876(?) THz\cite{NISTSrI}'
+    notation: '$5s5p\,{}^{1}P_1$'
+    references:
+      energy: [NISTSrI]
+      constants: [Boyd07Thesis]
+    hyperfine_constants:
+      a: '-3.4(4) MHz\cite{Boyd07Thesis}'
+      b: '39(4) MHz\cite{Boyd07Thesis}'
+    properties:
+      - section: Lifetime
+      - label: $\frac{\Gamma}{2\pi}$
+        value: 'about 32 MHz\cite{Ludlow15}'
+
+  - id: 3P1
+    j: 1
+    g_j: 1.5
+    energy: '434.829503798476(?) THz\cite{NISTSrI}'
+    notation: '$5s5p\,{}^{3}P_1$'
+    references:
+      energy: [NISTSrI]
+      constants: [Boyd07PRA, Boyd07Thesis]
+    hyperfine_constants:
+      a: '-260.084(10) MHz\cite{Boyd07PRA,Boyd07Thesis}'
+      b: '-35.658(6) MHz\cite{Boyd07PRA,Boyd07Thesis}'
+    properties:
+      - section: Lifetime
+      - label: $\frac{\Gamma}{2\pi}$
+        value: 'about 7.5 kHz\cite{Ludlow15}'
+
+  - id: 3P0
+    j: 0
+    g_j: 0
+    energy: '429.22800422987365(37) THz\cite{Campbell08}'
+    notation: '$5s5p\,{}^{3}P_0$'
+    references:
+      energy: [Campbell08]
+      constants: [Boyd07Thesis]
+    hyperfine_constants:
+      a: '-1094(1) MHz\cite{Boyd07Thesis}'
+    properties:
+      - section: Lifetime
+      - label: $\tau$
+        value: '174(28) s\cite{Kim25}'
+      - label: $\frac{\Gamma}{2\pi}$
+        value: 'about 0.91 mHz\cite{Kim25}'
+
+  - id: 3P2
+    j: 2
+    g_j: 1.5
+    energy: '446.647682243785(?) THz\cite{NISTSrI}'
+    notation: '$5s5p\,{}^{3}P_2$'
+    references:
+      energy: [NISTSrI]
+      constants: [Boyd07PRA, Boyd07Thesis]
+    hyperfine_constants:
+      a: '-212.765(1) MHz\cite{Boyd07PRA,Boyd07Thesis}'
+      b: '67.34(15) MHz\cite{Boyd07PRA,Boyd07Thesis}'
+
+  - id: 3S1
+    j: 1
+    g_j: 2.00231930436256
+    energy: '870.561173040811(?) THz\cite{NISTSrI}'
+    notation: '$5s6s\,{}^{3}S_1$'
+    references:
+      energy: [NISTSrI]
+      constants: [Boyd07Thesis]
+    hyperfine_constants:
+      a: '-542.0(1) MHz\cite{Boyd07Thesis}'
+      b: '-0.1(5) MHz\cite{Boyd07Thesis}'
+
+transitions:
+  - between: [1S0, 1P1]
+    type: E1
+    frequency: '650.504125364876(?) THz\cite{NISTSrI}'
+    show: [wavelength, type]
+    notes:
+      - 'Broad first-stage cooling / fluorescence line at 461 nm.\cite{Ludlow15}'
+
+  - between: ['1S0[F=9/2]', '1P1[F=11/2]']
+    type: E1
+    frequency: '650.504119814876(?) THz\cite{Boyd07Thesis,NISTSrI}'
+    show: [wavelength]
+    notes:
+      - 'Principal hyperfine branch used for 461 nm cooling in $^{87}$Sr.\cite{Ludlow08,Boyd07Thesis}'
+
+  - between: [1S0, 3P1]
+    type: E1
+    frequency: '434.829503798476(?) THz\cite{NISTSrI}'
+    show: [wavelength, type]
+    notes:
+      - 'Narrow-line 689 nm transition used for second-stage cooling, stirring, and optical pumping.\cite{Ludlow08,Ludlow15}'
+
+  - between: ['1S0[F=9/2]', '3P1[F=11/2]']
+    type: E1
+    frequency: '434.828324505976(?) THz\cite{Boyd07PRA,Boyd07Thesis,NISTSrI}'
+    show: [wavelength]
+    notes:
+      - 'Restoring branch of the 689 nm MOT.\cite{Ludlow08}'
+
+  - between: ['1S0[F=9/2]', '3P1[F=9/2]']
+    type: E1
+    frequency: '434.829787654476(?) THz\cite{Boyd07PRA,Boyd07Thesis,NISTSrI}'
+    show: [wavelength]
+    notes:
+      - 'Red-MOT stirring branch.\cite{Ludlow08}'
+
+  - between: ['1S0[F=9/2]', '3P1[F=7/2]']
+    type: E1
+    frequency: '434.830917917226(?) THz\cite{Boyd07PRA,Boyd07Thesis,NISTSrI}'
+    show: [wavelength]
+    notes:
+      - '$\pi$-polarized optical-pumping branch used to accumulate population in the stretched $m_F=\pm 9/2$ ground states.\cite{Ludlow08}'
+
+  - between: [1S0, 3P0]
+    type: E1
+    frequency: '429.22800422987365(37) THz\cite{Campbell08}'
+    show: [wavelength, type]
+    notes:
+      - '698 nm optical clock transition.\cite{Campbell08,Ludlow15}'
+
+  - between: [3P2, 3S1]
+    type: E1
+    frequency: '423.913490797026(?) THz\cite{NISTSrI}'
+    show: [wavelength, type]
+    notes:
+      - '707 nm repumper that empties the metastable $^3P_2$ reservoir.\cite{Ludlow08,Ludlow15}'
+
+  - between: [3P0, 3S1]
+    type: E1
+    frequency: '441.333168810937(?) THz\cite{Campbell08,NISTSrI}'
+    show: [wavelength, type]
+    notes:
+      - '679 nm repumper that clears the $^3P_0$ dark state.\cite{Ludlow08,Ludlow15}'
+
+default_layout:
+  version: 4
+  appVersion: '20260513.3'
+  view:
+    theme: dark
+    referencesVisible: false
+    zoom:
+      x: 272.3061033008679
+      'y': 51.04756141478231
+      k: 0.8506789713932851
+  layout:
+    expanded:
+      fine:
+        - 3P0
+        - 1P1
+        - 1S0
+        - 3P1
+        - 3P2
+      hyperfine:
+        - '3P0[F=9/2]'
+        - '1S0[F=9/2]'
+        - '3P1[F=11/2]'
+        - '3P1[F=9/2]'
+        - '3P1[F=7/2]'
+    hidden:
+      states: []
+      transitions:
+        - {between: ['1P1[F=11/2]', '1S0[F=9/2]']}
+        - {between: ['1S0[F=9/2]', '3P1[F=7/2]']}
+        - {between: ['1S0[F=9/2]', '3P1[F=9/2]']}
+        - {between: ['1S0[F=9/2]', '3P1[F=11/2]']}
+    displacements:
+      1S0:
+        x: 47.32589066198284
+        'y': 92.02256517607782
+      3S1:
+        x: 40.75285029226279
+        'y': 1.3146080739439867
+    pinnedPanels: []
+  tools:
+    hide:
+      enabled: false
+    measure:
+      enabled: false
+      selection: []
+      measurements: []
+    move:
+      enabled: false
+  diagram:
+    hyperfine:
+      scaleByFineState:
+        1S0: 1
+        1P1: 15.135612484362087
+        3P1: 0.3872576449216173
+        3P0: 1
+        3P2: 0.3019951720402016
+        3S1: 0.13061708881318418
+    transitions:
+      labels:
+        - {between: [1P1, 1S0], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+        - {between: ['1P1[F=11/2]', '1S0[F=9/2]'], show: [wavelength], precision: {wavelength: 6, frequency: null}}
+        - {between: [1S0, 3P1], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+        - {between: ['1S0[F=9/2]', '3P1[F=11/2]'], show: [wavelength], precision: {wavelength: 6, frequency: null}}
+        - {between: ['1S0[F=9/2]', '3P1[F=9/2]'], show: [wavelength], precision: {wavelength: 6, frequency: null}}
+        - {between: ['1S0[F=9/2]', '3P1[F=7/2]'], show: [wavelength], precision: {wavelength: 6, frequency: null}}
+        - {between: [1S0, 3P0], show: [wavelength, frequency], precision: {wavelength: 1, frequency: null}}
+        - {between: [3P2, 3S1], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+        - {between: [3P0, 3S1], show: [wavelength], precision: {wavelength: 1, frequency: null}}
+    magneticField:
+      enabled: true
+      visualScale: 1
+      gauss: 1
+      range:
+        min: 0
+        max: 10
+
+bibliography: |
+  @misc{NISTSrI,
+    author = {{NIST Physical Measurement Laboratory}},
+    title = {Energy Levels of Neutral Strontium (Sr I)},
+    note = {NIST Atomic Spectra Database handbook table for neutral strontium fine-structure energies.},
+    url = {https://pml.nist.gov/PhysRefData/Handbook/Tables/strontiumtable5.htm}
+  }
+
+  @article{Boyd07PRA,
+    author = {Boyd, M. M. and Zelevinsky, T. and Ludlow, A. D. and Blatt, S. and Zanon-Willette, T. and Foreman, S. M. and Ye, J.},
+    title = {Nuclear spin effects in optical lattice clocks},
+    journal = {Physical Review A},
+    volume = {76},
+    pages = {022510},
+    year = {2007},
+    doi = {10.1103/PhysRevA.76.022510}
+  }
+
+  @phdthesis{Boyd07Thesis,
+    author = {Boyd, M. M.},
+    title = {High Precision Spectroscopy of Strontium in an Optical Lattice: Towards a New Standard for Frequency and Time},
+    school = {University of Colorado Boulder},
+    year = {2007},
+    note = {Used here especially for Table 2.3 and the 87Sr cooling / pumping diagrams discussed in Chapter 2.}
+  }
+
+  @article{Campbell08,
+    author = {Campbell, G. K. and Ludlow, A. D. and Blatt, S. and Thomsen, J. W. and Martin, M. J. and de Miranda, M. H. G. and Zelevinsky, T. and Boyd, M. M. and Ye, J. and Diddams, S. A. and Heavner, T. P. and Parker, T. E. and Jefferts, S. R.},
+    title = {The absolute frequency of the 87Sr optical clock transition},
+    journal = {Metrologia},
+    volume = {45},
+    pages = {539--548},
+    year = {2008},
+    doi = {10.1088/0026-1394/45/5/008}
+  }
+
+  @phdthesis{Ludlow08,
+    author = {Ludlow, Andrew D.},
+    title = {The Strontium Optical Lattice Clock},
+    school = {University of Colorado Boulder},
+    year = {2008},
+    note = {Used here for the 689 nm stirring / optical-pumping scheme and clock interrogation conventions.}
+  }
+
+  @article{Ludlow15,
+    author = {Ludlow, Andrew D. and Boyd, Martin M. and Ye, Jun and Peik, Ekkehard and Schmidt, Piet O.},
+    title = {Optical atomic clocks},
+    journal = {Reviews of Modern Physics},
+    volume = {87},
+    pages = {637--701},
+    year = {2015},
+    doi = {10.1103/RevModPhys.87.637}
+  }
+
+  @article{Kim25,
+    author = {Kim, Kyungtae and Aeppli, Alexander and Warfield, William and Chu, Anjun and Rey, Ana Maria and Ye, Jun},
+    title = {Atomic Coherence of 2 Minutes and Instability of 1.5 x 10^-18 at 1 s in a Wannier-Stark Lattice Clock},
+    journal = {Physical Review Letters},
+    volume = {135},
+    pages = {103601},
+    year = {2025},
+    doi = {10.1103/3wtv-sty2}
+  }

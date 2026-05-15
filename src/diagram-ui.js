@@ -1504,11 +1504,11 @@ function createReferenceCitationMarkup(reference, { linked = false } = {}) {
 
   const title = document.createElement("span");
   title.className = "reference-title";
-  title.textContent = fields.title || reference.key;
+  setMixedTextContent(title, fields.title || reference.key);
 
   const source = document.createElement("span");
   source.className = "reference-source";
-  source.textContent = buildReferenceVenueLine(reference);
+  setMixedTextContent(source, buildReferenceVenueLine(reference));
 
   if (linked) {
     const referenceLink = getReferenceLink(reference);
@@ -1553,12 +1553,38 @@ function showReferenceTooltip(event, referenceKey) {
     return;
   }
 
+  const fields = reference.fields || {};
+  const rows = [];
+  const authors = formatBibtexAuthors(fields.author);
+  const venue = buildReferenceVenueLine(reference).replace(/\.$/, "");
+
+  if (authors) {
+    rows.push({
+      label: "Authors",
+      value: authors,
+    });
+  }
+
+  if (venue) {
+    rows.push({
+      label: "Source",
+      value: venue,
+    });
+  }
+
+  if (fields.doi) {
+    rows.push({
+      label: "DOI",
+      value: fields.doi,
+    });
+  }
+
   showTooltip(
     event,
     "Reference",
     reference.key,
-    formatReferenceLineText(reference),
-    [],
+    fields.title || reference.key,
+    rows,
   );
 
   tooltip.classList.add("is-reference-tooltip");

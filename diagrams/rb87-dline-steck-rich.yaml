@@ -16,9 +16,8 @@ species:
   ionization_number: 0
   nuclear_spin: 1.5
   notes:
-    - 'Steck-centered reference diagram for the $5S_{1/2}$, $5P_{1/2}$, and $5P_{3/2}$ manifolds.'
     - 'Ground-state configuration: [Kr]5$s^1$'
-    - 'Expand fine, hyperfine, and Zeeman structure to expose Table 8 branching factors and the stretched D2 cycling branch.'
+    - 'Relative natural abundance: 27.83(2)%\cite{Ste03}'
 
 states:
   - id: 5S1/2
@@ -33,19 +32,12 @@ states:
     hyperfine_constants:
       a: '3417.34130545215(5) MHz\cite{Bize99}'
     properties:
-      - section: Atomic reference
+      - section: Energy
       - label: Ionization limit
-        value: '33690.8048(2) cm^-1 = 4.1771270(2) eV\cite{Ste03}'
-      - label: Relative natural abundance
-        value: '27.83(2)%\cite{Ste03}'
-      - section: Magnetic response
-      - label: 'Measured $g_J$'
-        value: '2.00233113(20)\cite{Ari77}'
-      - label: 'Approx. weak-field $g_F$ values'
-        value: 'F=2 -> +1/2; F=1 -> -1/2\cite{Ste03}'
-      - section: Electric response
-      - label: 'Scalar polarizability $\alpha_0$'
-        value: 'h * 0.0794(16) Hz/(V/cm)^2\cite{Mil00,Ste03}'
+        value: '33690.8048(2) cm$^{-1}$ = 4.1771270(2) eV\cite{Ste03}'
+      - section: Polarizability
+      - label: 'Scalar $\frac{\alpha_\mathrm{DC}^{(0)}}{h}$'
+        value: '0.0794(16) Hz/(V/cm)$^2$\cite{Mil00,Ste03}'
 
   - id: 5P1/2
     j: 0.5
@@ -59,19 +51,13 @@ states:
     hyperfine_constants:
       a: '408.328(15) MHz\cite{Bar91}'
     properties:
-      - section: Magnetic response
-      - label: 'Estimated $g_J$'
-        value: '0.666; Steck notes no direct experimental measurement for this manifold\cite{Ste03}'
-      - label: 'Approx. weak-field $g_F$ values'
-        value: 'F=2 -> +1/6; F=1 -> -1/6\cite{Ste03}'
-      - section: Electric response
-      - label: 'Scalar polarizability shift $\alpha_0(5P_{1/2})-\alpha_0(5S_{1/2})$'
-        value: 'h * 0.122306(16) Hz/(V/cm)^2\cite{Mil94,Ste03}'
       - section: Lifetime
       - label: '$\tau$'
         value: '27.70(4) ns\cite{Volz96,Ste03}'
       - label: '$\frac{\Gamma}{2\pi}$'
         value: '5.746(8) MHz\cite{Volz96,Ste03}'
+    notes:
+      - 'Steck lists $g_J \approx 0.666$ for this manifold and notes no direct experimental measurement.\cite{Ste03}'
 
   - id: 5P3/2
     j: 1.5
@@ -86,16 +72,9 @@ states:
       a: '84.7185(20) MHz\cite{Ye96}'
       b: '12.4965(37) MHz\cite{Ye96}'
     properties:
-      - section: Magnetic response
-      - label: 'Measured $g_J$'
-        value: '1.3362(13)\cite{Ari77}'
-      - label: 'Approx. weak-field $g_F$ values'
-        value: 'F=3 -> +2/3; F=2 -> +2/3; F=1 -> +2/3; F=0 -> 0\cite{Ste03}'
-      - section: Electric response
-      - label: 'Scalar polarizability shift $\alpha_0(5P_{3/2})-\alpha_0(5S_{1/2})$'
-        value: 'h * 0.1340(8) Hz/(V/cm)^2\cite{Kre97,Ste03}'
-      - label: 'Tensor polarizability $\alpha_2(5P_{3/2})$'
-        value: 'h * -0.0406(8) Hz/(V/cm)^2\cite{Kre97,Ste03}'
+      - section: Polarizability
+      - label: 'Tensor $\frac{\alpha_\mathrm{DC}^{(2)}}{h}$'
+        value: '-0.0406(8) Hz/(V/cm)$^2$\cite{Kre97,Ste03}'
       - section: Lifetime
       - label: '$\tau$'
         value: '26.24(4) ns\cite{Volz96,Ste03}'
@@ -108,9 +87,9 @@ transitions:
     frequency: '6.83468261090429(9) GHz\cite{Bize99}'
     show: [frequency]
     properties:
-      - section: Clock reference
-      - label: Quadratic Zeeman coefficient
-        value: '2pi x 575.15 Hz/G^2\cite{Ste03}'
+      - section: Zeeman
+      - label: Quadratic coefficient
+        value: '2pi x 575.15 Hz/G$^2$\cite{Ste03}'
     notes:
       - 'The $m_F=0 \leftrightarrow m_F=0$ branch is the first-order field-insensitive clock transition.\cite{Ste03}'
 
@@ -120,35 +99,32 @@ transitions:
     frequency: '377.1074635(4) THz\cite{Bar91}'
     show: [wavelength, strength]
     properties:
-      - section: Optical line data
-      - label: Transition energy
+      - section: Line data
+      - label: Energy
         value: '1.55959099(6) eV\cite{Bar91,Ste03}'
       - label: Air wavelength
         value: '794.76569 nm\cite{Ste03}'
-      - label: Vacuum wavenumber
-        value: '12578.950985(13) cm^-1\cite{Bar91,Ste03}'
-      - section: Radiative response
-      - label: Lifetime
+      - label: Wavenumber
+        value: '12578.950985(13) cm$^{-1}$\cite{Bar91,Ste03}'
+      - section: Polarizability
+      - label: 'Scalar $\frac{\alpha_\mathrm{DC}^{(0)}}{h}$'
+        value: '0.122306(16) Hz/(V/cm)$^2$\cite{Mil94,Ste03}'
+      - section: Radiative properties
+      - label: $\tau$
         value: '27.70(4) ns\cite{Volz96,Ste03}'
-      - label: 'Decay rate $\Gamma$'
-        value: '36.10(5) x 10^6 s^-1\cite{Volz96,Ste03}'
+      - label: '$\Gamma$'
+        value: '36.10(5) x 10^6 s$^{-1}$\cite{Volz96,Ste03}'
       - label: '$\frac{\Gamma}{2\pi}$'
         value: '5.746(8) MHz\cite{Volz96,Ste03}'
-      - label: Absorption oscillator strength
+      - label: Oscillator strength
         value: '0.3420(14)\cite{Ste03}'
-      - section: Atomic motion
-      - label: Recoil velocity
+      - section: Recoil
+      - label: '$v_\mathrm{recoil}$'
         value: '5.7754 mm/s\cite{Ste03}'
-      - label: Recoil energy
-        value: '2pi x 3.6325 kHz\cite{Ste03}'
-      - label: Recoil temperature
+      - label: '$\frac{E_\mathrm{recoil}}{h}$'
+        value: '3.6325 kHz\cite{Ste03}'
+      - label: '$T_\mathrm{recoil}$'
         value: '348.66 nK\cite{Ste03}'
-      - label: Doppler shift at recoil velocity
-        value: '2pi x 7.2649 kHz\cite{Ste03}'
-      - label: Standing-wave shift for $v_{sw}=v_r$
-        value: '2pi x 14.530 kHz\cite{Ste03}'
-    notes:
-      - 'Expanded D1 hyperfine manifolds expose the Table 8 relative strength factors below.\cite{Ste03}'
 
   - between: [5S1/2, 5P3/2]
     type: E1
@@ -156,35 +132,32 @@ transitions:
     frequency: '384.2304844685(62) THz\cite{Ye96}'
     show: [wavelength, strength]
     properties:
-      - section: Optical line data
-      - label: Transition energy
+      - section: Line data
+      - label: Energy
         value: '1.589049439(58) eV\cite{Ye96,Ste03}'
       - label: Air wavelength
         value: '780.03200 nm\cite{Ste03}'
-      - label: Vacuum wavenumber
-        value: '12816.54938993(21) cm^-1\cite{Ye96,Ste03}'
-      - section: Radiative response
-      - label: Lifetime
+      - label: Wavenumber
+        value: '12816.54938993(21) cm$^{-1}$\cite{Ye96,Ste03}'
+      - section: Polarizability
+      - label: 'Scalar $\frac{\alpha_\mathrm{DC}^{(0)}}{h}$'
+        value: '0.1340(8) Hz/(V/cm)$^2$\cite{Kre97,Ste03}'
+      - section: Radiative properties
+      - label: $\tau$
         value: '26.24(4) ns\cite{Volz96,Ste03}'
-      - label: 'Decay rate $\Gamma$'
-        value: '38.11(6) x 10^6 s^-1\cite{Volz96,Ste03}'
+      - label: '$\Gamma$'
+        value: '38.11(6) x 10^6 s$^{-1}$\cite{Volz96,Ste03}'
       - label: '$\frac{\Gamma}{2\pi}$'
         value: '6.065(9) MHz\cite{Volz96,Ste03}'
-      - label: Absorption oscillator strength
+      - label: Oscillator strength
         value: '0.6956(15)\cite{Ste03}'
-      - section: Atomic motion
-      - label: Recoil velocity
+      - section: Recoil
+      - label: '$v_\mathrm{recoil}$'
         value: '5.8845 mm/s\cite{Ste03}'
-      - label: Recoil energy
-        value: '2pi x 3.7710 kHz\cite{Ste03}'
-      - label: Recoil temperature
+      - label: '$\frac{E_\mathrm{recoil}}{h}$'
+        value: '3.7710 kHz\cite{Ste03}'
+      - label: '$T_\mathrm{recoil}$'
         value: '361.96 nK\cite{Ste03}'
-      - label: Doppler shift at recoil velocity
-        value: '2pi x 7.5419 kHz\cite{Ste03}'
-      - label: Standing-wave shift for $v_{sw}=v_r$
-        value: '2pi x 15.084 kHz\cite{Ste03}'
-    notes:
-      - 'Expanded D2 hyperfine manifolds expose the MOT cooling, repump, and stretched cycling branches.\cite{Ste03}'
 
   - between: ['5S1/2[F=1]', '5P1/2[F=1]']
     type: E1
@@ -263,11 +236,11 @@ transitions:
     references:
       derived: [Bize99, Ye96]
     properties:
-      - section: Cycling branch
+      - section: Line data
       - label: Saturation intensity
-        value: '1.669(2) mW/cm^2\cite{Ste03}'
+        value: '1.669(2) mW/cm$^2$\cite{Ste03}'
       - label: Resonant cross section
-        value: '2.907 x 10^-9 cm^2\cite{Ste03}'
+        value: '2.907 x 10$^{-9}$ cm$^2$\cite{Ste03}'
     notes:
       - 'Stretched $\sigma^+$ D2 cycling transition.\cite{Ste03}'
 

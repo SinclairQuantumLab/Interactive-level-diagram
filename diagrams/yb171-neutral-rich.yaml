@@ -1,0 +1,403 @@
+# Atomic species data only.
+# Keep app layout, UI copy, storage, and rendering rules in the app code.
+
+meta:
+  id: yb171-neutral-rich
+  title: Ytterbium-171 Neutral Atom
+
+species:
+  species: Yb
+  atomic_mass_number: 171
+  ionization_number: 0
+  nuclear_spin: 0.5
+  notes:
+    - 'Ground-state configuration: [Xe]4f$^{14}$6$s^2$'
+    - 'Fermionic isotope with nuclear spin $I=1/2$.'
+
+states:
+  - id: 1S0
+    j: 0
+    g_j: 0
+    energy: '0 THz'
+    notation: '$6s^2\,{}^{1}S_0$'
+    hyperfine:
+      - f: 0.5
+        rel: '0 MHz'
+
+  - id: 1P1
+    j: 1
+    g_j: 1
+    energy: '751.527474845(418) THz\cite{Kleinert16}'
+    notation: '$6s6p\,{}^{1}P_1$'
+    references:
+      energy: [Kleinert16]
+      constants: [Kleinert16]
+    hyperfine_constants:
+      a: '-212.33(30) MHz\cite{Kleinert16}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '5.464(5) ns\cite{Takasu04}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '29.12(3) MHz\cite{Takasu04}'
+    notes:
+      - 'Centroid energy calculated from the measured $F=1/2 \to F''=3/2$ frequency and $A(^1P_1)$.\cite{Kleinert16}'
+
+  - id: 3P1
+    j: 1
+    g_j: 1.5
+    energy: '539.388426843(38) THz\cite{Jones23}'
+    notation: '$6s6p\,{}^{3}P_1$'
+    references:
+      energy: [Jones23]
+      constants: [Jones23]
+    hyperfine_constants:
+      a: '3957.833(28) MHz\cite{Jones23}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '866.1(7.4) ns\cite{Beloy12}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '183.8(1.6) kHz\cite{Beloy12}'
+    notes:
+      - 'Centroid energy calculated from the measured hyperfine components and $A(^3P_1)$.\cite{Jones23}'
+
+  - id: 3P0
+    j: 0
+    g_j: 0
+    energy: '518.2958365916(44) THz\cite{Hoyt05}'
+    notation: '$6s6p\,{}^{3}P_0$'
+    references:
+      energy: [Hoyt05]
+    hyperfine:
+      - f: 0.5
+        rel: '0 MHz'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '23(?) s\cite{Porsev04}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '6.9 mHz\cite{Porsev04}'
+    notes:
+      - 'Hyperfine-induced clock state in the odd isotopes of neutral ytterbium.\cite{Porsev04}'
+
+  - id: 3P2
+    j: 2
+    g_j: 1.5
+    energy: '590.904179674(425) THz\cite{Xu23,Hoyt05}'
+    notation: '$6s6p\,{}^{3}P_2$'
+    references:
+      energy: [Xu23, Hoyt05]
+      constants: [Xu23]
+    hyperfine_constants:
+      a: '2682.86(38) MHz\cite{Xu23}'
+    notes:
+      - 'Centroid energy calculated from the measured 770 nm hyperfine components, $A(^3P_2)$, and the derived $^3S_1$ centroid.\cite{Xu23,Hoyt05}'
+      - 'Long-lived metastable triplet state addressed by the 770 nm repump.\cite{Cho12,Xu23}'
+
+  - id: 3S1
+    j: 1
+    g_j: 2
+    energy: '980.164013314(235) THz\cite{Xu23,Hoyt05}'
+    notation: '$6s7s\,{}^{3}S_1$'
+    references:
+      energy: [Xu23, Hoyt05]
+      constants: [Xu23]
+    hyperfine_constants:
+      a: '6838.69(25) MHz\cite{Xu23}'
+    notes:
+      - 'Centroid energy calculated from the measured 649 nm hyperfine components and the $^3P_0$ clock frequency.\cite{Xu23,Hoyt05}'
+
+  - id: J2
+    j: 2
+    g_j: '1.54(13)\cite{Qiao24}'
+    energy: '695.172739733(5) THz\cite{Qiao24,Hoyt05}'
+    notation: '$4f^{13}5d6s^2\,(J=2)$'
+    references:
+      energy: [Qiao24, Hoyt05]
+      constants: [Qiao24]
+    hyperfine_constants:
+      a: '1123.2523(20) MHz\cite{Qiao24}'
+    notes:
+      - 'Centroid energy calculated from the measured 1695 nm hyperfine components and the $^1S_0 \to {}^3P_0$ clock frequency.\cite{Qiao24,Hoyt05}'
+
+transitions:
+  - between: [1S0, 1P1]
+    type: E1
+    frequency: '751.527474845(418) THz\cite{Kleinert16}'
+    show: [wavelength, type]
+    notes:
+      - 'Broad 399 nm line used for first-stage cooling and fluorescence.\cite{Kleinert16}'
+
+  - between: ['1S0[F=1/2]', '1P1[F=1/2]']
+    type: E1
+    frequency: '751527687.18(60) MHz\cite{Kleinert16}'
+    show: [frequency]
+
+  - between: ['1S0[F=1/2]', '1P1[F=3/2]']
+    type: E1
+    frequency: '751527368.68(39) MHz\cite{Kleinert16}'
+    show: [frequency]
+    notes:
+      - 'Principal 399 nm cooling branch in $^{171}$Yb.\cite{Kleinert16}'
+
+  - between: [1S0, 3P1]
+    type: E1
+    frequency: '539.388426843(38) THz\cite{Jones23}'
+    show: [wavelength, type]
+    notes:
+      - '556 nm intercombination line used for narrow-line cooling.\cite{Jones23}'
+
+  - between: ['1S0[F=1/2]', '3P1[F=1/2]']
+    type: E1
+    frequency: '539384469.009(35) MHz\cite{Jones23}'
+    show: [frequency]
+
+  - between: ['1S0[F=1/2]', '3P1[F=3/2]']
+    type: E1
+    frequency: '539390405.761(69) MHz\cite{Jones23}'
+    show: [frequency]
+    notes:
+      - 'Main 556 nm branch for the fermionic narrow-line MOT.\cite{Jones23}'
+
+  - between: [1S0, 3P0]
+    type: E1
+    frequency: '518295836.5916(44) MHz\cite{Hoyt05}'
+    show: [wavelength, frequency, type]
+    notes:
+      - '578 nm hyperfine-induced optical clock transition.\cite{Hoyt05,Lemke09}'
+
+  - between: [3P0, 3S1]
+    type: E1
+    frequency: '461.868176723(235) THz\cite{Xu23,Hoyt05}'
+    show: [wavelength, type]
+    notes:
+      - '649 nm repump that clears the metastable $^3P_0$ state.\cite{Cho12,Xu23}'
+
+  - between: ['3P0[F=1/2]', '3S1[F=1/2]']
+    type: E1
+    frequency: '461861338.03(21) MHz\cite{Xu23}'
+    show: [frequency]
+
+  - between: ['3P0[F=1/2]', '3S1[F=3/2]']
+    type: E1
+    frequency: '461871596.07(31) MHz\cite{Xu23}'
+    show: [frequency]
+
+  - between: [3P2, 3S1]
+    type: E1
+    frequency: '389.259833640(357) THz\cite{Xu23}'
+    show: [wavelength, type]
+    notes:
+      - '770 nm repump that empties the metastable $^3P_2$ reservoir.\cite{Cho12,Xu23}'
+
+  - between: ['3P2[F=3/2]', '3S1[F=1/2]']
+    type: E1
+    frequency: '389257019.71(29) MHz\cite{Xu23}'
+    show: [frequency]
+
+  - between: ['3P2[F=3/2]', '3S1[F=3/2]']
+    type: E1
+    frequency: '389267277.10(61) MHz\cite{Xu23}'
+    show: [frequency]
+
+  - between: ['3P2[F=5/2]', '3S1[F=3/2]']
+    type: E1
+    frequency: '389260569.95(27) MHz\cite{Xu23}'
+    show: [frequency]
+
+  - between: [1S0, J2]
+    type: M2
+    frequency: '695.172739733(5) THz\cite{Qiao24,Hoyt05}'
+    show: [wavelength, type]
+    notes:
+      - '431 nm inner-shell orbital clock line observed in neutral $^{171}$Yb.\cite{Kawasaki23}'
+
+  - between: [3P0, J2]
+    type: E2
+    frequency: '176.876903141(3) THz\cite{Qiao24}'
+    show: [wavelength, type]
+    notes:
+      - '1695 nm second-clock transition proposed by Safronova et al. and directly studied in neutral $^{171}$Yb.\cite{Safronova18,Qiao24}'
+
+  - between: ['1S0[F=1/2]', 'J2[F=3/2]']
+    type: M2
+    frequency: '695171054.8581(82) MHz\cite{Kawasaki23}'
+    show: [frequency]
+
+  - between: ['3P0[F=1/2]', 'J2[F=3/2]']
+    type: E2
+    frequency: '176875218.2627(13) MHz\cite{Qiao24}'
+    show: [frequency]
+
+  - between: ['3P0[F=1/2]', 'J2[F=5/2]']
+    type: E2
+    frequency: '176878026.3935(47) MHz\cite{Qiao24}'
+    show: [frequency]
+
+default_layout:
+  view:
+    theme: dark
+    referencesVisible: false
+  layout:
+    expanded:
+      fine:
+        - 1P1
+        - 1S0
+        - 3P1
+        - 3P0
+        - 3P2
+      hyperfine:
+        - '1S0[F=1/2]'
+        - '1P1[F=3/2]'
+        - '3P1[F=3/2]'
+        - '3P1[F=1/2]'
+        - '3P0[F=1/2]'
+
+bibliography: |
+  @misc{NISTYbI,
+    title = {Yb I Energies and Wavelengths},
+    howpublished = {NIST Basic Atomic Spectroscopic Data},
+    url = {https://physics.nist.gov/PhysRefData/Handbook/Tables/ytterbiumtable5.htm},
+    note = {Accessed 2026-05-14}
+  }
+
+  @article{Kleinert16,
+    author = {Kleinert, S. and McLelland, A. J. and Dahal, H. and Manalo, C. K. and Karki, D. B. and Gerginov, V. and Gibble, K.},
+    title = {Hyperfine structure and isotope shifts of the 398.8 nm line of Yb by laser frequency combs and ultracold atoms},
+    journal = {Physical Review A},
+    volume = {94},
+    pages = {052511},
+    year = {2016},
+    doi = {10.1103/PhysRevA.94.052511}
+  }
+
+  @article{Das05,
+    author = {Das, D. and Natarajan, V.},
+    title = {Absolute frequency measurements in ytterbium with 0.08 ppb uncertainty: isotope shifts and hyperfine structure in the 399 nm $^1S_0 \to {}^1P_1$ line},
+    journal = {Physical Review A},
+    volume = {72},
+    pages = {032506},
+    year = {2005},
+    doi = {10.1103/PhysRevA.72.032506}
+  }
+
+  @article{Takasu04,
+    author = {Takasu, Y. and Komori, K. and Honda, K. and Kumakura, M. and Yabuzaki, T. and Takahashi, Y.},
+    title = {Photoassociation spectroscopy of laser-cooled ytterbium atoms},
+    journal = {Physical Review Letters},
+    volume = {93},
+    pages = {123202},
+    year = {2004},
+    doi = {10.1103/PhysRevLett.93.123202}
+  }
+
+  @article{Nenadovic16,
+    author = {Nenadovic, L. and Braverman, B. and Levin, K. and Hinkley, N. and Ludlow, A. D. and Oates, C. W. and Pizzocaro, M. and Levi, F. and Calonico, D. and Tino, G. M. and Fortier, T. M.},
+    title = {Intercombination line frequencies in $^{171}$Yb validated with the clock transition},
+    journal = {Journal of Physics B: Atomic, Molecular and Optical Physics},
+    volume = {49},
+    pages = {065004},
+    year = {2016},
+    doi = {10.1088/0953-4075/49/6/065004}
+  }
+
+  @article{Jones23,
+    author = {Jones, M. and McLelland, A. J. and Manalo, C. K. and Saldanha, P. L. and Kleinert, S. and Baird, P. E. G. and Winn, M. M. and Degenhardt, C. and Gerginov, V. and Gibble, K.},
+    title = {Absolute frequency and hyperfine structure measurements of the $^1S_0 \to {}^3P_1$ transition in fermionic ytterbium isotopes},
+    journal = {Applied Optics},
+    volume = {62},
+    pages = {3932--3940},
+    year = {2023},
+    doi = {10.1364/AO.488653}
+  }
+
+  @article{Beloy12,
+    author = {Beloy, K. and Janik, R. and Sherman, J. A. and Lemke, N. D. and Hinkley, N. and Pizzocaro, M. and Oates, C. W. and Ludlow, A. D.},
+    title = {Determination of the $6s6p\,{}^3P_0$ and $6s6p\,{}^3P_1$ lifetimes in ytterbium},
+    journal = {Physical Review A},
+    volume = {86},
+    pages = {051404},
+    year = {2012},
+    doi = {10.1103/PhysRevA.86.051404}
+  }
+
+  @article{Hoyt05,
+    author = {Hoyt, C. W. and Barber, Z. W. and Oates, C. W. and Fortier, T. M. and Diddams, S. A. and Hollberg, L.},
+    title = {Observation and absolute frequency measurements of the $^1S_0 \to {}^3P_0$ optical clock transition in neutral ytterbium},
+    journal = {Physical Review Letters},
+    volume = {95},
+    pages = {083003},
+    year = {2005},
+    doi = {10.1103/PhysRevLett.95.083003}
+  }
+
+  @article{Lemke09,
+    author = {Lemke, N. D. and Ludlow, A. D. and Barber, Z. W. and Fortier, T. M. and Diddams, S. A. and Jiang, Y. and Jefferts, S. R. and Heavner, T. P. and Parker, T. E. and Oates, C. W.},
+    title = {Spin-$1/2$ optical lattice clock},
+    journal = {Physical Review Letters},
+    volume = {103},
+    pages = {063001},
+    year = {2009},
+    doi = {10.1103/PhysRevLett.103.063001}
+  }
+
+  @article{Porsev04,
+    author = {Porsev, S. G. and Derevianko, A.},
+    title = {Hyperfine quenching of the metastable $^3P_0$ and $^3P_2$ states in divalent atoms},
+    journal = {Physical Review A},
+    volume = {69},
+    pages = {042506},
+    year = {2004},
+    doi = {10.1103/PhysRevA.69.042506}
+  }
+
+  @article{Cho12,
+    author = {Cho, Y. N. and Campbell, G. K. and Bouscal, A. and Blatt, S. and Martin, M. J. and Hinkley, N. and Ludlow, A. D. and Lemke, N. D. and Ye, J.},
+    title = {Optical repumping of triplet $P$ states enhances magneto-optical trapping of ytterbium atoms},
+    journal = {Physical Review A},
+    volume = {85},
+    pages = {035401},
+    year = {2012},
+    doi = {10.1103/PhysRevA.85.035401}
+  }
+
+  @article{Xu23,
+    author = {Xu, X. and Zhao, Y. and Meng, Z. and Ma, Z. and Xu, G. and Hao, L. and Wang, X. and Jia, S.},
+    title = {Frequency measurement of $6s6p\,{}^3P_{0,2}$--$6s7s\,{}^3S_1$ transitions in ultracold $^{171}$Yb atoms},
+    journal = {Results in Physics},
+    volume = {48},
+    pages = {106439},
+    year = {2023},
+    doi = {10.1016/j.rinp.2023.106439}
+  }
+
+  @article{Kawasaki23,
+    author = {Kawasaki, H. and Kato, Y. and Ono, T. and Kobayashi, J. and Nakamura, T. and Aikawa, K. and Katori, H.},
+    title = {Observation of the clock transition at 431 nm in $^{171}$Yb},
+    journal = {Physical Review A},
+    volume = {107},
+    pages = {L060801},
+    year = {2023},
+    doi = {10.1103/PhysRevA.107.L060801}
+  }
+
+  @article{Qiao24,
+    author = {Qiao, C. and Meng, Z. and Hao, L. and Tian, Y. and Ma, Z. and Li, Y. and Wang, X. and Jia, S.},
+    title = {Investigation of the $6s6p\,{}^3P_0$--$4f^{13}5d6s^2\,(J=2)$ clock transition in $^{171}$Yb atoms},
+    journal = {Physical Review X},
+    volume = {14},
+    pages = {011023},
+    year = {2024},
+    doi = {10.1103/PhysRevX.14.011023}
+  }
+
+  @article{Safronova18,
+    author = {Safronova, M. S. and Porsev, S. G. and Sanner, C. and Ye, J.},
+    title = {Two clock transitions in neutral Yb for the highest sensitivity to variations of the fine-structure constant},
+    journal = {Physical Review Letters},
+    volume = {120},
+    pages = {173001},
+    year = {2018},
+    doi = {10.1103/PhysRevLett.120.173001}
+  }
