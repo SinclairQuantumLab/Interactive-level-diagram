@@ -3,6 +3,7 @@ run/
 dist/
 src/generated-app-version.js
 AGENTS.md
+.agents/
 .codex/
 .git-safety/
 .local/

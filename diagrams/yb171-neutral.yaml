@@ -2,7 +2,7 @@
 # Keep app layout, UI copy, storage, and rendering rules in the app code.
 
 meta:
-  id: yb171-neutral-rich
+  id: yb171-neutral
   title: Ytterbium-171 Neutral Atom
 
 species:

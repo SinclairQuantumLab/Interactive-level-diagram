@@ -11,3 +11,4 @@ App versioning:
 - On `main`, the app version format is `YYYYMMDD.d`.
 - On non-`main` branches, the app version format is `YYYYMMDD.<branchname>.<commit hash>`.
 - Repo-local hooks in `.githooks/` refresh `src/generated-app-version.js` after commits, checkouts, merges, and rewrites.
+- Repo-local hooks also regenerate `diagrams/manifest.json` before commit so bundled diagrams stay in sync with the folder contents.

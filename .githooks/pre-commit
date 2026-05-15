@@ -1,0 +1,4 @@
+#!/bin/sh
+
+"$(dirname "$0")/refresh-diagram-manifest.sh" || exit $?
+git add diagrams/manifest.json

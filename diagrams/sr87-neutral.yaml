@@ -2,7 +2,7 @@
 # Keep app layout, UI copy, storage, and rendering rules in the app code.
 
 meta:
-  id: sr87-neutral-ye-rich
+  id: sr87-neutral
   title: Strontium-87 Neutral Atom
 
 species:
