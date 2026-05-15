@@ -1,0 +1,491 @@
+# Atomic species data only.
+# Keep app layout, UI copy, storage, and rendering rules in the app code.
+
+meta:
+  id: ca43-ion
+  title: Calcium-43 Ion
+
+species:
+  species: Ca
+  atomic_mass_number: 43
+  ionization_number: 1
+  nuclear_spin: 3.5
+  notes:
+    - 'Ground-state configuration: [Ar]4$s$'
+    - 'Stable fermionic isotope with natural abundance about 0.135%.'
+    - 'Fine-state centroids follow generic Ca II term energies; measured $^{43}$Ca$^+$ hyperfine structure is included explicitly.'
+
+states:
+  - id: 4S1/2
+    j: 0.5
+    g_j: 2.00225664
+    energy: '0 THz\cite{NISTCaII}'
+    notation: '$4s\,{}^{2}S_{1/2}$'
+    references:
+      energy: [NISTCaII]
+      constants: [Arbes94, Benhelm07]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '-806.4020716(1) MHz\cite{Arbes94}'
+    hyperfine:
+      - f: 3
+        rel: '1814.4046611(18) MHz\cite{Benhelm07}'
+      - f: 4
+        rel: '-1411.2036253(14) MHz\cite{Benhelm07}'
+
+  - id: 4P1/2
+    j: 0.5
+    g_j: 0.6666666666666666
+    energy: '755.222710197(?) THz\cite{NISTCaII}'
+    notation: '$4p\,{}^{2}P_{1/2}$'
+    references:
+      energy: [NISTCaII]
+      constants: [Kurth95, Benhelm07]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '-142(8) MHz\cite{Kurth95}'
+    hyperfine:
+      - f: 3
+        rel: '327.2(2) MHz\cite{Benhelm07}'
+      - f: 4
+        rel: '-254.5(2) MHz\cite{Benhelm07}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '6.904(26) ns\cite{Hettrich15}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '23.05(9) MHz\cite{Hettrich15}'
+      - section: Branching
+      - label: '$4S_{1/2}$'
+        value: '0.93565(7)\cite{Ramm13}'
+      - label: '$3D_{3/2}$'
+        value: '0.06435(7)\cite{Ramm13}'
+
+  - id: 4P3/2
+    j: 1.5
+    g_j: 1.3333333333333333
+    energy: '761.904964169(?) THz\cite{NISTCaII}'
+    notation: '$4p\,{}^{2}P_{3/2}$'
+    references:
+      energy: [NISTCaII]
+      constants: [Silverans91, Benhelm07]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '-31.0(2) MHz\cite{Silverans91}'
+    hyperfine:
+      - f: 2
+        rel: '205.6(1.6) MHz\cite{Benhelm07}'
+      - f: 3
+        rel: '117.5(8) MHz\cite{Benhelm07}'
+      - f: 4
+        rel: '-4.5(8) MHz\cite{Benhelm07}'
+      - f: 5
+        rel: '-164.5(11) MHz\cite{Benhelm07}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '6.639(42) ns\cite{Meir20}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '23.97(15) MHz\cite{Meir20}'
+      - section: Branching
+      - label: '$4S_{1/2}$'
+        value: '0.9347(3)\cite{Gerritsma08}'
+      - label: '$3D_{3/2}$'
+        value: '0.00661(4)\cite{Gerritsma08}'
+      - label: '$3D_{5/2}$'
+        value: '0.0587(2)\cite{Gerritsma08}'
+
+  - id: 3D3/2
+    j: 1.5
+    g_j: 0.8
+    energy: '409.222701019(?) THz\cite{NISTCaII}'
+    notation: '$3d\,{}^{2}D_{3/2}$'
+    references:
+      energy: [NISTCaII]
+      constants: [Kurth95, Benhelm07]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '-48.3(16) MHz\cite{Kurth95}'
+    hyperfine:
+      - f: 2
+        rel: '317.3(17) MHz\cite{Benhelm07}'
+      - f: 3
+        rel: '178.0(8) MHz\cite{Benhelm07}'
+      - f: 4
+        rel: '-10.1(9) MHz\cite{Benhelm07}'
+      - f: 5
+        rel: '-249.3(12) MHz\cite{Benhelm07}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '1.176(11) s\cite{Kreuter05}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '0.1353(13) Hz\cite{Kreuter05}'
+
+  - id: 3D5/2
+    j: 2.5
+    g_j: 1.2
+    energy: '411.042141447(?) THz\cite{NISTCaII}'
+    notation: '$3d\,{}^{2}D_{5/2}$'
+    references:
+      energy: [NISTCaII]
+      constants: [Benhelm07]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '-3.8931(2) MHz\cite{Benhelm07}'
+      b: '-4.241(4) MHz\cite{Benhelm07}'
+    hyperfine:
+      - f: 1
+        rel: '41.525(3) MHz\cite{Benhelm07}'
+      - f: 2
+        rel: '34.951(2) MHz\cite{Benhelm07}'
+      - f: 3
+        rel: '24.635(1) MHz\cite{Benhelm07}'
+      - f: 4
+        rel: '10.032(1) MHz\cite{Benhelm07}'
+      - f: 5
+        rel: '-9.585(1) MHz\cite{Benhelm07}'
+      - f: 6
+        rel: '-35.125(2) MHz\cite{Benhelm07}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '1.168(7) s\cite{Kreuter05}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '0.1363(8) Hz\cite{Kreuter05}'
+
+transitions:
+  - between: ['4S1/2[F=3]', '4S1/2[F=4]']
+    type: M1
+    frequency: '3.2256082864(1) GHz\cite{Arbes94}'
+    show: [frequency]
+    notes:
+      - 'Ground-state hyperfine qubit splitting of $^{43}$Ca$^+$.\cite{Arbes94}'
+
+  - between: [4S1/2, 4P1/2]
+    type: E1
+    frequency: '755.222710197(?) THz\cite{NISTCaII}'
+    show: [wavelength, type]
+    notes:
+      - '397 nm cooling / fluorescence line of Ca II.'
+
+  - between: ['4S1/2[F=4]', '4P1/2[F=4]']
+    type: E1
+    notes:
+      - 'Canonical 397 nm cooling branch in $^{43}$Ca$^+$ hyperfine cooling schemes.'
+
+  - between: ['4S1/2[F=3]', '4P1/2[F=4]']
+    type: E1
+    notes:
+      - '397 nm repump branch that returns population from the dark $F=3$ ground manifold.'
+
+  - between: [4S1/2, 4P3/2]
+    type: E1
+    frequency: '761.904964169(?) THz\cite{NISTCaII}'
+    show: [wavelength, type]
+    notes:
+      - '393 nm dipole line used for optical pumping and shelving protocols.'
+
+  - between: [3D3/2, 4P1/2]
+    type: E1
+    frequency: '346.000009178(?) THz\cite{NISTCaII}'
+    show: [wavelength, type]
+    notes:
+      - '866 nm repump from the metastable $3D_{3/2}$ manifold.'
+
+  - between: [3D3/2, 4P3/2]
+    type: E1
+    frequency: '352.682263150(?) THz\cite{NISTCaII}'
+    show: [wavelength, type]
+    notes:
+      - '850 nm auxiliary repump / shelving line from $3D_{3/2}$.'
+
+  - between: [3D5/2, 4P3/2]
+    type: E1
+    frequency: '350.862822722(?) THz\cite{NISTCaII}'
+    show: [wavelength, type]
+    notes:
+      - '854 nm quench / repump line from the metastable $3D_{5/2}$ manifold.'
+
+  - between: [4S1/2, 3D5/2]
+    type: E2
+    frequency: '411.042141447(?) THz\cite{NISTCaII}'
+    show: [wavelength, type]
+    notes:
+      - '729 nm electric-quadrupole clock / optical-qubit line.'
+      - '$^{43}$Ca$^+$ to $^{40}$Ca$^+$ isotope shift on this transition: 4134.713(5) MHz.\cite{Benhelm07}'
+
+  - between: ['4S1/2[F=4]', '3D5/2[F=6]']
+    type: E2
+    notes:
+      - 'Commonly addressed hyperfine branch of the 729 nm quadrupole transition.'
+
+  - between: [4S1/2, 3D3/2]
+    type: E2
+    frequency: '409.222701019(?) THz\cite{NISTCaII}'
+    show: [wavelength, type]
+    notes:
+      - '732.6 nm electric-quadrupole line connecting the ground state to $3D_{3/2}$.'
+
+bibliography: |
+  @misc{NISTCaII,
+    author = {National Institute of Standards and Technology},
+    title = {Calcium {II} Energy Levels},
+    year = {2025},
+    url = {https://physics.nist.gov/PhysRefData/Handbook/Tables/calciumtable5.htm}
+  }
+
+  @article{Arbes94,
+    author = {Arbes, F. and others},
+    title = {Precise determination of the hyperfine structure of the 4s $^2S_{1/2}$ ground state in $^{43}$Ca$^+$},
+    journal = {Zeitschrift f{\"u}r Physik D},
+    volume = {31},
+    pages = {27--29},
+    year = {1994},
+    doi = {10.1007/BF01426597}
+  }
+
+  @article{Silverans91,
+    author = {Silverans, R. E. and others},
+    title = {Hyperfine structure constants of the Ca {II} states 4s $^2S_{1/2}$ and 4p $^2P_{1/2,3/2}$},
+    journal = {Hyperfine Interactions},
+    volume = {65},
+    pages = {1129--1134},
+    year = {1991},
+    doi = {10.1007/BF00572077}
+  }
+
+  @article{Kurth95,
+    author = {Kurth, F. and others},
+    title = {Fine and hyperfine structure of the 4P$_{1/2,3/2}$ and 3D$_{3/2}$ levels in $^{43}$Ca$^+$ from dark resonances in collinear laser spectroscopy},
+    journal = {Zeitschrift f{\"u}r Physik D},
+    volume = {34},
+    pages = {157--163},
+    year = {1995},
+    doi = {10.1007/BF01437567}
+  }
+
+  @article{Benhelm07,
+    author = {Benhelm, Jan and Kirchmair, Gerhard and Rapol, Umakant and K{\"o}rber, Thomas and Roos, Christian F. and Blatt, Rainer},
+    title = {Measurement of the hyperfine structure of the S$_{1/2}$--D$_{5/2}$ transition in $^{43}$Ca$^+$},
+    journal = {Physical Review A},
+    volume = {75},
+    pages = {032506},
+    year = {2007},
+    doi = {10.1103/PhysRevA.75.032506}
+  }
+
+  @article{Ramm13,
+    author = {Ramm, Michael and Pruttivarasin, Thaned and Kokish, Michael and Talukdar, Indrajit and Kreuter, Axel and Haeffner, Hartmut},
+    title = {Precision Measurement Method for Branching Fractions of Excited P$_{1/2}$ States Applied to $^{40}$Ca$^+$},
+    journal = {Physical Review Letters},
+    volume = {111},
+    pages = {023004},
+    year = {2013},
+    doi = {10.1103/PhysRevLett.111.023004}
+  }
+
+  @article{Gerritsma08,
+    author = {Gerritsma, R. and Kirchmair, G. and Z{\"a}hringer, F. and Benhelm, J. and Blatt, R. and Roos, C. F.},
+    title = {Precision measurement of the branching fractions of the 4p $^2P_{3/2}$ decay of Ca {II}},
+    journal = {European Physical Journal D},
+    volume = {50},
+    pages = {13--19},
+    year = {2008},
+    doi = {10.1140/epjd/e2008-00200-4}
+  }
+
+  @article{Kreuter05,
+    author = {Kreuter, Axel and Becher, Christoph and H{\"a}ffner, Hartmut and McDonnell, M. J. and Roos, Christian F. and Eschner, J{\"u}rgen and Schmidt-Kaler, Ferdinand and Blatt, Rainer},
+    title = {Experimental and theoretical study of the $3d\,^2D$-level lifetimes of $^{40}$Ca$^+$},
+    journal = {Physical Review A},
+    volume = {71},
+    pages = {032504},
+    year = {2005},
+    doi = {10.1103/PhysRevA.71.032504}
+  }
+
+  @article{Hettrich15,
+    author = {Hettrich, Matthias and others},
+    title = {Measurement of Dipole Matrix Elements with a Single Trapped Ion},
+    journal = {Physical Review Letters},
+    volume = {115},
+    pages = {143003},
+    year = {2015},
+    doi = {10.1103/PhysRevLett.115.143003}
+  }
+
+  @article{Meir20,
+    author = {Meir, Ziv and Sinhal, Mudit and Safronova, Marianna S. and Willitsch, Stefan},
+    title = {Combining experiments and relativistic theory for establishing accurate radiative quantities in atoms: The lifetime of the $^2P_{3/2}$ state in $^{40}$Ca$^+$},
+    journal = {Physical Review A},
+    volume = {101},
+    pages = {012509},
+    year = {2020},
+    doi = {10.1103/PhysRevA.101.012509}
+  }
+
+  @book{Foot05,
+    author = {Foot, Christopher J.},
+    title = {Atomic Physics},
+    publisher = {Oxford University Press},
+    year = {2005}
+  }
+
+default_layout:
+  version: 4
+  appVersion: '20260514.3'
+  view:
+    theme: dark
+    referencesVisible: false
+    zoom:
+      x: 235.3019806173574
+      'y': -13.616384466727368
+      k: 0.9282880434782609
+  layout:
+    expanded:
+      fine:
+        - 4P1/2
+        - 3D5/2
+        - 3D3/2
+        - 4S1/2
+      hyperfine:
+        - 4S1/2[F=3]
+        - 4S1/2[F=4]
+    hidden:
+      states:
+        - 4S1/2[F=4,mF=-2]
+        - 4S1/2[F=4,mF=-1]
+        - 4S1/2[F=4,mF=1]
+        - 4S1/2[F=4,mF=2]
+        - 4S1/2[F=3,mF=2]
+        - 4S1/2[F=3,mF=1]
+        - 4S1/2[F=3,mF=-2]
+        - 4S1/2[F=3,mF=-1]
+      transitions:
+        - between: [3D5/2, 4S1/2]
+        - between: [4P1/2, 4S1/2]
+    displacements:
+      4P3/2:
+        x: -256.396117778811
+        'y': 43.51801128076768
+      4P1/2:
+        x: -69.8943138692996
+        'y': 16.50388138575383
+      3D5/2:
+        x: -113.25848768252308
+        'y': 0
+      3D3/2:
+        x: -109.05473408553144
+        'y': 37.99107790759217
+      4S1/2:
+        x: 1.1625362786480764
+        'y': 69.7521767188814
+    pinnedPanels: []
+  tools:
+    hide:
+      enabled: false
+    measure:
+      enabled: false
+      selection: []
+      measurements: []
+    move:
+      enabled: false
+  diagram:
+    states:
+      labels:
+        - state: 4S1/2
+          show: []
+        - state: 4S1/2[F=3]
+          show: []
+        - state: 4S1/2[F=4]
+          show: []
+        - state: 4P1/2
+          show: [property:\frac\gamma2\pi]
+        - state: 4P1/2[F=3]
+          show: []
+        - state: 4P1/2[F=4]
+          show: []
+        - state: 4P3/2
+          show: [property:\frac\gamma2\pi]
+        - state: 4P3/2[F=2]
+          show: []
+        - state: 4P3/2[F=3]
+          show: []
+        - state: 4P3/2[F=4]
+          show: []
+        - state: 4P3/2[F=5]
+          show: []
+        - state: 3D3/2
+          show: [property:\frac\gamma2\pi]
+        - state: 3D3/2[F=2]
+          show: []
+        - state: 3D3/2[F=3]
+          show: []
+        - state: 3D3/2[F=4]
+          show: []
+        - state: 3D3/2[F=5]
+          show: []
+        - state: 3D5/2
+          show: [property:\frac\gamma2\pi]
+        - state: 3D5/2[F=1]
+          show: []
+        - state: 3D5/2[F=2]
+          show: []
+        - state: 3D5/2[F=3]
+          show: []
+        - state: 3D5/2[F=4]
+          show: []
+        - state: 3D5/2[F=5]
+          show: []
+        - state: 3D5/2[F=6]
+          show: []
+    hyperfine:
+      scaleByFineState:
+        4S1/2: 0.19230917289101584
+        4P1/2: 1
+        4P3/2: 1
+        3D3/2: 1.5995580286146696
+        3D5/2: 23.9883291901949
+    transitions:
+      labels:
+        - between: ['4S1/2[F=3]', '4S1/2[F=4]']
+          show: [frequency]
+          precision: {wavelength: null, frequency: null}
+        - between: [4P1/2, 4S1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['4P1/2[F=4]', '4S1/2[F=4]']
+          show: []
+          precision: {wavelength: 1, frequency: null}
+        - between: ['4P1/2[F=4]', '4S1/2[F=3]']
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [4P3/2, 4S1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [3D3/2, 4P1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [3D3/2, 4P3/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [3D5/2, 4P3/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [3D5/2, 4S1/2]
+          show: [wavelength, type]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['3D5/2[F=6]', '4S1/2[F=4]']
+          show: [wavelength, type]
+          precision: {wavelength: 1, frequency: null}
+        - between: [3D3/2, 4S1/2]
+          show: [wavelength, type]
+          precision: {wavelength: 1, frequency: null}
+    magneticField:
+      enabled: true
+      visualScale: 1
+      gauss: 0.5
+      range:
+        min: 0
+        max: 10

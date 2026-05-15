@@ -1,0 +1,510 @@
+# Atomic species data only.
+# Keep app layout, UI copy, storage, and rendering rules in the app code.
+
+meta:
+  id: cs133-neutral
+  title: Cesium-133 Neutral Atom
+
+species:
+  species: Cs
+  atomic_mass_number: 133
+  ionization_number: 0
+  nuclear_spin: 3.5
+  notes:
+    - 'Ground-state configuration: [Xe]6$s^1$'
+    - 'Only stable naturally occurring isotope: $^{133}$Cs'
+
+states:
+  - id: 6S1/2
+    j: 0.5
+    g_j: '2.00254032(20)\cite{Steck25}'
+    energy: '0 THz\cite{NISTCsI}'
+    notation: '$6s\,{}^{2}S_{1/2}$'
+    references:
+      energy: [NISTCsI]
+      constants: [Steck25]
+      gFCalculation: [Steck25]
+    hyperfine_constants:
+      a: '2298.1579425 MHz\cite{Steck25}'
+
+  - id: 6P1/2
+    j: 0.5
+    g_j: '0.66590(9)\cite{Steck25}'
+    energy: '335.1160487481(24) THz\cite{Gerginov06}'
+    notation: '$6p\,{}^{2}P_{1/2}$'
+    references:
+      energy: [Gerginov06]
+      constants: [Gerginov06]
+      gFCalculation: [Steck25]
+    hyperfine_constants:
+      a: '291.9309(12) MHz\cite{Gerginov06}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '34.72(6) ns\cite{Steck25}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '4.584(8) MHz\cite{Steck25}'
+
+  - id: 6P3/2
+    j: 1.5
+    g_j: '1.33408749(52)\cite{Steck25}'
+    energy: '351.72571850(11) THz\cite{Udem00}'
+    notation: '$6p\,{}^{2}P_{3/2}$'
+    references:
+      energy: [Udem00]
+      constants: [Gerginov03]
+      gFCalculation: [Steck25]
+    hyperfine_constants:
+      a: '50.27546(86) MHz\cite{Gerginov03}'
+      b: '-0.4934(17) MHz\cite{Gerginov03}'
+    hyperfine:
+      - f: 2
+        rel: '-339.7128(39) MHz\cite{Gerginov03}'
+      - f: 3
+        rel: '-188.4885(13) MHz\cite{Gerginov03}'
+      - f: 4
+        rel: '12.79851(82) MHz\cite{Gerginov03}'
+      - f: 5
+        rel: '263.8906(24) MHz\cite{Gerginov03}'
+    properties:
+      - section: Hyperfine
+      - label: '$C$'
+        value: '0.560(7) kHz\cite{Gerginov03}'
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '30.462(46) ns\cite{Steck25}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '5.225(8) MHz\cite{Steck25}'
+
+  - id: 7S1/2
+    j: 0.5
+    energy: '555.681179924(?) THz\cite{NISTCsI}'
+    notation: '$7s\,{}^{2}S_{1/2}$'
+    references:
+      energy: [NISTCsI]
+      constants: [Yang16]
+      gJCalculation: [Foot05]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '545.818(9) MHz\cite{Yang16}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '48.28(7) ns\cite{Toh18}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '3.296(5) MHz\cite{Toh18}'
+
+  - id: 7P1/2
+    j: 0.5
+    energy: '652.508717615(?) THz\cite{NISTCsI}'
+    notation: '$7p\,{}^{2}P_{1/2}$'
+    references:
+      energy: [NISTCsI]
+      gJCalculation: [Foot05]
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '165.21(19) ns\cite{Toh19}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '0.9633(11) MHz\cite{Toh19}'
+
+  - id: 7P3/2
+    j: 1.5
+    energy: '657.936430087(?) THz\cite{NISTCsI}'
+    notation: '$7p\,{}^{2}P_{3/2}$'
+    references:
+      energy: [NISTCsI]
+      gJCalculation: [Foot05]
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '137.54(16) ns\cite{Toh19}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '1.1572(13) MHz\cite{Toh19}'
+
+transitions:
+  - between: ['6S1/2[F=3]', '6S1/2[F=4]']
+    type: M1
+    frequency: '9.192631770 GHz\cite{BIPM25}'
+    show: [frequency]
+    notes:
+      - 'Unperturbed ground-state hyperfine transition defining the SI second.\cite{BIPM25}'
+
+  - between: ['6S1/2[F=3,mF=0]', '6S1/2[F=4,mF=0]']
+    type: M1
+    frequency: '9.192631770 GHz\cite{BIPM25}'
+    show: [frequency, type]
+    notes:
+      - 'First-order field-insensitive clock branch in the low-field limit.\cite{BIPM25}'
+
+  - between: [6S1/2, 6P1/2]
+    type: E1
+    strength: '3.1869(41) ea0\cite{Steck25}'
+    frequency: '335.1160487481(24) THz\cite{Gerginov06}'
+    show: [wavelength, type]
+    notes:
+      - 'Cesium D1 line near 894.6 nm; widely used for optical pumping and Raman work.'
+
+  - between: ['6S1/2[F=3]', '6P1/2[F=3]']
+    type: E1
+    strength: '1/4\cite{Steck25}'
+
+  - between: ['6S1/2[F=3]', '6P1/2[F=4]']
+    type: E1
+    strength: '3/4\cite{Steck25}'
+
+  - between: ['6S1/2[F=4]', '6P1/2[F=3]']
+    type: E1
+    strength: '7/12\cite{Steck25}'
+
+  - between: ['6S1/2[F=4]', '6P1/2[F=4]']
+    type: E1
+    strength: '5/12\cite{Steck25}'
+
+  - between: [6S1/2, 6P3/2]
+    type: E1
+    strength: '4.4837(57) ea0\cite{Steck25}'
+    frequency: '351.72571850(11) THz\cite{Udem00}'
+    show: [wavelength, type]
+    notes:
+      - 'Cesium D2 line near 852.3 nm; canonical laser-cooling transition.'
+
+  - between: ['6S1/2[F=3]', '6P3/2[F=2]']
+    type: E1
+    strength: '5/14\cite{Steck25}'
+
+  - between: ['6S1/2[F=3]', '6P3/2[F=3]']
+    type: E1
+    strength: '3/8\cite{Steck25}'
+
+  - between: ['6S1/2[F=3]', '6P3/2[F=4]']
+    type: E1
+    strength: '15/56\cite{Steck25}'
+    notes:
+      - 'Canonical D2 repump branch in standard cesium cooling schemes.'
+
+  - between: ['6S1/2[F=4]', '6P3/2[F=3]']
+    type: E1
+    strength: '7/72\cite{Steck25}'
+
+  - between: ['6S1/2[F=4]', '6P3/2[F=4]']
+    type: E1
+    strength: '7/24\cite{Steck25}'
+
+  - between: ['6S1/2[F=4]', '6P3/2[F=5]']
+    type: E1
+    strength: '11/18\cite{Steck25}'
+    notes:
+      - 'Canonical D2 cooling branch.'
+
+  - between: ['6S1/2[F=4,mF=4]', '6P3/2[F=5,mF=5]']
+    type: E1
+    notes:
+      - 'Stretched $\sigma^+$ D2 cycling branch.'
+
+  - between: [6P1/2, 7S1/2]
+    type: E1
+    frequency: '220.565131176(?) THz\cite{NISTCsI,Gerginov06}'
+    show: [wavelength, type]
+    notes:
+      - 'Telecom ladder line near 1359.2 nm.'
+
+  - between: [6P3/2, 7S1/2]
+    type: E1
+    frequency: '203.955461424(?) THz\cite{NISTCsI,Udem00}'
+    show: [wavelength, type]
+    notes:
+      - 'Telecom ladder line near 1469.9 nm.'
+
+  - between: [6S1/2, 7S1/2]
+    type: '2E1'
+    frequency: '555.681179924(?) THz\cite{NISTCsI}'
+    show: [frequency, type]
+    notes:
+      - 'Degenerate two-photon excitation uses 1079.008859 nm light.'
+      - 'Canonical cesium atomic-parity-violation transition.\cite{Wood97}'
+
+  - between: [6S1/2, 7P1/2]
+    type: E1
+    frequency: '652.508717615(?) THz\cite{NISTCsI}'
+    show: [wavelength, type]
+    notes:
+      - 'Blue excitation line near 459.45 nm.'
+
+  - between: [6S1/2, 7P3/2]
+    type: E1
+    frequency: '657.936430087(?) THz\cite{NISTCsI}'
+    show: [wavelength, type]
+    notes:
+      - 'Blue excitation line near 455.66 nm.'
+
+bibliography: |
+  @misc{NISTCsI,
+    author = {National Institute of Standards and Technology},
+    title = {Cesium {I} Energy Levels},
+    year = {2025},
+    url = {https://physics.nist.gov/PhysRefData/Handbook/Tables/cesiumtable5.htm}
+  }
+
+  @misc{Steck25,
+    author = {Steck, Daniel A.},
+    title = {Cesium D Line Data},
+    year = {2025},
+    note = {Revision 2.3.4, 23 January 2025},
+    url = {https://steck.us/alkalidata/cesiumnumbers.pdf}
+  }
+
+  @misc{BIPM25,
+    author = {Bureau International des Poids et Mesures},
+    title = {The International System of Units ({SI} Brochure), 10th edition},
+    year = {2025},
+    url = {https://www.bipm.org/en/publications/si-brochure}
+  }
+
+  @misc{Gerginov06,
+    author = {Gerginov, V. and Tanner, C. E. and Diddams, S. A. and Bartels, A. and Hollberg, L.},
+    title = {Optical frequency measurements of 6s $^2S_{1/2}$-6p $^2P_{1/2}$ D1 transitions in $^{133}$Cs and their impact on the fine-structure constant},
+    year = {2006},
+    url = {https://www.nist.gov/publications/optical-frequency-measurements-6s-2s12-6p-2p12-d1transitions-133cs-and-their-impact}
+  }
+
+  @article{Udem00,
+    author = {Udem, Th. and Huber, A. and Gross, B. and Reichert, J. and Prevedelli, M. and Weitz, M. and H\"ansch, T. W.},
+    title = {Absolute optical frequency measurement of the cesium D$_2$ line},
+    journal = {Physical Review A},
+    volume = {62},
+    pages = {031801},
+    year = {2000},
+    doi = {10.1103/PhysRevA.62.031801},
+    url = {https://doi.org/10.1103/PhysRevA.62.031801}
+  }
+
+  @article{Gerginov03,
+    author = {Gerginov, V. and Derevianko, A. and Tanner, C. E.},
+    title = {Observation of the Nuclear Magnetic Octupole Moment of $^{133}$Cs},
+    journal = {Physical Review Letters},
+    volume = {91},
+    pages = {072501},
+    year = {2003},
+    doi = {10.1103/PhysRevLett.91.072501},
+    url = {https://doi.org/10.1103/PhysRevLett.91.072501}
+  }
+
+  @article{Yang16,
+    author = {Yang, Guang and Wang, Jie and Yang, Baodong and Wang, Junmin},
+    title = {Determination of the hyperfine coupling constant of cesium 7S$_{1/2}$ state by using optical-optical double resonance spectroscopy},
+    journal = {Laser Physics Letters},
+    volume = {13},
+    pages = {085702},
+    year = {2016},
+    doi = {10.1088/1612-2011/13/8/085702},
+    url = {https://doi.org/10.1088/1612-2011/13/8/085702}
+  }
+
+  @article{Toh18,
+    author = {Toh, George and Jaramillo-Villegas, Jose A. and Glotzbach, Nathan and Quirk, Jonah and Stevenson, Ian C. and Choi, J. and Weiner, Andrew M. and Elliott, D. S.},
+    title = {Measurement of the lifetime of the 7s $^2S_{1/2}$ state in atomic cesium using asynchronous gated detection},
+    journal = {Physical Review A},
+    volume = {97},
+    pages = {052507},
+    year = {2018},
+    doi = {10.1103/PhysRevA.97.052507},
+    url = {https://doi.org/10.1103/PhysRevA.97.052507}
+  }
+
+  @article{Toh19,
+    author = {Toh, George and Chalus, Nathan and Jaramillo-Villegas, Jose A. and Johnson, Brett C. and Byrnes, Trevor M. and Stevenson, Ian C. and Choi, J. and Weiner, Andrew M. and Safronova, M. S. and Orozco, Luis A. and Elliott, D. S.},
+    title = {Measurement of the lifetimes of the cesium 7p $^2P_{3/2}$ and 7p $^2P_{1/2}$ states using asynchronous gated detection},
+    journal = {Physical Review A},
+    volume = {100},
+    pages = {052507},
+    year = {2019},
+    doi = {10.1103/PhysRevA.100.052507},
+    url = {https://doi.org/10.1103/PhysRevA.100.052507}
+  }
+
+  @article{Wood97,
+    author = {Wood, C. S. and Bennett, S. C. and Cho, D. and Masterson, B. P. and Roberts, J. L. and Tanner, C. E. and Wieman, C. E.},
+    title = {Measurement of Parity Nonconservation and an Anapole Moment in Cesium},
+    journal = {Science},
+    volume = {275},
+    pages = {1759--1763},
+    year = {1997},
+    doi = {10.1126/science.275.5307.1759},
+    url = {https://doi.org/10.1126/science.275.5307.1759}
+  }
+
+  @book{Foot05,
+    author = {Foot, Christopher J.},
+    title = {Atomic Physics},
+    publisher = {Oxford University Press},
+    year = {2005},
+    url = {https://global.oup.com/academic/product/atomic-physics-9780198506966}
+  }
+
+default_layout:
+  version: 4
+  appVersion: '20260514.3'
+  view:
+    theme: dark
+    referencesVisible: false
+    zoom:
+      x: 317.761589569604
+      'y': -94.22244706751508
+      k: 0.9657264439307723
+  layout:
+    expanded:
+      fine:
+        - 6S1/2
+        - 6P3/2
+        - 6P1/2
+      hyperfine:
+        - 6S1/2[F=4]
+        - 6S1/2[F=3]
+        - 6P3/2[F=5]
+    hidden:
+      states:
+        - 6S1/2[F=3,mF=-2]
+        - 6S1/2[F=3,mF=-1]
+        - 6S1/2[F=3,mF=0]
+        - 6S1/2[F=3,mF=1]
+        - 6S1/2[F=3,mF=2]
+        - 6S1/2[F=4,mF=2]
+        - 6S1/2[F=4,mF=1]
+        - 6S1/2[F=4,mF=0]
+        - 6S1/2[F=4,mF=-1]
+        - 6S1/2[F=4,mF=-2]
+        - 6P3/2[F=5,mF=-4]
+        - 6P3/2[F=5,mF=-3]
+        - 6P3/2[F=5,mF=-2]
+        - 6P3/2[F=5,mF=-1]
+        - 6P3/2[F=5,mF=1]
+        - 6P3/2[F=5,mF=2]
+        - 6P3/2[F=5,mF=3]
+        - 6P3/2[F=5,mF=4]
+        - 6P3/2[F=5,mF=0]
+      transitions:
+        - between: ['6P1/2[F=3]', '6S1/2[F=3]']
+        - between: ['6P1/2[F=4]', '6S1/2[F=3]']
+        - between: ['6P1/2[F=3]', '6S1/2[F=4]']
+        - between: ['6P1/2[F=4]', '6S1/2[F=4]']
+        - between: ['6P3/2[F=2]', '6S1/2[F=3]']
+        - between: ['6P3/2[F=3]', '6S1/2[F=3]']
+        - between: ['6P3/2[F=3]', '6S1/2[F=4]']
+        - between: ['6P3/2[F=4]', '6S1/2[F=4]']
+        - between: ['6S1/2[F=3,mF=0]', '6S1/2[F=4,mF=0]']
+        - between: [6P3/2, 6S1/2]
+    displacements:
+      6S1/2:
+        x: 10.421983549607035
+        'y': 134.3277879727126
+    pinnedPanels: []
+  tools:
+    hide:
+      enabled: false
+    measure:
+      enabled: false
+      selection: []
+      measurements: []
+    move:
+      enabled: false
+  diagram:
+    states:
+      labels:
+        - state: 6S1/2
+          show: []
+        - state: 6P1/2
+          show: []
+        - state: 6P3/2
+          show: [property:\frac\gamma2\pi]
+        - state: 6P3/2[F=2]
+          show: []
+        - state: 6P3/2[F=3]
+          show: []
+        - state: 6P3/2[F=4]
+          show: []
+        - state: 6P3/2[F=5]
+          show: []
+        - state: 7S1/2
+          show: []
+        - state: 7P1/2
+          show: []
+        - state: 7P3/2
+          show: []
+    hyperfine:
+      scaleByFineState:
+        6S1/2: 0.08394599865193973
+        6P1/2: 0.4
+        6P3/2: 1.78648757485205
+        7S1/2: 0.2
+        7P1/2: 1
+        7P3/2: 1
+    transitions:
+      labels:
+        - between: ['6S1/2[F=3]', '6S1/2[F=4]']
+          show: [frequency]
+          precision: {wavelength: null, frequency: null}
+        - between: ['6S1/2[F=3,mF=0]', '6S1/2[F=4,mF=0]']
+          show: [frequency, type]
+          precision: {wavelength: null, frequency: null}
+        - between: [6P1/2, 6S1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['6P1/2[F=3]', '6S1/2[F=3]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: ['6P1/2[F=4]', '6S1/2[F=3]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: ['6P1/2[F=3]', '6S1/2[F=4]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: ['6P1/2[F=4]', '6S1/2[F=4]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: [6P3/2, 6S1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['6P3/2[F=2]', '6S1/2[F=3]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: ['6P3/2[F=3]', '6S1/2[F=3]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: ['6P3/2[F=4]', '6S1/2[F=3]']
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['6P3/2[F=3]', '6S1/2[F=4]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: ['6P3/2[F=4]', '6S1/2[F=4]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: ['6P3/2[F=5]', '6S1/2[F=4]']
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['6P3/2[F=5,mF=5]', '6S1/2[F=4,mF=4]']
+          show: [wavelength]
+          precision: {wavelength: null, frequency: null}
+        - between: [6P1/2, 7S1/2]
+          show: [wavelength]
+          precision: {wavelength: 0, frequency: null}
+        - between: [6P3/2, 7S1/2]
+          show: [wavelength]
+          precision: {wavelength: 0, frequency: null}
+        - between: [6S1/2, 7S1/2]
+          show: [type, wavelength]
+          precision: {wavelength: 1, frequency: 6}
+        - between: [6S1/2, 7P1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [6S1/2, 7P3/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+    magneticField:
+      enabled: true
+      visualScale: 1
+      gauss: 1
+      range:
+        min: 0
+        max: 10

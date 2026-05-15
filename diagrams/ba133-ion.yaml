@@ -1,0 +1,375 @@
+# Atomic species data only.
+# Keep app layout, UI copy, storage, and rendering rules in the app code.
+
+meta:
+  id: ba133-ion
+  title: Barium-133 Ion
+
+species:
+  species: Ba
+  atomic_mass_number: 133
+  ionization_number: 1
+  nuclear_spin: 0.5
+  notes:
+    - 'Ground-state configuration: [Xe]6$s$'
+    - 'Radioactive fermionic isotope with half-life about 10.5 years and nuclear spin $I=1/2$.'
+    - 'Fine-state centroids follow generic Ba II term energies; measured $^{133}$Ba$^+$ hyperfine splittings and isotope shifts are attached where available.'
+
+states:
+  - id: 6S1/2
+    j: 0.5
+    g_j: 2.00225664
+    energy: '0 THz\cite{NISTBaII}'
+    notation: '$6s\,{}^{2}S_{1/2}$'
+    references:
+      energy: [NISTBaII]
+      constants: [Hucul17]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '9931(20) MHz\cite{Hucul17}'
+
+  - id: 6P1/2
+    j: 0.5
+    g_j: 0.6666666666666666
+    energy: '607.426317511(?) THz\cite{NISTBaII}'
+    notation: '$6p\,{}^{2}P_{1/2}$'
+    references:
+      energy: [NISTBaII]
+      constants: [Hucul17]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '1840(20) MHz\cite{Hucul17}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '7.855(10) ns\cite{Arnold19}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '20.262(26) MHz\cite{Arnold19}'
+      - section: Branching
+      - label: '$6S_{1/2}$'
+        value: '0.731823(37)(20)\cite{Arnold19}'
+      - label: '$5D_{3/2}$'
+        value: '0.268177(37)(20)\cite{Arnold19}'
+
+  - id: 6P3/2
+    j: 1.5
+    g_j: 1.3333333333333333
+    energy: '658.116515417(?) THz\cite{NISTBaII}'
+    notation: '$6p\,{}^{2}P_{3/2}$'
+    references:
+      energy: [NISTBaII]
+      constants: [Christensen20]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '311.5(10) MHz\cite{Christensen20}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '6.321(?) ns\cite{Klose02}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '25.18(?) MHz\cite{Klose02}'
+      - section: Branching
+      - label: '$6S_{1/2}$'
+        value: '0.741717(71)\cite{Zhang20}'
+      - label: '$5D_{3/2}$'
+        value: '0.028031(23)\cite{Zhang20}'
+      - label: '$5D_{5/2}$'
+        value: '0.230253(61)\cite{Zhang20}'
+    notes:
+      - 'Lifetime and linewidth here are derived from the critically evaluated Ba II transition probabilities compiled by NIST.\cite{Klose02}'
+
+  - id: 5D3/2
+    j: 1.5
+    g_j: 0.8
+    energy: '146.114407101(?) THz\cite{NISTBaII}'
+    notation: '$5d\,{}^{2}D_{3/2}$'
+    references:
+      energy: [NISTBaII]
+      constants: [Hucul17]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '468.5(10) MHz\cite{Hucul17}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '89.4(15.6) s\cite{Gurell07}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '1.78(31) mHz\cite{Gurell07}'
+
+  - id: 5D5/2
+    j: 2.5
+    g_j: 1.2
+    energy: '170.126433921(?) THz\cite{NISTBaII}'
+    notation: '$5d\,{}^{2}D_{5/2}$'
+    references:
+      energy: [NISTBaII]
+      constants: [Christensen20]
+      gFCalculation: [Foot05]
+    hyperfine_constants:
+      a: '27.7(6.7) MHz\cite{Christensen20}'
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '30.14(40) s\cite{Zhang20}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '5.28(7) mHz\cite{Zhang20}'
+
+transitions:
+  - between: ['6S1/2[F=0]', '6S1/2[F=1]']
+    type: M1
+    frequency: '9.931(20) GHz\cite{Hucul17}'
+    show: [frequency]
+    notes:
+      - 'Ground-state hyperfine qubit splitting of $^{133}$Ba$^+$.\cite{Hucul17}'
+
+  - between: [6S1/2, 6P1/2]
+    type: E1
+    frequency: '607.426317511(?) THz\cite{NISTBaII}'
+    show: [wavelength, type]
+    notes:
+      - '493 nm dipole line forming the cooling / detection branch of the standard Ba$^+$ lambda system.'
+      - '$^{133}$Ba$^+$ to $^{138}$Ba$^+$ centroid isotope shift: +373(4) MHz.\cite{ChristensenThesis20}'
+
+  - between: ['6S1/2[F=1]', '6P1/2[F=0]']
+    type: E1
+    notes:
+      - 'Canonical 493 nm cooling branch for the hyperfine qubit manifold.'
+
+  - between: ['6S1/2[F=0]', '6P1/2[F=1]']
+    type: E1
+    notes:
+      - '493 nm branch that depopulates the dark $F=0$ ground hyperfine state.'
+
+  - between: [5D3/2, 6P1/2]
+    type: E1
+    frequency: '461.311910410(?) THz\cite{NISTBaII}'
+    show: [wavelength, type]
+    notes:
+      - '650 nm repumping line of the Ba$^+$ cooling lambda system.'
+      - '$^{133}$Ba$^+$ to $^{138}$Ba$^+$ centroid isotope shift: +198(20) MHz.\cite{ChristensenThesis20}'
+
+  - between: [6S1/2, 6P3/2]
+    type: E1
+    frequency: '658.116515417(?) THz\cite{NISTBaII}'
+    show: [wavelength, type]
+    notes:
+      - '455 nm shelving / optical-pumping line through the $6P_{3/2}$ manifold.'
+      - '$^{133}$Ba$^+$ to $^{138}$Ba$^+$ centroid isotope shift: +358(28) MHz.\cite{ChristensenThesis20}'
+
+  - between: [5D3/2, 6P3/2]
+    type: E1
+    frequency: '512.002108316(?) THz\cite{NISTBaII}'
+    show: [wavelength, type]
+    notes:
+      - '585 nm auxiliary branch coupling $5D_{3/2}$ to $6P_{3/2}$.'
+      - '$^{133}$Ba$^+$ to $^{138}$Ba$^+$ centroid isotope shift: +183(35) MHz.\cite{ChristensenThesis20}'
+
+  - between: [5D5/2, 6P3/2]
+    type: E1
+    frequency: '487.990081496(?) THz\cite{NISTBaII}'
+    show: [wavelength, type]
+    notes:
+      - '614 nm deshelving line from the metastable $5D_{5/2}$ manifold.'
+      - '$^{133}$Ba$^+$ to $^{138}$Ba$^+$ centroid isotope shift: +216(28) MHz.\cite{ChristensenThesis20}'
+
+  - between: [6S1/2, 5D5/2]
+    type: E2
+    frequency: '170.126433921(?) THz\cite{NISTBaII}'
+    show: [wavelength, type]
+    notes:
+      - '1762 nm electric-quadrupole line used for optical-qubit and shelving work.'
+
+  - between: [6S1/2, 5D3/2]
+    type: E2
+    frequency: '146.114407101(?) THz\cite{NISTBaII}'
+    show: [wavelength, type]
+    notes:
+      - '2052 nm electric-quadrupole line connecting the ground state to $5D_{3/2}$.'
+
+bibliography: |
+  @misc{NISTBaII,
+    author = {National Institute of Standards and Technology},
+    title = {Barium {II} Energy Levels},
+    year = {2025},
+    url = {https://physics.nist.gov/PhysRefData/Handbook/Tables/bariumtable5.htm}
+  }
+
+  @article{Hucul17,
+    author = {Hucul, David and Christensen, Justin E. and Hudson, Eric R. and Campbell, Wesley C.},
+    title = {Spectroscopy of a Synthetic Trapped Ion Qubit},
+    journal = {Physical Review Letters},
+    volume = {119},
+    pages = {100501},
+    year = {2017},
+    doi = {10.1103/PhysRevLett.119.100501}
+  }
+
+  @article{Christensen20,
+    author = {Christensen, Justin E. and Hucul, David and Campbell, Wesley C. and Hudson, Eric R.},
+    title = {High-fidelity manipulation of a qubit enabled by a manufactured nucleus},
+    journal = {npj Quantum Information},
+    volume = {6},
+    pages = {35},
+    year = {2020},
+    doi = {10.1038/s41534-020-0265-5}
+  }
+
+  @phdthesis{ChristensenThesis20,
+    author = {Christensen, Justin E.},
+    title = {High-fidelity operation of a radioactive trapped ion qubit, $^{133}$Ba$^+$},
+    school = {University of California, Los Angeles},
+    year = {2020},
+    url = {https://escholarship.org/uc/item/1975f05v}
+  }
+
+  @article{Arnold19,
+    author = {Arnold, Kevin and Kaewuam, Rattanaphon and Roy, Seckin and Tan, Tze Yian and Barrett, Murray D.},
+    title = {Measurement of the branching fractions and lifetime of the 6P$_{1/2}$ state in $^{138}$Ba$^+$},
+    journal = {Physical Review A},
+    volume = {100},
+    pages = {032503},
+    year = {2019},
+    doi = {10.1103/PhysRevA.100.032503}
+  }
+
+  @article{Zhang20,
+    author = {Zhang, J. and Um, M. and Lyu, M. and Zhang, J.-N. and Duan, L.-M. and Yum, D. and Kwak, D. H. and Ryu, J. and Lee, K. and Kim, K.},
+    title = {Branching fractions for P$_{3/2}$ decays in Ba$^+$ and the lifetime of the 5D$_{5/2}$ state},
+    journal = {Physical Review A},
+    volume = {101},
+    pages = {062515},
+    year = {2020},
+    doi = {10.1103/PhysRevA.101.062515}
+  }
+
+  @article{Gurell07,
+    author = {Gurell, J. and Nilsson, H. and Engstr{\"o}m, L. and Mannervik, S. and Norlin, L.-O. and Quinet, P. and Rostohar, D. and Royen, P. and Schef, P.},
+    title = {Laser probing measurements and calculations of lifetimes of the 5d $^2D_{3/2}$ and 5d $^2D_{5/2}$ metastable levels in Ba {II}},
+    journal = {Physical Review A},
+    volume = {75},
+    pages = {052506},
+    year = {2007},
+    doi = {10.1103/PhysRevA.75.052506}
+  }
+
+  @article{Klose02,
+    author = {Klose, J. Z. and Fuhr, J. R. and Wiese, W. L.},
+    title = {Critical evaluation of data on spectral lines and energy levels in atomic barium, Ba I and Ba II},
+    journal = {Journal of Physical and Chemical Reference Data},
+    volume = {31},
+    pages = {217--251},
+    year = {2002},
+    doi = {10.1063/1.1464105}
+  }
+
+  @book{Foot05,
+    author = {Foot, Christopher J.},
+    title = {Atomic Physics},
+    publisher = {Oxford University Press},
+    year = {2005}
+  }
+
+default_layout:
+  version: 4
+  appVersion: '20260514.3'
+  view:
+    theme: dark
+    referencesVisible: false
+    zoom:
+      x: 297.6088043478261
+      'y': 4.793768219641549
+      k: 0.9282880434782609
+  layout:
+    expanded:
+      fine:
+        - 6P1/2
+        - 6S1/2
+        - 5D3/2
+        - 5D5/2
+        - 6P3/2
+      hyperfine:
+        - 6S1/2[F=0]
+        - 6S1/2[F=1]
+    hidden:
+      states: []
+      transitions:
+        - between: [6P1/2, 6S1/2]
+    displacements:
+      6P3/2:
+        x: -100.38271926196137
+        'y': -1.673045321032646
+      6P1/2:
+        x: 39.31656504426826
+        'y': -20.076543852392206
+      6S1/2:
+        x: 61.06615421769311
+        'y': 27.605247797039397
+    pinnedPanels: []
+  tools:
+    hide:
+      enabled: false
+    measure:
+      enabled: false
+      selection: []
+      measurements: []
+    move:
+      enabled: false
+  diagram:
+    states:
+      labels:
+        - state: 6S1/2
+          show: []
+        - state: 6P1/2
+          show: [property:\frac\gamma2\pi]
+        - state: 6P3/2
+          show: [property:\frac\gamma2\pi]
+        - state: 5D3/2
+          show: [property:\frac\gamma2\pi]
+        - state: 5D5/2
+          show: [property:\frac\gamma2\pi]
+    hyperfine:
+      scaleByFineState:
+        6S1/2: 0.055975760149511014
+        6P1/2: 0.3372873086588689
+        6P3/2: 1
+        5D3/2: 0.6486344335482385
+        5D5/2: 5.199959965335162
+    transitions:
+      labels:
+        - between: ['6S1/2[F=0]', '6S1/2[F=1]']
+          show: [frequency]
+          precision: {wavelength: null, frequency: null}
+        - between: [6P1/2, 6S1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['6P1/2[F=0]', '6S1/2[F=1]']
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: ['6P1/2[F=1]', '6S1/2[F=0]']
+          show: []
+          precision: {wavelength: null, frequency: null}
+        - between: [5D3/2, 6P1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [6P3/2, 6S1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [5D3/2, 6P3/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [5D5/2, 6P3/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [5D5/2, 6S1/2]
+          show: [wavelength, type]
+          precision: {wavelength: 0, frequency: null}
+        - between: [5D3/2, 6S1/2]
+          show: [wavelength, type]
+          precision: {wavelength: 0, frequency: null}
+    magneticField:
+      enabled: true
+      visualScale: 1
+      gauss: 0.5
+      range:
+        min: 0
+        max: 10
