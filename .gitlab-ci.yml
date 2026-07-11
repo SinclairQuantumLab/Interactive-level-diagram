@@ -10,7 +10,6 @@ deploy-pages:
   script:
     - apk add --no-cache git
     - sh .githooks/run-version-refresh.sh
-    - sh .githooks/refresh-diagram-manifest.sh
     - mkdir -p public
     - cp index.html public/
     - cp LICENSE public/LICENSE

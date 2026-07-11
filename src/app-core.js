@@ -185,7 +185,6 @@ const DEFAULT_APP_CONFIG = {
 
 const BROWSER_DIAGRAMS_FOLDER_NAME = "diagrams";
 const DIAGRAMS_FOLDER_PICKER_ID = "interactive-level-diagram-folder";
-const HOSTED_DIAGRAM_MANIFEST_PATH = `${BROWSER_DIAGRAMS_FOLDER_NAME}/manifest.json`;
 const DEFAULT_HOME_DIAGRAM_FILE = "Rb87.yaml";
 
 function isPlainConfigObject(value) {
@@ -249,8 +248,6 @@ function createBrowserDiagramSourceInfo(overrides = {}) {
     permissionGranted: false,
     folderName: "",
     expectedFolderName: BROWSER_DIAGRAMS_FOLDER_NAME,
-    hostedCatalogAvailable: false,
-    hostedManifestPath: HOSTED_DIAGRAM_MANIFEST_PATH,
     sharedApiAvailable: false,
     sharedApiBaseUrl: "",
     activeSource: "none",
@@ -597,11 +594,6 @@ async function pickDiagramsFolder() {
   } catch {
     return;
   }
-}
-
-function canFetchHostedDiagramCatalog() {
-  return typeof window.fetch === "function"
-    && window.location.protocol !== "file:";
 }
 
 function getSharedApiBaseUrl() {
@@ -1146,8 +1138,12 @@ async function deleteSharedDiagramEntry(entry = sharedDiagramEditorState?.entry)
     await refreshSharedDiagramCatalog();
 
     if (browserDiagramSourceInfo.activeSource === "shared" && selectedDiagramPath === entry.fileName) {
-      const fallbackSource = diagramCatalog.hostedEntries.length ? "hosted" : (diagramCatalog.folderEntries.length ? "folder" : "shared");
-      const fallbackEntry = getDiagramEntriesForSource(fallbackSource).find((candidate) => typeof candidate.text === "string");
+      const fallbackSource = ["shared", "folder"]
+        .find((candidate) => getDiagramEntriesForSource(candidate).some((entry) => typeof entry.text === "string"));
+      const fallbackEntry = fallbackSource
+        ? getDiagramEntriesForSource(fallbackSource).find((candidate) => typeof candidate.text === "string")
+        : null;
+
       if (fallbackEntry) {
         activateDiagramSelection(fallbackSource, fallbackEntry.fileName, { layoutFlavor: "saved" });
       } else {
@@ -1183,22 +1179,6 @@ async function fetchTextResource(resourceUrl, { optional = false } = {}) {
 
     throw error;
   }
-}
-
-function normalizeHostedManifestFileList(manifestData) {
-  if (Array.isArray(manifestData)) {
-    return manifestData
-      .map((fileName) => String(fileName || "").trim())
-      .filter(isDiagramConfigFileName);
-  }
-
-  if (manifestData && typeof manifestData === "object" && Array.isArray(manifestData.files)) {
-    return manifestData.files
-      .map((fileName) => String(fileName || "").trim())
-      .filter(isDiagramConfigFileName);
-  }
-
-  return [];
 }
 
 function buildDiagramCatalogEntry(fileName, rawYamlText, { lastModifiedMs = null, sourceIndex = 0 } = {}) {
@@ -1270,55 +1250,6 @@ function filterAndSortDiagramCatalogEntries(entries) {
     : [...entries];
 
   return filteredEntries.sort((left, right) => compareDiagramCatalogEntries(left, right, diagramPickerSortMode));
-}
-
-async function loadHostedDiagramCatalog() {
-  if (!canFetchHostedDiagramCatalog()) {
-    return {
-      available: false,
-      entries: [],
-    };
-  }
-
-  try {
-    const manifestUrl = new URL(HOSTED_DIAGRAM_MANIFEST_PATH, window.location.href);
-    const manifestText = await fetchTextResource(manifestUrl.toString());
-    const manifestData = JSON.parse(manifestText);
-    const fileNames = normalizeHostedManifestFileList(manifestData);
-    const entries = [];
-
-    for (const [sourceIndex, fileName] of fileNames.entries()) {
-      const diagramUrl = new URL(fileName, manifestUrl);
-      const resourceRecord = await fetchTextResourceRecord(diagramUrl.toString(), { optional: true });
-
-      if (!resourceRecord?.text) {
-        entries.push({
-          fileName,
-          title: `${fileName} (unreadable)`,
-          text: null,
-          bibliographyText: null,
-          lastModifiedMs: resourceRecord?.lastModifiedMs ?? null,
-          sourceIndex,
-        });
-        continue;
-      }
-
-      entries.push(buildDiagramCatalogEntry(fileName, resourceRecord.text, {
-        lastModifiedMs: resourceRecord.lastModifiedMs,
-        sourceIndex,
-      }));
-    }
-
-    return {
-      available: true,
-      entries,
-    };
-  } catch {
-    return {
-      available: false,
-      entries: [],
-    };
-  }
 }
 
 async function loadFolderDiagramCatalog(folderHandle) {
@@ -2018,7 +1949,7 @@ function storeSelectedDiagramPath(path) {
 }
 
 function normalizeDiagramSelectionSource(source) {
-  return source === "folder" || source === "hosted" || source === "shared" ? source : null;
+  return source === "folder" || source === "shared" ? source : null;
 }
 
 function isHomeRouteUrl() {
@@ -2110,7 +2041,7 @@ function syncUrlDiagramSelection(path, source, { historyMode = "replace" } = {})
       nextUrl.searchParams.delete("diagram");
     }
 
-    if (normalizedSource && normalizedSource !== "hosted") {
+    if (normalizedSource) {
       nextUrl.searchParams.set("source", normalizedSource);
     } else {
       nextUrl.searchParams.delete("source");
@@ -2140,12 +2071,11 @@ function diagramCatalogEntriesContainPath(entries, fileName) {
     .some((entry) => entry?.fileName === normalizedFileName);
 }
 
-function resolveSourceForUrlDiagramSelection({ hostedEntries = [], folderEntries = [], sharedEntries = [] } = {}, selection = {}) {
+function resolveSourceForUrlDiagramSelection({ folderEntries = [], sharedEntries = [] } = {}, selection = {}) {
   const normalizedSource = normalizeDiagramSelectionSource(selection?.source);
   const normalizedPath = String(selection?.path || "").trim();
 
   if (normalizedPath) {
-    const hostedHasPath = diagramCatalogEntriesContainPath(hostedEntries, normalizedPath);
     const folderHasPath = diagramCatalogEntriesContainPath(folderEntries, normalizedPath);
     const sharedHasPath = diagramCatalogEntriesContainPath(sharedEntries, normalizedPath);
 
@@ -2153,24 +2083,16 @@ function resolveSourceForUrlDiagramSelection({ hostedEntries = [], folderEntries
       return "folder";
     }
 
-    if (normalizedSource === "hosted" && hostedHasPath) {
-      return "hosted";
-    }
-
     if (normalizedSource === "shared" && sharedHasPath) {
       return "shared";
     }
 
-    if (hostedHasPath) {
-      return "hosted";
+    if (sharedHasPath) {
+      return "shared";
     }
 
     if (folderHasPath) {
       return "folder";
-    }
-
-    if (sharedHasPath) {
-      return "shared";
     }
   }
 
@@ -2218,8 +2140,6 @@ async function loadDiagramCatalog() {
   });
   const hasPermission = await ensureDiagramsFolderPermission(folderHandle);
   browserSourceInfo.permissionGranted = hasPermission;
-  const hostedCatalog = await loadHostedDiagramCatalog();
-  browserSourceInfo.hostedCatalogAvailable = hostedCatalog.available;
   const sharedCatalog = await loadSharedDiagramCatalog();
   const sharedEntries = mergeSharedDiagramEntries(sharedCatalog.entries, sharedCatalog.myEntries);
   browserSourceInfo.sharedApiAvailable = sharedCatalog.available;
@@ -2230,9 +2150,7 @@ async function loadDiagramCatalog() {
     : [];
   const preferredSource = getStoredSelectedDiagramSource();
   const urlDiagramSelection = readUrlDiagramSelection();
-  const shouldUseHomeDefault = shouldUseDefaultHomeDiagramSelection();
   const urlPreferredSource = resolveSourceForUrlDiagramSelection({
-    hostedEntries: hostedCatalog.entries,
     folderEntries,
     sharedEntries,
   }, urlDiagramSelection);
@@ -2240,39 +2158,28 @@ async function loadDiagramCatalog() {
 
   if (urlPreferredSource === "folder" && folderHandle && hasPermission) {
     activeSource = "folder";
-  } else if (urlPreferredSource === "hosted" && hostedCatalog.available) {
-    activeSource = "hosted";
   } else if (urlPreferredSource === "shared" && sharedCatalog.available) {
     activeSource = "shared";
-  } else if (shouldUseHomeDefault
-    && hostedCatalog.available
-    && diagramCatalogEntriesContainPath(hostedCatalog.entries, DEFAULT_HOME_DIAGRAM_FILE)) {
-    activeSource = "hosted";
   } else if (preferredSource === "folder" && folderHandle && hasPermission) {
     activeSource = "folder";
-  } else if (preferredSource === "hosted" && hostedCatalog.available) {
-    activeSource = "hosted";
   } else if (preferredSource === "shared" && sharedCatalog.available && sharedEntries.length > 0) {
+    activeSource = "shared";
+  } else if (sharedCatalog.available && sharedEntries.length > 0) {
     activeSource = "shared";
   } else if (folderHandle && hasPermission && folderEntries.length > 0) {
     activeSource = "folder";
-  } else if (hostedCatalog.available) {
-    activeSource = "hosted";
-  } else if (sharedCatalog.available && sharedEntries.length > 0) {
-    activeSource = "shared";
   } else if (folderHandle && hasPermission) {
     activeSource = "folder";
   }
 
   return {
     folderHandle: folderHandle && hasPermission ? folderHandle : null,
-    hostedEntries: hostedCatalog.entries,
     folderEntries,
     sharedEntries,
     mySharedEntries: sharedCatalog.myEntries,
     entries: activeSource === "folder"
       ? folderEntries
-      : (activeSource === "hosted" ? hostedCatalog.entries : (activeSource === "shared" ? sharedEntries : [])),
+      : (activeSource === "shared" ? sharedEntries : []),
     browserSourceInfo: createBrowserDiagramSourceInfo({
       ...browserSourceInfo,
       activeSource,
@@ -2346,15 +2253,16 @@ function getDiagramEntriesForSource(source) {
     return Array.isArray(diagramCatalog.sharedEntries) ? diagramCatalog.sharedEntries : [];
   }
 
-  if (source === "hosted") {
-    return Array.isArray(diagramCatalog.hostedEntries) ? diagramCatalog.hostedEntries : [];
-  }
-
   return [];
 }
 
 function activateDiagramSelection(source, preferredPath = null, { layoutFlavor = "saved", historyMode = "push" } = {}) {
-  const normalizedSource = normalizeDiagramSelectionSource(source) || "hosted";
+  const normalizedSource = normalizeDiagramSelectionSource(source);
+
+  if (!normalizedSource) {
+    return;
+  }
+
   const sourceEntries = getDiagramEntriesForSource(normalizedSource);
   const nextCatalog = {
     ...diagramCatalog,
@@ -2405,7 +2313,6 @@ function activateDiagramSelection(source, preferredPath = null, { layoutFlavor =
 let diagramsFolderHandle = null;
 let diagramCatalog = {
   folderHandle: null,
-  hostedEntries: [],
   folderEntries: [],
   sharedEntries: [],
   mySharedEntries: [],
@@ -3597,27 +3504,9 @@ function shouldPromptForDiagramsFolderFromPrimaryButton() {
   return false;
 }
 
-function buildHostedDiagramSourceUrl(fileName) {
-  try {
-    const manifestUrl = new URL(HOSTED_DIAGRAM_MANIFEST_PATH, window.location.href);
-    return new URL(fileName, manifestUrl).toString();
-  } catch {
-    return "";
-  }
-}
-
-function openDiagramSourceInNewTab(entry, source) {
+function openDiagramSourceInNewTab(entry) {
   if (!entry || typeof entry.fileName !== "string") {
     return;
-  }
-
-  if (source === "hosted") {
-    const hostedUrl = buildHostedDiagramSourceUrl(entry.fileName);
-
-    if (hostedUrl) {
-      window.open(hostedUrl, "_blank", "noopener,noreferrer");
-      return;
-    }
   }
 
   if (typeof entry.text !== "string") {
@@ -3678,7 +3567,7 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
     fileLink.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      openDiagramSourceInNewTab(entry, source);
+      openDiagramSourceInNewTab(entry);
     });
     card.append(button, fileLink);
 
@@ -3885,7 +3774,6 @@ function renderHomePanel() {
 function handleDiagramSelectionPopState() {
   const urlDiagramSelection = readUrlDiagramSelection();
   const sourceFromUrl = resolveSourceForUrlDiagramSelection({
-    hostedEntries: diagramCatalog.hostedEntries,
     folderEntries: diagramCatalog.folderEntries,
     sharedEntries: diagramCatalog.sharedEntries,
   }, urlDiagramSelection);
@@ -3893,11 +3781,11 @@ function handleDiagramSelectionPopState() {
   let nextSource = sourceFromUrl;
 
   if (!nextSource) {
-    nextSource = normalizeDiagramSelectionSource(browserDiagramSourceInfo.activeSource) || "hosted";
+    nextSource = normalizeDiagramSelectionSource(browserDiagramSourceInfo.activeSource);
   }
 
   if (!getDiagramEntriesForSource(nextSource).length) {
-    nextSource = ["hosted", "folder", "shared"]
+    nextSource = ["shared", "folder"]
       .find((candidate) => getDiagramEntriesForSource(candidate).length) || null;
   }
 
