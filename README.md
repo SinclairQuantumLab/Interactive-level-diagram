@@ -8,7 +8,7 @@ Repository for local use of the app: https://github.com/SinclairQuantumLab/Inter
 
 ## Overview
 
-This app is a browser-native, interactive viewer for atomic level diagrams. It is designed for quickly exploring fine-structure, hyperfine structure, Zeeman manifolds, optical transitions and their properties, curated measurements, and literature references without requiring a backend service.
+This app is a browser-native, interactive viewer for atomic level diagrams. It is designed for quickly exploring fine-structure, hyperfine structure, Zeeman manifolds, optical transitions and their properties, curated measurements, and literature references. Local diagrams run without a backend; shared diagrams use the online catalog service.
 
 
 ## Feature highlights
@@ -16,9 +16,10 @@ This app is a browser-native, interactive viewer for atomic level diagrams. It i
 - **Interactive, intuitive controls** for exploring the level diagram.
 - **Learn as you use it**: nobody wants to read a long manual first. Just start using it, and most interactions should be straightforward to figure out.
 - **Local standalone app**: just download the repo and open `index.html` in a supported browser. You do not need an internet connection to use it.
+- **Shared diagram metadata lives in YAML**: uploaded diagrams use `meta.title` and optional `meta.description` from the YAML file for the selector card.
 - **Strong citation support**: any data fields can cite their references. This app accepts BibTeX-formatted bibliography content.
 
-### User-contribution features are coming soon!
+### User-contribution features are in progress
 
 ## License
 

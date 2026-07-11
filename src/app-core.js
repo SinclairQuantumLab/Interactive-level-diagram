@@ -73,7 +73,6 @@ const sharedDiagramEditorTitle = document.getElementById("shared-diagram-editor-
 const sharedDiagramEditorCloseButton = document.getElementById("shared-diagram-editor-close");
 const sharedDiagramSaveButton = document.getElementById("shared-diagram-save");
 const sharedDiagramDeleteButton = document.getElementById("shared-diagram-delete");
-const sharedDiagramTitleInput = document.getElementById("shared-diagram-title");
 const sharedDiagramFileNameInput = document.getElementById("shared-diagram-file-name");
 const sharedDiagramVisibilitySelect = document.getElementById("shared-diagram-visibility");
 const sharedDiagramFileInput = document.getElementById("shared-diagram-file-input");
@@ -784,6 +783,7 @@ function normalizeSharedDiagramApiRecord(diagram, sourceIndex = 0, { owner = fal
   return {
     ...entry,
     title: String(diagram?.title || entry.title || displayFileName),
+    description: String(diagram?.description || entry.description || ""),
     sharedId,
     displayFileName,
     visibility: diagram?.visibility === "private" ? "private" : "public",
@@ -998,15 +998,6 @@ function validateSharedDiagramYamlText(text) {
   return "";
 }
 
-function getSharedDiagramTitleFromYaml(text) {
-  try {
-    const parsed = parseDiagramConfig(text);
-    return String(parsed?.meta?.title || parsed?.meta?.id || "").trim();
-  } catch {
-    return "";
-  }
-}
-
 function openSharedDiagramEditor(entry = null) {
   if (!sharedDiagramSessionToken) {
     setStatus("Sign in before uploading or editing shared diagrams.");
@@ -1020,9 +1011,6 @@ function openSharedDiagramEditor(entry = null) {
 
   if (sharedDiagramEditorTitle) {
     sharedDiagramEditorTitle.textContent = entry?.sharedId ? "Edit Shared Diagram" : "New Shared Diagram";
-  }
-  if (sharedDiagramTitleInput) {
-    sharedDiagramTitleInput.value = entry?.title || "";
   }
   if (sharedDiagramFileNameInput) {
     sharedDiagramFileNameInput.value = entry?.displayFileName || "";
@@ -1063,9 +1051,6 @@ async function loadSharedDiagramYamlFile(file) {
   if (sharedDiagramFileNameInput && !sharedDiagramFileNameInput.value.trim()) {
     sharedDiagramFileNameInput.value = file.name || "";
   }
-  if (sharedDiagramTitleInput && !sharedDiagramTitleInput.value.trim()) {
-    sharedDiagramTitleInput.value = getSharedDiagramTitleFromYaml(text);
-  }
 }
 
 async function saveSharedDiagramEditor() {
@@ -1083,7 +1068,6 @@ async function saveSharedDiagramEditor() {
   }
 
   const payload = {
-    title: String(sharedDiagramTitleInput?.value || "").trim() || getSharedDiagramTitleFromYaml(yamlText) || "Untitled diagram",
     fileName: String(sharedDiagramFileNameInput?.value || "").trim(),
     visibility: sharedDiagramVisibilitySelect?.value === "private" ? "private" : "public",
     yamlText,
@@ -1189,6 +1173,7 @@ function buildDiagramCatalogEntry(fileName, rawYamlText, { lastModifiedMs = null
     return {
       fileName,
       title: normalized.meta.title || fileName,
+      description: normalized.meta.description || "",
       text: rawYamlText,
       bibliographyText: inlineBibText,
       lastModifiedMs: Number.isFinite(lastModifiedMs) ? lastModifiedMs : null,
@@ -1198,6 +1183,7 @@ function buildDiagramCatalogEntry(fileName, rawYamlText, { lastModifiedMs = null
     return {
       fileName,
       title: `${fileName} (invalid YAML)`,
+      description: "",
       text: null,
       bibliographyText: null,
       lastModifiedMs: Number.isFinite(lastModifiedMs) ? lastModifiedMs : null,
@@ -1766,6 +1752,7 @@ function normalizeConfig(rawConfig = {}, bibliography = []) {
     meta: {
       id: rawMeta.id || createConfigId(rawSpecies),
       title: rawMeta.title || "",
+      description: rawMeta.description || "",
     },
     species: {
       ...rawSpecies,
@@ -3393,13 +3380,10 @@ function openDiagramPicker() {
 
 function getLocalDiagramPickerUiState() {
   const folderName = browserDiagramSourceInfo.folderName || diagramsFolderHandle?.name || "";
-  const usesExpectedFolderName = folderName.toLowerCase() === BROWSER_DIAGRAMS_FOLDER_NAME;
 
   if (browserDiagramSourceInfo.activeSource === "folder") {
     return {
-      hint: usesExpectedFolderName
-        ? `Using "${folderName}" for local diagram YAML files.`
-        : `Using "${folderName}" for local diagram YAML files.`,
+      hint: `Local diagrams from "${folderName}" are listed below.`,
       path: "",
       emptyText: `No readable .yaml diagrams were found in "${folderName}".`,
     };
@@ -3439,9 +3423,7 @@ function getLocalDiagramPickerUiState() {
 
   return {
     hint: browserDiagramSourceInfo.activeSource === "folder"
-      ? (usesExpectedFolderName
-        ? `Using "${folderName}" for diagram YAML files.`
-        : `Using "${folderName}" for local diagram YAML files.`)
+      ? `Local diagrams from "${folderName}" are listed below.`
       : `Local diagrams from "${folderName}" are available here.`,
     path: "",
     emptyText: `No readable .yaml diagrams were found in "${folderName}".`,
@@ -3450,7 +3432,6 @@ function getLocalDiagramPickerUiState() {
 
 function getSharedDiagramPickerUiState() {
   const apiBaseUrl = browserDiagramSourceInfo.sharedApiBaseUrl || getSharedApiBaseUrl();
-  const sharedUserLabel = getSharedUserDisplayLabel();
 
   if (!apiBaseUrl) {
     return {
@@ -3472,7 +3453,6 @@ function getSharedDiagramPickerUiState() {
     hint: sharedDiagramUser
       ? ""
       : "Public shared diagrams are available below. Sign in by email to upload or manage your own diagrams.",
-    signedInUserLabel: sharedDiagramUser ? sharedUserLabel : "",
     path: "",
     emptyText: "No public shared diagrams are available yet.",
   };
@@ -3536,6 +3516,7 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
     const card = document.createElement("div");
     const button = document.createElement("button");
     const title = document.createElement("span");
+    const description = document.createElement("span");
     const fileLink = document.createElement("a");
     const displayFileName = entry.displayFileName || entry.fileName;
     const selectDiagram = (event) => {
@@ -3549,13 +3530,18 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
     button.className = "diagram-picker-select";
     card.classList.toggle("is-active", browserDiagramSourceInfo.activeSource === source && entry.fileName === selectedDiagramPath);
     title.className = "diagram-picker-title";
+    description.className = "diagram-picker-description";
     fileLink.className = "diagram-picker-file";
     fileLink.href = "#";
     fileLink.target = "_blank";
     fileLink.rel = "noopener noreferrer";
     setDashboardTextContent(title, entry.title);
+    setDashboardTextContent(description, entry.description || "");
     fileLink.textContent = displayFileName;
     button.append(title);
+    if (entry.description) {
+      button.append(description);
+    }
     button.addEventListener("click", selectDiagram);
     card.addEventListener("click", (event) => {
       if (event.target.closest(".diagram-picker-file")) {
@@ -3642,15 +3628,8 @@ function renderDiagramPicker() {
   const sharedApiConfigured = isSharedDiagramApiConfigured();
 
   if (diagramPickerSharedHint) {
-    if (sharedState.signedInUserLabel) {
-      setSharedSignedInText(
-        diagramPickerSharedHint,
-        sharedState.signedInUserLabel,
-        ". Public shared diagrams and your own diagrams are available below.",
-      );
-    } else {
-      diagramPickerSharedHint.textContent = sharedState.hint;
-    }
+    diagramPickerSharedHint.textContent = sharedState.hint;
+    diagramPickerSharedHint.hidden = !sharedState.hint;
   }
 
   if (diagramPickerSharedPath) {
