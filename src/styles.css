@@ -975,14 +975,20 @@ h1 {
 
 .diagram-picker-card-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  align-self: center;
   gap: 6px;
-  margin-top: 4px;
-  padding-left: 10px;
+  min-width: max-content;
 }
 
 .diagram-picker-mini-action {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 4px 8px;
   border: 1px solid rgba(147, 90, 47, 0.28);
   border-radius: 999px;
@@ -991,6 +997,9 @@ h1 {
   font: inherit;
   font-size: 0.76rem;
   font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -1046,7 +1055,9 @@ h1 {
 
 .diagram-picker-card {
   display: grid;
-  gap: 3px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
   padding: 8px 10px;
   border: 1px solid rgba(25, 36, 31, 0.14);
   border-radius: 12px;
@@ -1066,6 +1077,7 @@ h1 {
 
 .diagram-picker-select {
   width: 100%;
+  min-width: 0;
   appearance: none;
   padding: 0;
   border: 0;
@@ -1078,6 +1090,10 @@ h1 {
 
 .diagram-picker-select span {
   display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .diagram-picker-list .diagram-picker-title {
@@ -1092,17 +1108,7 @@ h1 {
 }
 
 .diagram-picker-list .diagram-picker-file {
-  display: inline-flex;
-  justify-self: start;
-  width: fit-content;
-  margin-left: 10px;
-  font-size: 0.82rem;
   color: var(--text-muted);
-  text-decoration: none;
-}
-
-.diagram-picker-list .diagram-picker-file:hover {
-  text-decoration: underline;
 }
 
 .control-panel {

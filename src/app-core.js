@@ -80,6 +80,7 @@ const sharedDiagramVisibilityField = document.getElementById("shared-diagram-vis
 const sharedDiagramVisibilitySelect = document.getElementById("shared-diagram-visibility");
 const sharedDiagramFileField = document.getElementById("shared-diagram-file-field");
 const sharedDiagramFileInput = document.getElementById("shared-diagram-file-input");
+const sharedDiagramYamlMeta = document.getElementById("shared-diagram-yaml-meta");
 const sharedDiagramYamlHighlight = document.getElementById("shared-diagram-yaml-highlight");
 const sharedDiagramYamlText = document.getElementById("shared-diagram-yaml");
 const sharedDiagramYamlTitle = document.getElementById("shared-diagram-yaml-title");
@@ -1032,6 +1033,13 @@ function syncSharedDiagramYamlMetadataPreview() {
   }
 }
 
+function getDashboardTooltipText(text) {
+  return String(text || "")
+    .replace(/\\cite\{[^}]+\}/g, "")
+    .replace(/\$/g, "")
+    .trim();
+}
+
 function configureDiagramYamlEditorUi({
   title,
   copy,
@@ -1057,6 +1065,12 @@ function configureDiagramYamlEditorUi({
   if (sharedDiagramFileField) {
     sharedDiagramFileField.hidden = localMode;
   }
+  if (sharedDiagramEditorFields) {
+    sharedDiagramEditorFields.hidden = localMode;
+  }
+  if (sharedDiagramYamlMeta) {
+    sharedDiagramYamlMeta.hidden = localMode;
+  }
   if (sharedDiagramFileNameInput) {
     sharedDiagramFileNameInput.readOnly = localMode;
   }
@@ -1065,9 +1079,6 @@ function configureDiagramYamlEditorUi({
       "aria-label",
       localMode ? "Local diagram YAML editor" : "Shared diagram YAML editor",
     );
-  }
-  if (sharedDiagramEditorFields) {
-    sharedDiagramEditorFields.classList.toggle("is-local-diagram-editor", localMode);
   }
   if (sharedDiagramEditorModal) {
     sharedDiagramEditorModal.classList.toggle("is-local-diagram-editor", localMode);
@@ -3743,11 +3754,13 @@ function openDiagramSourceInNewTab(entry) {
     return;
   }
 
-  if (typeof entry.text !== "string") {
+  const sourceText = typeof entry.rawText === "string" ? entry.rawText : entry.text;
+
+  if (typeof sourceText !== "string") {
     return;
   }
 
-  const previewUrl = URL.createObjectURL(new Blob([entry.text], { type: "text/yaml;charset=utf-8" }));
+  const previewUrl = URL.createObjectURL(new Blob([sourceText], { type: "text/yaml;charset=utf-8" }));
   window.open(previewUrl, "_blank", "noopener,noreferrer");
 }
 
@@ -3771,6 +3784,7 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
     const button = document.createElement("button");
     const title = document.createElement("span");
     const description = document.createElement("span");
+    const actions = document.createElement("div");
     const fileLink = document.createElement("a");
     const displayFileName = entry.displayFileName || entry.fileName;
     const selectDiagram = (event) => {
@@ -3785,20 +3799,24 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
     card.classList.toggle("is-active", browserDiagramSourceInfo.activeSource === source && entry.fileName === selectedDiagramPath);
     title.className = "diagram-picker-title";
     description.className = "diagram-picker-description";
-    fileLink.className = "diagram-picker-file";
+    actions.className = "diagram-picker-card-actions";
+    fileLink.className = "diagram-picker-file diagram-picker-mini-action";
     fileLink.href = "#";
     fileLink.target = "_blank";
     fileLink.rel = "noopener noreferrer";
     setDashboardTextContent(title, entry.title);
     setDashboardTextContent(description, entry.description || "");
-    fileLink.textContent = displayFileName;
+    title.title = getDashboardTooltipText(entry.title);
+    description.title = getDashboardTooltipText(entry.description || "");
+    fileLink.textContent = "YAML";
+    fileLink.title = displayFileName;
     button.append(title);
     if (entry.description) {
       button.append(description);
     }
     button.addEventListener("click", selectDiagram);
     card.addEventListener("click", (event) => {
-      if (event.target.closest(".diagram-picker-file")) {
+      if (event.target.closest(".diagram-picker-card-actions")) {
         return;
       }
 
@@ -3809,14 +3827,12 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
       event.stopPropagation();
       openDiagramSourceInNewTab(entry);
     });
-    card.append(button, fileLink);
+    actions.append(fileLink);
 
     if (ownerActions && entry.isOwner) {
-      const actions = document.createElement("div");
       const editButton = document.createElement("button");
       const deleteButton = document.createElement("button");
 
-      actions.className = "diagram-picker-card-actions";
       editButton.type = "button";
       editButton.className = "diagram-picker-mini-action";
       editButton.textContent = "Edit";
@@ -3834,14 +3850,11 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
         void deleteSharedDiagramEntry(entry);
       });
       actions.append(editButton, deleteButton);
-      card.append(actions);
     }
 
     if (localActions && entry.fileHandle) {
-      const actions = document.createElement("div");
       const editButton = document.createElement("button");
 
-      actions.className = "diagram-picker-card-actions";
       editButton.type = "button";
       editButton.className = "diagram-picker-mini-action";
       editButton.textContent = "Edit";
@@ -3851,9 +3864,9 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
         openLocalDiagramEditor(entry);
       });
       actions.append(editButton);
-      card.append(actions);
     }
 
+    card.append(button, actions);
     li.append(card);
     listElement.append(li);
   });
