@@ -4,6 +4,7 @@
 meta:
   id: rb87-neutral
   title: Rubidium-87 Neutral Atom
+  description: "Rubidium-87 neutral atom diagram with fine, hyperfine, Zeeman, and selected optical transitions."
 species:
   species: Rb
   atomic_mass_number: 87

@@ -4,6 +4,7 @@
 meta:
   id: ca43-ion
   title: Calcium-43 Ion
+  description: "Calcium-43 ion diagram with hyperfine structure and clock-relevant transitions."
 
 species:
   species: Ca

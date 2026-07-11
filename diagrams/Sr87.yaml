@@ -4,6 +4,7 @@
 meta:
   id: sr87-neutral
   title: Strontium-87 Neutral Atom
+  description: "Strontium-87 neutral atom diagram with clock-relevant levels, hyperfine structure, and transitions."
 
 species:
   species: Sr

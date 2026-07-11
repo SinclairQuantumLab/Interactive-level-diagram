@@ -330,10 +330,18 @@ body {
   font: inherit;
 }
 
+.shared-diagram-editor-field input[readonly] {
+  color: var(--text-muted);
+}
+
 [data-theme="dark"] .shared-diagram-editor-field input,
 [data-theme="dark"] .shared-diagram-editor-field select {
   border-color: rgba(237, 243, 239, 0.14);
   background: rgba(30, 41, 51, 0.92);
+}
+
+.shared-diagram-editor-fields.is-local-diagram-editor {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .shared-diagram-file-field input {

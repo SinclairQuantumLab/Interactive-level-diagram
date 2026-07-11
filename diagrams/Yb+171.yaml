@@ -1,6 +1,7 @@
 meta:
   id: yb171-ion
   title: Ytterbium-171 Ion
+  description: "Ytterbium-171 ion diagram with cooling, clock, repump, and higher-lying reference transitions."
 species:
   species: Yb
   atomic_mass_number: 171

@@ -272,7 +272,7 @@
         <div class="layout-editor-header">
           <div>
             <h2 id="shared-diagram-editor-title">Shared Diagram</h2>
-            <p class="layout-editor-copy">Upload or edit diagram YAML for the shared catalog.</p>
+            <p id="shared-diagram-editor-copy" class="layout-editor-copy">Upload or edit diagram YAML for the shared catalog.</p>
           </div>
           <div class="layout-editor-toolbar">
             <button id="shared-diagram-delete" class="layout-editor-action" type="button" hidden>Delete</button>
@@ -280,19 +280,19 @@
             <button id="shared-diagram-editor-close" class="layout-editor-close" type="button" aria-label="Close shared diagram editor">X</button>
           </div>
         </div>
-        <div class="shared-diagram-editor-fields">
+        <div id="shared-diagram-editor-fields" class="shared-diagram-editor-fields">
           <label class="shared-diagram-editor-field">
             <span class="diagram-picker-layout-label">File Name</span>
             <input id="shared-diagram-file-name" type="text" placeholder="Rb87.yaml">
           </label>
-          <label class="shared-diagram-editor-field">
+          <label id="shared-diagram-visibility-field" class="shared-diagram-editor-field">
             <span class="diagram-picker-layout-label">Visibility</span>
             <select id="shared-diagram-visibility">
               <option value="public">Public</option>
               <option value="private">Private</option>
             </select>
           </label>
-          <label class="shared-diagram-editor-field shared-diagram-file-field">
+          <label id="shared-diagram-file-field" class="shared-diagram-editor-field shared-diagram-file-field">
             <span class="diagram-picker-layout-label">YAML File</span>
             <input id="shared-diagram-file-input" type="file" accept=".yaml,.yml,text/yaml,text/plain">
           </label>

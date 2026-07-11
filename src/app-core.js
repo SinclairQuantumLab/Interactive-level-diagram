@@ -70,11 +70,15 @@ const diagramPickerSearchInput = document.getElementById("diagram-picker-search"
 const diagramPickerSortSelect = document.getElementById("diagram-picker-sort");
 const sharedDiagramEditorModal = document.getElementById("shared-diagram-editor-modal");
 const sharedDiagramEditorTitle = document.getElementById("shared-diagram-editor-title");
+const sharedDiagramEditorCopy = document.getElementById("shared-diagram-editor-copy");
 const sharedDiagramEditorCloseButton = document.getElementById("shared-diagram-editor-close");
 const sharedDiagramSaveButton = document.getElementById("shared-diagram-save");
 const sharedDiagramDeleteButton = document.getElementById("shared-diagram-delete");
+const sharedDiagramEditorFields = document.getElementById("shared-diagram-editor-fields");
 const sharedDiagramFileNameInput = document.getElementById("shared-diagram-file-name");
+const sharedDiagramVisibilityField = document.getElementById("shared-diagram-visibility-field");
 const sharedDiagramVisibilitySelect = document.getElementById("shared-diagram-visibility");
+const sharedDiagramFileField = document.getElementById("shared-diagram-file-field");
 const sharedDiagramFileInput = document.getElementById("shared-diagram-file-input");
 const sharedDiagramYamlHighlight = document.getElementById("shared-diagram-yaml-highlight");
 const sharedDiagramYamlText = document.getElementById("shared-diagram-yaml");
@@ -1028,6 +1032,48 @@ function syncSharedDiagramYamlMetadataPreview() {
   }
 }
 
+function configureDiagramYamlEditorUi({
+  title,
+  copy,
+  saveLabel = "Save",
+  localMode = false,
+  showDelete = false,
+} = {}) {
+  if (sharedDiagramEditorTitle) {
+    sharedDiagramEditorTitle.textContent = title || "Diagram YAML";
+  }
+  if (sharedDiagramEditorCopy) {
+    sharedDiagramEditorCopy.textContent = copy || "";
+  }
+  if (sharedDiagramSaveButton) {
+    sharedDiagramSaveButton.textContent = saveLabel;
+  }
+  if (sharedDiagramDeleteButton) {
+    sharedDiagramDeleteButton.hidden = !showDelete;
+  }
+  if (sharedDiagramVisibilityField) {
+    sharedDiagramVisibilityField.hidden = localMode;
+  }
+  if (sharedDiagramFileField) {
+    sharedDiagramFileField.hidden = localMode;
+  }
+  if (sharedDiagramFileNameInput) {
+    sharedDiagramFileNameInput.readOnly = localMode;
+  }
+  if (sharedDiagramYamlText) {
+    sharedDiagramYamlText.setAttribute(
+      "aria-label",
+      localMode ? "Local diagram YAML editor" : "Shared diagram YAML editor",
+    );
+  }
+  if (sharedDiagramEditorFields) {
+    sharedDiagramEditorFields.classList.toggle("is-local-diagram-editor", localMode);
+  }
+  if (sharedDiagramEditorModal) {
+    sharedDiagramEditorModal.classList.toggle("is-local-diagram-editor", localMode);
+  }
+}
+
 function openSharedDiagramEditor(entry = null) {
   if (!sharedDiagramSessionToken) {
     setStatus("Sign in before uploading or editing shared diagrams.");
@@ -1039,9 +1085,13 @@ function openSharedDiagramEditor(entry = null) {
     ? { mode: "edit", sharedId: entry.sharedId, entry }
     : { mode: "new", sharedId: null, entry: null };
 
-  if (sharedDiagramEditorTitle) {
-    sharedDiagramEditorTitle.textContent = entry?.sharedId ? "Edit Shared Diagram" : "New Shared Diagram";
-  }
+  configureDiagramYamlEditorUi({
+    title: entry?.sharedId ? "Edit Shared Diagram" : "New Shared Diagram",
+    copy: "Upload or edit diagram YAML for the shared catalog.",
+    saveLabel: "Save",
+    localMode: false,
+    showDelete: Boolean(entry?.sharedId),
+  });
   if (sharedDiagramFileNameInput) {
     sharedDiagramFileNameInput.value = entry?.displayFileName || "";
   }
@@ -1058,8 +1108,42 @@ function openSharedDiagramEditor(entry = null) {
   if (typeof syncSharedDiagramYamlHighlight === "function") {
     syncSharedDiagramYamlHighlight();
   }
-  if (sharedDiagramDeleteButton) {
-    sharedDiagramDeleteButton.hidden = !entry?.sharedId;
+  if (sharedDiagramEditorModal) {
+    sharedDiagramEditorModal.hidden = false;
+    requestAnimationFrame(() => sharedDiagramYamlText?.focus());
+  }
+}
+
+function openLocalDiagramEditor(entry) {
+  if (!entry?.fileHandle) {
+    setStatus("Choose a local diagrams folder before editing local YAML.");
+    return;
+  }
+
+  sharedDiagramEditorState = {
+    mode: "local",
+    entry,
+  };
+
+  configureDiagramYamlEditorUi({
+    title: "Edit Local Diagram",
+    copy: "Edit diagram YAML from the selected local folder.",
+    saveLabel: "Save Local YAML",
+    localMode: true,
+    showDelete: false,
+  });
+  if (sharedDiagramFileNameInput) {
+    sharedDiagramFileNameInput.value = entry.displayFileName || entry.fileName || "";
+  }
+  if (sharedDiagramYamlText) {
+    sharedDiagramYamlText.value = entry.rawText || entry.text || "";
+  }
+  if (sharedDiagramFileInput) {
+    sharedDiagramFileInput.value = "";
+  }
+  syncSharedDiagramYamlMetadataPreview();
+  if (typeof syncSharedDiagramYamlHighlight === "function") {
+    syncSharedDiagramYamlHighlight();
   }
   if (sharedDiagramEditorModal) {
     sharedDiagramEditorModal.hidden = false;
@@ -1071,6 +1155,13 @@ function closeSharedDiagramEditor() {
   if (sharedDiagramEditorModal) {
     sharedDiagramEditorModal.hidden = true;
   }
+  configureDiagramYamlEditorUi({
+    title: "Shared Diagram",
+    copy: "Upload or edit diagram YAML for the shared catalog.",
+    saveLabel: "Save",
+    localMode: false,
+    showDelete: false,
+  });
   sharedDiagramEditorState = null;
 }
 
@@ -1097,7 +1188,115 @@ async function loadSharedDiagramYamlFile(file) {
   }
 }
 
+async function ensureLocalDiagramWritePermission(fileHandle) {
+  if (!fileHandle) {
+    return false;
+  }
+
+  const options = { mode: "readwrite" };
+
+  try {
+    if (typeof fileHandle.queryPermission === "function") {
+      const currentPermission = await fileHandle.queryPermission(options);
+      if (currentPermission === "granted") {
+        return true;
+      }
+    }
+
+    if (typeof fileHandle.requestPermission === "function") {
+      return await fileHandle.requestPermission(options) === "granted";
+    }
+  } catch {
+    return true;
+  }
+
+  return true;
+}
+
+function replaceLocalDiagramEntry(updatedEntry) {
+  const currentEntries = Array.isArray(diagramCatalog.folderEntries) ? diagramCatalog.folderEntries : [];
+  const existingIndex = currentEntries.findIndex((entry) => entry.fileName === updatedEntry.fileName);
+  const nextFolderEntries = [...currentEntries];
+
+  if (existingIndex >= 0) {
+    nextFolderEntries[existingIndex] = updatedEntry;
+  } else {
+    nextFolderEntries.push(updatedEntry);
+  }
+
+  diagramCatalog = {
+    ...diagramCatalog,
+    folderEntries: nextFolderEntries,
+    entries: browserDiagramSourceInfo.activeSource === "folder" ? nextFolderEntries : diagramCatalog.entries,
+  };
+}
+
+async function saveLocalDiagramEditor() {
+  const entry = sharedDiagramEditorState?.entry;
+  const yamlText = String(sharedDiagramYamlText?.value || "").trim();
+  const validationError = validateSharedDiagramYamlText(yamlText);
+
+  if (!entry?.fileHandle) {
+    setStatus("Local diagram file access is unavailable. Choose the folder again.");
+    return;
+  }
+
+  if (validationError) {
+    setStatus(validationError);
+    return;
+  }
+
+  try {
+    if (sharedDiagramSaveButton) {
+      sharedDiagramSaveButton.disabled = true;
+    }
+
+    const canWrite = await ensureLocalDiagramWritePermission(entry.fileHandle);
+    if (!canWrite) {
+      setStatus("Write access was not granted for this local diagram.");
+      return;
+    }
+
+    const writable = await entry.fileHandle.createWritable();
+    await writable.write(`${yamlText}\n`);
+    await writable.close();
+
+    const updatedEntry = {
+      ...buildDiagramCatalogEntry(entry.fileName, `${yamlText}\n`, {
+        lastModifiedMs: Date.now(),
+        sourceIndex: entry.sourceIndex,
+      }),
+      fileHandle: entry.fileHandle,
+      rawText: `${yamlText}\n`,
+    };
+    replaceLocalDiagramEntry(updatedEntry);
+    closeSharedDiagramEditor();
+
+    if (browserDiagramSourceInfo.activeSource === "folder" && selectedDiagramPath === entry.fileName) {
+      activateDiagramSelection("folder", entry.fileName, {
+        layoutFlavor: "saved",
+        historyMode: "replace",
+      });
+    } else {
+      renderDiagramPicker();
+    }
+
+    setStatus(`Saved local diagram "${entry.fileName}".`);
+  } catch (error) {
+    setStatus(error.message || "Local diagram could not be saved.");
+  } finally {
+    if (sharedDiagramSaveButton) {
+      sharedDiagramSaveButton.disabled = false;
+    }
+  }
+}
+
 async function saveSharedDiagramEditor() {
+  if (sharedDiagramEditorState?.mode === "local") {
+    await saveLocalDiagramEditor();
+    return;
+  }
+
   if (!sharedDiagramSessionToken) {
     setStatus("Sign in before saving shared diagrams.");
     return;
@@ -1119,7 +1318,9 @@ async function saveSharedDiagramEditor() {
   const isEdit = sharedDiagramEditorState?.mode === "edit" && sharedDiagramEditorState.sharedId;
 
   try {
-    sharedDiagramSaveButton.disabled = true;
+    if (sharedDiagramSaveButton) {
+      sharedDiagramSaveButton.disabled = true;
+    }
     const result = await sharedApiFetch(isEdit
       ? `/api/diagrams/${encodeURIComponent(sharedDiagramEditorState.sharedId)}`
       : "/api/diagrams", {
@@ -1142,7 +1343,9 @@ async function saveSharedDiagramEditor() {
   } catch (error) {
     setStatus(error.message || "Shared diagram could not be saved.");
   } finally {
-    sharedDiagramSaveButton.disabled = false;
+    if (sharedDiagramSaveButton) {
+      sharedDiagramSaveButton.disabled = false;
+    }
   }
 }
 
@@ -1219,6 +1422,7 @@ function buildDiagramCatalogEntry(fileName, rawYamlText, { lastModifiedMs = null
       title: normalized.meta.title || fileName,
       description: normalized.meta.description || "",
       text: rawYamlText,
+      rawText: rawYamlText,
       bibliographyText: inlineBibText,
       lastModifiedMs: Number.isFinite(lastModifiedMs) ? lastModifiedMs : null,
       sourceIndex,
@@ -1229,6 +1433,7 @@ function buildDiagramCatalogEntry(fileName, rawYamlText, { lastModifiedMs = null
       title: `${fileName} (invalid YAML)`,
       description: "",
       text: null,
+      rawText: rawYamlText,
       bibliographyText: null,
       lastModifiedMs: Number.isFinite(lastModifiedMs) ? lastModifiedMs : null,
       sourceIndex,
@@ -1274,7 +1479,7 @@ function filterAndSortDiagramCatalogEntries(entries) {
   const normalizedQuery = diagramPickerSearchQuery.trim().toLowerCase();
   const filteredEntries = normalizedQuery
     ? entries.filter((entry) => {
-      const haystack = `${entry.title || ""}\n${entry.fileName || ""}`.toLowerCase();
+      const haystack = `${entry.title || ""}\n${entry.description || ""}\n${entry.fileName || ""}`.toLowerCase();
       return haystack.includes(normalizedQuery);
     })
     : [...entries];
@@ -1293,18 +1498,23 @@ async function loadFolderDiagramCatalog(folderHandle) {
     try {
       const file = await entry.getFile();
       const rawYamlText = await file.text();
-      entries.push(buildDiagramCatalogEntry(entry.name, rawYamlText, {
-        lastModifiedMs: file.lastModified,
-        sourceIndex: entries.length,
-      }));
+      entries.push({
+        ...buildDiagramCatalogEntry(entry.name, rawYamlText, {
+          lastModifiedMs: file.lastModified,
+          sourceIndex: entries.length,
+        }),
+        fileHandle: entry,
+      });
     } catch {
       entries.push({
         fileName: entry.name,
         title: `${entry.name} (invalid YAML)`,
         text: null,
+        rawText: "",
         bibliographyText: null,
         lastModifiedMs: null,
         sourceIndex: entries.length,
+        fileHandle: entry,
       });
     }
   }
@@ -3541,7 +3751,7 @@ function openDiagramSourceInNewTab(entry) {
   window.open(previewUrl, "_blank", "noopener,noreferrer");
 }
 
-function renderDiagramPickerList(listElement, entries, { source, emptyText, ownerActions = false } = {}) {
+function renderDiagramPickerList(listElement, entries, { source, emptyText, ownerActions = false, localActions = false } = {}) {
   if (!listElement) {
     return;
   }
@@ -3624,6 +3834,23 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
         void deleteSharedDiagramEntry(entry);
       });
       actions.append(editButton, deleteButton);
+      card.append(actions);
+    }
+
+    if (localActions && entry.fileHandle) {
+      const actions = document.createElement("div");
+      const editButton = document.createElement("button");
+
+      actions.className = "diagram-picker-card-actions";
+      editButton.type = "button";
+      editButton.className = "diagram-picker-mini-action";
+      editButton.textContent = "Edit";
+      editButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openLocalDiagramEditor(entry);
+      });
+      actions.append(editButton);
       card.append(actions);
     }
 
@@ -3728,6 +3955,7 @@ function renderDiagramPicker() {
   renderDiagramPickerList(diagramPickerLocalList, localEntries, {
     source: "folder",
     emptyText: localEmptyText,
+    localActions: true,
   });
 
   if (!diagramPicker.hidden && typeof positionDiagramPickerPanel === "function") {

@@ -4,6 +4,7 @@
 meta:
   id: sr88-ion
   title: Strontium-88 Ion
+  description: "Strontium-88 ion diagram for common laser-cooling and low-lying optical transitions."
 
 species:
   species: Sr

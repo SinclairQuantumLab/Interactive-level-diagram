@@ -4,6 +4,7 @@
 meta:
   id: ba137-ion
   title: Barium-137 Ion
+  description: "Barium-137 ion diagram with hyperfine structure and selected optical transitions."
 
 species:
   species: Ba

@@ -4,6 +4,7 @@
 meta:
   id: ba133-ion
   title: Barium-133 Ion
+  description: "Barium-133 ion diagram with hyperfine structure and selected optical transitions."
 
 species:
   species: Ba
