@@ -247,6 +247,12 @@ body {
   line-height: 1.45;
 }
 
+.layout-editor-copy[hidden],
+.shared-diagram-editor-fields[hidden],
+.shared-diagram-yaml-meta[hidden] {
+  display: none;
+}
+
 .layout-editor-action {
   appearance: none;
   padding: 7px 11px;
@@ -1105,10 +1111,6 @@ h1 {
   color: var(--text-muted);
   font-size: 0.9rem;
   line-height: 1.3;
-}
-
-.diagram-picker-list .diagram-picker-file {
-  color: var(--text-muted);
 }
 
 .control-panel {
