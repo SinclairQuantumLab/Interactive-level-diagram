@@ -77,6 +77,8 @@ const sharedDiagramFileNameInput = document.getElementById("shared-diagram-file-
 const sharedDiagramVisibilitySelect = document.getElementById("shared-diagram-visibility");
 const sharedDiagramFileInput = document.getElementById("shared-diagram-file-input");
 const sharedDiagramYamlText = document.getElementById("shared-diagram-yaml");
+const sharedDiagramYamlTitle = document.getElementById("shared-diagram-yaml-title");
+const sharedDiagramYamlDescription = document.getElementById("shared-diagram-yaml-description");
 const referencesPanel = document.getElementById("references-panel");
 const referencesList = document.getElementById("references-list");
 const referencesCloseButton = document.getElementById("references-close");
@@ -998,6 +1000,33 @@ function validateSharedDiagramYamlText(text) {
   return "";
 }
 
+function getSharedDiagramMetadataFromYaml(text) {
+  try {
+    const parsed = parseDiagramConfig(text);
+    return {
+      title: String(parsed?.meta?.title || parsed?.meta?.id || "").trim(),
+      description: String(parsed?.meta?.description || "").trim(),
+    };
+  } catch {
+    return {
+      title: "",
+      description: "",
+    };
+  }
+}
+
+function syncSharedDiagramYamlMetadataPreview() {
+  const yamlText = String(sharedDiagramYamlText?.value || "").trim();
+  const metadata = getSharedDiagramMetadataFromYaml(yamlText);
+
+  if (sharedDiagramYamlTitle) {
+    sharedDiagramYamlTitle.textContent = metadata.title || "Not set in YAML meta.title";
+  }
+  if (sharedDiagramYamlDescription) {
+    sharedDiagramYamlDescription.textContent = metadata.description || "Optional meta.description is not set";
+  }
+}
+
 function openSharedDiagramEditor(entry = null) {
   if (!sharedDiagramSessionToken) {
     setStatus("Sign in before uploading or editing shared diagrams.");
@@ -1024,6 +1053,7 @@ function openSharedDiagramEditor(entry = null) {
   if (sharedDiagramFileInput) {
     sharedDiagramFileInput.value = "";
   }
+  syncSharedDiagramYamlMetadataPreview();
   if (sharedDiagramDeleteButton) {
     sharedDiagramDeleteButton.hidden = !entry?.sharedId;
   }
@@ -1042,15 +1072,22 @@ function closeSharedDiagramEditor() {
 
 async function loadSharedDiagramYamlFile(file) {
   if (!file || !sharedDiagramYamlText) {
+    if (sharedDiagramFileInput) {
+      sharedDiagramFileInput.value = "";
+    }
     return;
   }
 
+  if (sharedDiagramFileInput) {
+    sharedDiagramFileInput.value = "";
+  }
   const text = await file.text();
   sharedDiagramYamlText.value = text;
 
-  if (sharedDiagramFileNameInput && !sharedDiagramFileNameInput.value.trim()) {
+  if (sharedDiagramFileNameInput) {
     sharedDiagramFileNameInput.value = file.name || "";
   }
+  syncSharedDiagramYamlMetadataPreview();
 }
 
 async function saveSharedDiagramEditor() {

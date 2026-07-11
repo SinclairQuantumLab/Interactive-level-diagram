@@ -297,6 +297,16 @@
             <input id="shared-diagram-file-input" type="file" accept=".yaml,.yml,text/yaml,text/plain">
           </label>
         </div>
+        <dl id="shared-diagram-yaml-meta" class="shared-diagram-yaml-meta" aria-label="YAML metadata preview">
+          <div>
+            <dt>Title</dt>
+            <dd id="shared-diagram-yaml-title">Read from YAML `meta.title`</dd>
+          </div>
+          <div>
+            <dt>Description</dt>
+            <dd id="shared-diagram-yaml-description">Optional `meta.description`</dd>
+          </div>
+        </dl>
         <div class="layout-editor-surface shared-diagram-editor-surface">
           <textarea id="shared-diagram-yaml" class="layout-editor-text" spellcheck="false" aria-label="Shared diagram YAML editor"></textarea>
         </div>

@@ -3249,6 +3249,10 @@ sharedDiagramFileInput?.addEventListener("change", (event) => {
   void loadSharedDiagramYamlFile(file);
 });
 
+sharedDiagramYamlText?.addEventListener("input", () => {
+  syncSharedDiagramYamlMetadataPreview();
+});
+
 layoutEditorText?.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
     event.preventDefault();
