@@ -3085,27 +3085,35 @@ function escapeLayoutEditorHtml(text) {
     .replaceAll(">", "&gt;");
 }
 
-function syncLayoutEditorHighlight() {
-  if (!layoutEditorHighlight || !layoutEditorText) {
+function syncYamlEditorHighlight(highlightElement, textElement) {
+  if (!highlightElement || !textElement) {
     return;
   }
 
-  const content = layoutEditorText.value || "";
+  const content = textElement.value || "";
   const canHighlight = Boolean(window.hljs?.highlight);
-  layoutEditorHighlight.classList.toggle("hljs", canHighlight);
+  highlightElement.classList.toggle("hljs", canHighlight);
 
   if (canHighlight) {
     const highlighted = window.hljs.highlight(content, {
       language: "yaml",
       ignoreIllegals: true,
     });
-    layoutEditorHighlight.innerHTML = `${highlighted.value}\n`;
+    highlightElement.innerHTML = `${highlighted.value}\n`;
   } else {
-    layoutEditorHighlight.innerHTML = `${escapeLayoutEditorHtml(content)}\n`;
+    highlightElement.innerHTML = `${escapeLayoutEditorHtml(content)}\n`;
   }
 
-  layoutEditorHighlight.scrollTop = layoutEditorText.scrollTop;
-  layoutEditorHighlight.scrollLeft = layoutEditorText.scrollLeft;
+  highlightElement.scrollTop = textElement.scrollTop;
+  highlightElement.scrollLeft = textElement.scrollLeft;
+}
+
+function syncLayoutEditorHighlight() {
+  syncYamlEditorHighlight(layoutEditorHighlight, layoutEditorText);
+}
+
+function syncSharedDiagramYamlHighlight() {
+  syncYamlEditorHighlight(sharedDiagramYamlHighlight, sharedDiagramYamlText);
 }
 
 function syncLayoutEditorPlacement() {
@@ -3251,6 +3259,11 @@ sharedDiagramFileInput?.addEventListener("change", (event) => {
 
 sharedDiagramYamlText?.addEventListener("input", () => {
   syncSharedDiagramYamlMetadataPreview();
+  syncSharedDiagramYamlHighlight();
+});
+
+sharedDiagramYamlText?.addEventListener("scroll", () => {
+  syncSharedDiagramYamlHighlight();
 });
 
 layoutEditorText?.addEventListener("keydown", (event) => {
@@ -3703,6 +3716,7 @@ window.addEventListener("resize", () => {
   hideTooltip();
   syncLayoutEditorPlacement();
   syncLayoutEditorHighlight();
+  syncSharedDiagramYamlHighlight();
   renderFineLabelOverlay(currentLayout, 0);
   renderPinnedPanels();
   positionHelpPanel();

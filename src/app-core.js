@@ -76,6 +76,7 @@ const sharedDiagramDeleteButton = document.getElementById("shared-diagram-delete
 const sharedDiagramFileNameInput = document.getElementById("shared-diagram-file-name");
 const sharedDiagramVisibilitySelect = document.getElementById("shared-diagram-visibility");
 const sharedDiagramFileInput = document.getElementById("shared-diagram-file-input");
+const sharedDiagramYamlHighlight = document.getElementById("shared-diagram-yaml-highlight");
 const sharedDiagramYamlText = document.getElementById("shared-diagram-yaml");
 const sharedDiagramYamlTitle = document.getElementById("shared-diagram-yaml-title");
 const sharedDiagramYamlDescription = document.getElementById("shared-diagram-yaml-description");
@@ -1054,6 +1055,9 @@ function openSharedDiagramEditor(entry = null) {
     sharedDiagramFileInput.value = "";
   }
   syncSharedDiagramYamlMetadataPreview();
+  if (typeof syncSharedDiagramYamlHighlight === "function") {
+    syncSharedDiagramYamlHighlight();
+  }
   if (sharedDiagramDeleteButton) {
     sharedDiagramDeleteButton.hidden = !entry?.sharedId;
   }
@@ -1088,6 +1092,9 @@ async function loadSharedDiagramYamlFile(file) {
     sharedDiagramFileNameInput.value = file.name || "";
   }
   syncSharedDiagramYamlMetadataPreview();
+  if (typeof syncSharedDiagramYamlHighlight === "function") {
+    syncSharedDiagramYamlHighlight();
+  }
 }
 
 async function saveSharedDiagramEditor() {
