@@ -3226,6 +3226,29 @@ layoutEditorModal?.addEventListener("click", (event) => {
   }
 });
 
+sharedDiagramEditorCloseButton?.addEventListener("click", () => {
+  closeSharedDiagramEditor();
+});
+
+sharedDiagramSaveButton?.addEventListener("click", () => {
+  void saveSharedDiagramEditor();
+});
+
+sharedDiagramDeleteButton?.addEventListener("click", () => {
+  void deleteSharedDiagramEntry();
+});
+
+sharedDiagramEditorModal?.addEventListener("click", (event) => {
+  if (event.target === sharedDiagramEditorModal) {
+    closeSharedDiagramEditor();
+  }
+});
+
+sharedDiagramFileInput?.addEventListener("change", (event) => {
+  const file = event.target?.files?.[0] || null;
+  void loadSharedDiagramYamlFile(file);
+});
+
 layoutEditorText?.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
     event.preventDefault();
@@ -3245,6 +3268,11 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !layoutEditorModal?.hidden) {
     event.preventDefault();
     closeLayoutEditor();
+  }
+
+  if (event.key === "Escape" && !sharedDiagramEditorModal?.hidden) {
+    event.preventDefault();
+    closeSharedDiagramEditor();
   }
 });
 
@@ -3337,6 +3365,33 @@ diagramPickerSearchInput?.addEventListener("input", (event) => {
 diagramPickerSortSelect?.addEventListener("change", (event) => {
   diagramPickerSortMode = event.target.value || "alpha-asc";
   renderDiagramPicker();
+});
+
+sharedAuthSendLinkButton?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  void requestSharedMagicLink();
+});
+
+sharedAuthVerifyCodeButton?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  void verifySharedFallbackCode();
+});
+
+sharedAuthSignOutButton?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  void signOutSharedDiagrams();
+});
+
+sharedDiagramNewButton?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  openSharedDiagramEditor();
+});
+
+sharedAuthCodeInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    void verifySharedFallbackCode();
+  }
 });
 
 resetViewButton.addEventListener("click", () => {

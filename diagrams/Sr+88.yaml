@@ -1,0 +1,302 @@
+# Atomic species data only.
+# Keep app layout, UI copy, storage, and rendering rules in the app code.
+
+meta:
+  id: sr88-ion
+  title: Strontium-88 Ion
+
+species:
+  species: Sr
+  atomic_mass_number: 88
+  ionization_number: 1
+  nuclear_spin: 0
+  notes:
+    - 'Ground-state configuration: [Kr]5$s$'
+    - 'Bosonic isotope with natural abundance about 82.58%.'
+    - 'Because $I = 0$, the low-lying manifold has no hyperfine structure.'
+
+states:
+  - id: 5S1/2
+    j: 0.5
+    g_j: 2.00225664
+    energy: '0 THz\cite{NISTSrII}'
+    notation: '$5s\,{}^{2}S_{1/2}$'
+    references:
+      energy: [NISTSrII]
+      gJCalculation: [Foot05]
+
+  - id: 5P1/2
+    j: 0.5
+    g_j: 0.6666666666666666
+    energy: '710.963510204(?) THz\cite{NISTSrII}'
+    notation: '$5p\,{}^{2}P_{1/2}$'
+    references:
+      energy: [NISTSrII]
+      gJCalculation: [Foot05]
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '7.39(7) ns\cite{Pinnington95}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '21.54(20) MHz\cite{Pinnington95}'
+      - section: Branching
+      - label: '$5S_{1/2}$'
+        value: '0.94498(8)\cite{Zhang16}'
+      - label: '$4D_{3/2}$'
+        value: '0.05502(8)\cite{Zhang16}'
+
+  - id: 5P3/2
+    j: 1.5
+    g_j: 1.3333333333333333
+    energy: '734.990676543(?) THz\cite{NISTSrII}'
+    notation: '$5p\,{}^{2}P_{3/2}$'
+    references:
+      energy: [NISTSrII]
+      gJCalculation: [Foot05]
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '6.63(7) ns\cite{Pinnington95}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '24.01(25) MHz\cite{Pinnington95}'
+      - section: Branching
+      - label: '$5S_{1/2}$'
+        value: '0.9406(3)\cite{Zhang16}'
+      - label: '$4D_{3/2}$'
+        value: '0.0063(3)\cite{Zhang16}'
+      - label: '$4D_{5/2}$'
+        value: '0.0531(2)\cite{Zhang16}'
+
+  - id: 4D3/2
+    j: 1.5
+    g_j: 0.8
+    energy: '436.374903940(?) THz\cite{NISTSrII}'
+    notation: '$4d\,{}^{2}D_{3/2}$'
+    references:
+      energy: [NISTSrII]
+      gJCalculation: [Foot05]
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '0.435(4) s\cite{Mannervik99}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '0.3659(34) Hz\cite{Mannervik99}'
+
+  - id: 4D5/2
+    j: 2.5
+    g_j: 1.2
+    energy: '444.77904409548549(19) THz\cite{Jian23}'
+    notation: '$4d\,{}^{2}D_{5/2}$'
+    references:
+      energy: [Jian23]
+      gJCalculation: [Foot05]
+    properties:
+      - section: Lifetime
+      - label: '$\tau$'
+        value: '390.8(1.6) ms\cite{Letchumanan05}'
+      - label: '$\frac{\Gamma}{2\pi}$'
+        value: '0.4073(17) Hz\cite{Letchumanan05}'
+
+transitions:
+  - between: [5S1/2, 5P1/2]
+    type: E1
+    frequency: '710.963510204(?) THz\cite{NISTSrII}'
+    show: [wavelength, type]
+    notes:
+      - 'Canonical 422 nm Doppler-cooling and fluorescence line of $^{88}$Sr$^+$.'
+
+  - between: [4D3/2, 5P1/2]
+    type: E1
+    frequency: '274.588606263(?) THz\cite{NISTSrII}'
+    show: [wavelength, type]
+    notes:
+      - '1092 nm repump that closes the standard $5S_{1/2}$-$5P_{1/2}$-$4D_{3/2}$ lambda system.'
+
+  - between: [5S1/2, 5P3/2]
+    type: E1
+    frequency: '734.990676543(?) THz\cite{NISTSrII}'
+    show: [wavelength, type]
+    notes:
+      - '408 nm dipole line connecting the ground state to the $5P_{3/2}$ manifold.'
+
+  - between: [4D3/2, 5P3/2]
+    type: E1
+    frequency: '298.615772602(?) THz\cite{NISTSrII}'
+    show: [wavelength, type]
+    notes:
+      - '1004 nm auxiliary line linking the metastable $4D_{3/2}$ manifold to $5P_{3/2}$.'
+
+  - between: [4D5/2, 5P3/2]
+    type: E1
+    frequency: '290.211632448(?) THz\cite{NISTSrII,Jian23}'
+    show: [wavelength, type]
+    notes:
+      - '1033 nm quench / repump line from the metastable $4D_{5/2}$ clock state.'
+      - 'Calculated from the cited $5P_{3/2}$ centroid and $4D_{5/2}$ clock energy.'
+
+  - between: [5S1/2, 4D5/2]
+    type: E2
+    frequency: '444.77904409548549(19) THz\cite{Jian23}'
+    show: [wavelength, type]
+    notes:
+      - '674 nm electric-quadrupole clock / optical-qubit transition of $^{88}$Sr$^+$.'
+
+  - between: [5S1/2, 4D3/2]
+    type: E2
+    frequency: '436.374903940(?) THz\cite{NISTSrII}'
+    show: [wavelength, type]
+    notes:
+      - '687 nm electric-quadrupole line connecting the ground state to $4D_{3/2}$.'
+
+bibliography: |
+  @misc{NISTSrII,
+    author = {National Institute of Standards and Technology},
+    title = {Energy Levels of Singly Ionized Strontium ({Sr II})},
+    year = {2026},
+    url = {https://physics.nist.gov/PhysRefData/Handbook/Tables/strontiumtable6.htm}
+  }
+
+  @article{Jian23,
+    author = {Jian, Bin and Bernard, John E. and Gertsvolf, Marina and Dub{\'e}, Pierre},
+    title = {Improved absolute frequency measurement of the strontium ion clock using a {GPS} link to the {SI} second},
+    journal = {Metrologia},
+    volume = {60},
+    pages = {015007},
+    year = {2023},
+    doi = {10.1088/1681-7575/aca615}
+  }
+
+  @article{Pinnington95,
+    author = {Pinnington, E. H. and Berends, R. W. and Lumsden, M.},
+    title = {Studies of laser-induced fluorescence in fast beams of Sr$^+$ and Ba$^+$ ions},
+    journal = {Journal of Physics B: Atomic, Molecular and Optical Physics},
+    volume = {28},
+    pages = {2095},
+    year = {1995},
+    doi = {10.1088/0953-4075/28/11/009}
+  }
+
+  @article{Zhang16,
+    author = {Zhang, Helena and Gutierrez, Michael and Low, Guang Hao and Rines, Richard and Stuart, Jules and Wu, Tailin and Chuang, Isaac},
+    title = {Iterative precision measurement of branching ratios applied to 5P states in $^{88}$Sr$^+$},
+    journal = {New Journal of Physics},
+    volume = {18},
+    pages = {123021},
+    year = {2016},
+    doi = {10.1088/1367-2630/aa511d}
+  }
+
+  @article{Mannervik99,
+    author = {Mannervik, S. and Lidberg, J. and Norlin, L.-O. and Royen, P. and Schmitt, A. and Shi, W. and Tordoir, X.},
+    title = {Lifetime measurement of the metastable 4d $^2D_{3/2}$ level in Sr$^+$ by optical pumping of a stored ion beam},
+    journal = {Physical Review Letters},
+    volume = {83},
+    pages = {698--701},
+    year = {1999},
+    doi = {10.1103/PhysRevLett.83.698}
+  }
+
+  @article{Letchumanan05,
+    author = {Letchumanan, V. and Wilson, M. A. and Gill, P. and Sinclair, A. G.},
+    title = {Lifetime measurement of the metastable 4d $^2D_{5/2}$ state in $^{88}$Sr$^+$ using a single trapped ion},
+    journal = {Physical Review A},
+    volume = {72},
+    pages = {012509},
+    year = {2005},
+    doi = {10.1103/PhysRevA.72.012509}
+  }
+
+  @book{Foot05,
+    author = {Foot, Christopher J.},
+    title = {Atomic Physics},
+    publisher = {Oxford University Press},
+    year = {2005}
+  }
+
+default_layout:
+  version: 4
+  appVersion: '20260515.2'
+  view:
+    theme: dark
+    referencesVisible: false
+  layout:
+    expanded:
+      fine:
+        - 5P1/2
+        - 5P3/2
+        - 4D3/2
+        - 4D5/2
+        - 5S1/2
+      hyperfine: []
+    hidden:
+      states: []
+      transitions: []
+    displacements:
+      5P3/2:
+        x: -138
+        'y': -6
+      5P1/2:
+        x: 8
+        'y': -16
+      5S1/2:
+        x: 46
+        'y': 46
+      4D3/2:
+        x: 136
+        'y': 26
+      4D5/2:
+        x: 156
+        'y': -4
+    pinnedPanels: []
+  tools:
+    hide:
+      enabled: false
+    measure:
+      enabled: false
+      selection: []
+      measurements: []
+    move:
+      enabled: false
+  diagram:
+    states:
+      labels:
+        - state: 5S1/2
+          show: []
+        - state: 5P1/2
+          show: [property:\frac\gamma2\pi]
+        - state: 5P3/2
+          show: [property:\frac\gamma2\pi]
+        - state: 4D3/2
+          show: [property:\frac\gamma2\pi]
+        - state: 4D5/2
+          show: [property:\frac\gamma2\pi]
+    transitions:
+      labels:
+        - between: [5S1/2, 5P1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [4D3/2, 5P1/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [5S1/2, 5P3/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [4D3/2, 5P3/2]
+          show: []
+          precision: {wavelength: 1, frequency: null}
+        - between: [4D5/2, 5P3/2]
+          show: [wavelength]
+          precision: {wavelength: 1, frequency: null}
+        - between: [5S1/2, 4D5/2]
+          show: [wavelength, type]
+          precision: {wavelength: 1, frequency: null}
+        - between: [5S1/2, 4D3/2]
+          show: [wavelength, type]
+          precision: {wavelength: 1, frequency: null}
+    magneticField:
+      enabled: true
+      visualScale: 1
+      gauss: 1
+      range:
+        min: 0
+        max: 10

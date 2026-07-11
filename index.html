@@ -154,9 +154,9 @@
     <aside id="help-panel" class="help-panel" hidden>
         <h2>How To Use</h2>
       <ul class="help-list">
-        <li>When this app is hosted as a website, built-in diagrams from the site's bundled `diagrams/` catalog load automatically.</li>
-        <li>If you want to work from your own local files instead, click `Choose local diagrams/ folder` and pick the `diagrams` folder on your computer. After that, the browser remembers the folder choice.</li>
-        <li>The selected diagram and current layout are remembered. Reloading re-reads the YAML from the active source, whether that is the built-in site catalog or your remembered local folder.</li>
+        <li>`Shared Diagrams` is the online catalog. You can browse public diagrams and sign in by email to manage your own YAML uploads.</li>
+        <li>`Local Diagrams` reads YAML files from a folder on this computer. If you clone or download this repo, `webapp/diagrams` is just another local folder you can choose.</li>
+        <li>The selected diagram and current layout are remembered. Reloading re-reads the YAML from the active source.</li>
         <li>Click a fine-state bar to expand or collapse hyperfine structure.</li>
         <li>Click a hyperfine bar to expand or collapse Zeeman sublevels.</li>
         <li>Right-click any state to pin a movable information panel.</li>
@@ -201,17 +201,42 @@
           </select>
         </label>
       </section>
-      <section class="diagram-picker-source" aria-labelledby="diagram-picker-web-title">
+      <section class="diagram-picker-source diagram-picker-source-shared" aria-labelledby="diagram-picker-shared-title">
         <div class="diagram-picker-source-header">
-          <h3 id="diagram-picker-web-title" class="diagram-picker-source-title">Web Repo</h3>
+          <h3 id="diagram-picker-shared-title" class="diagram-picker-source-title">Shared Diagrams</h3>
+          <button id="shared-diagram-new" class="diagram-picker-action" type="button" hidden>New Shared Diagram</button>
         </div>
-        <p id="diagram-picker-web-hint" class="diagram-picker-hint"></p>
-        <p id="diagram-picker-web-path" class="diagram-picker-path" hidden></p>
-        <ul id="diagram-picker-web-list" class="diagram-picker-list"></ul>
+        <p id="diagram-picker-shared-hint" class="diagram-picker-hint"></p>
+        <div id="shared-auth-panel" class="shared-auth-panel">
+          <div id="shared-auth-signed-out" class="shared-auth-state">
+            <label class="shared-auth-field">
+              <span class="diagram-picker-layout-label">Email</span>
+              <input id="shared-auth-email" type="email" placeholder="you@example.org" autocomplete="email">
+            </label>
+            <button id="shared-auth-send-link" class="diagram-picker-action" type="button">Send Magic Link</button>
+            <label class="shared-auth-field">
+              <span class="diagram-picker-layout-label">Local Code</span>
+              <input id="shared-auth-code" type="text" inputmode="numeric" placeholder="One-time code">
+            </label>
+            <button id="shared-auth-verify-code" class="diagram-picker-action" type="button">Sign In With Code</button>
+          </div>
+          <div id="shared-auth-signed-in" class="shared-auth-state shared-auth-state-signed-in" hidden>
+            <p id="shared-auth-user" class="diagram-picker-hint"></p>
+            <button id="shared-auth-sign-out" class="diagram-picker-action" type="button">Sign Out</button>
+          </div>
+        </div>
+        <p id="diagram-picker-shared-path" class="diagram-picker-path" hidden></p>
+        <ul id="diagram-picker-shared-list" class="diagram-picker-list"></ul>
+        <div id="shared-my-diagrams" class="shared-my-diagrams" hidden>
+          <div class="diagram-picker-source-header">
+            <h4 class="diagram-picker-source-title">My Diagrams</h4>
+          </div>
+          <ul id="diagram-picker-my-list" class="diagram-picker-list"></ul>
+        </div>
       </section>
       <section class="diagram-picker-source diagram-picker-source-local" aria-labelledby="diagram-picker-local-title">
         <div class="diagram-picker-source-header">
-          <h3 id="diagram-picker-local-title" class="diagram-picker-source-title">Local Folder</h3>
+          <h3 id="diagram-picker-local-title" class="diagram-picker-source-title">Local Diagrams</h3>
           <button id="diagram-picker-local-pick" class="diagram-picker-action" type="button">Choose Folder</button>
         </div>
         <div id="diagram-picker-local-body" class="diagram-picker-source-body">
@@ -238,6 +263,46 @@
         <div class="layout-editor-surface">
           <pre id="layout-editor-highlight" class="layout-editor-highlight" aria-hidden="true"></pre>
           <textarea id="layout-editor-text" class="layout-editor-text" spellcheck="false" aria-label="Layout YAML editor"></textarea>
+        </div>
+      </section>
+    </aside>
+
+    <aside id="shared-diagram-editor-modal" class="layout-editor-modal shared-diagram-editor-modal" hidden aria-labelledby="shared-diagram-editor-title" aria-modal="true" role="dialog">
+      <section class="layout-editor-panel shared-diagram-editor-panel">
+        <div class="layout-editor-header">
+          <div>
+            <h2 id="shared-diagram-editor-title">Shared Diagram</h2>
+            <p class="layout-editor-copy">Upload or edit diagram YAML for the shared catalog.</p>
+          </div>
+          <div class="layout-editor-toolbar">
+            <button id="shared-diagram-delete" class="layout-editor-action" type="button" hidden>Delete</button>
+            <button id="shared-diagram-save" class="layout-editor-action is-primary" type="button">Save</button>
+            <button id="shared-diagram-editor-close" class="layout-editor-close" type="button" aria-label="Close shared diagram editor">X</button>
+          </div>
+        </div>
+        <div class="shared-diagram-editor-fields">
+          <label class="shared-diagram-editor-field">
+            <span class="diagram-picker-layout-label">Title</span>
+            <input id="shared-diagram-title" type="text" placeholder="Diagram title">
+          </label>
+          <label class="shared-diagram-editor-field">
+            <span class="diagram-picker-layout-label">File Name</span>
+            <input id="shared-diagram-file-name" type="text" placeholder="Rb87.yaml">
+          </label>
+          <label class="shared-diagram-editor-field">
+            <span class="diagram-picker-layout-label">Visibility</span>
+            <select id="shared-diagram-visibility">
+              <option value="public">Public</option>
+              <option value="private">Private</option>
+            </select>
+          </label>
+          <label class="shared-diagram-editor-field shared-diagram-file-field">
+            <span class="diagram-picker-layout-label">YAML File</span>
+            <input id="shared-diagram-file-input" type="file" accept=".yaml,.yml,text/yaml,text/plain">
+          </label>
+        </div>
+        <div class="layout-editor-surface shared-diagram-editor-surface">
+          <textarea id="shared-diagram-yaml" class="layout-editor-text" spellcheck="false" aria-label="Shared diagram YAML editor"></textarea>
         </div>
       </section>
     </aside>
@@ -289,6 +354,13 @@ storage:
   diagramsFolderDb: level-diagram-db
   diagramsFolderStore: handles
   diagramsFolderKey: diagrams-folder
+  sharedSessionTokenKey: level-diagram-shared-session
+  sharedEmailKey: level-diagram-shared-email
+
+sharedApiBaseUrl: "https://interactive-level-diagram-api.sinclairquantumlab.workers.dev"
+
+shared:
+  apiBaseUrl: ""
 
 defaults:
   expandedFine: []

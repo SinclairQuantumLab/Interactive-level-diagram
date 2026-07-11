@@ -43,9 +43,21 @@ const layoutEditorCopyButton = document.getElementById("layout-editor-copy");
 const layoutEditorApplyButton = document.getElementById("layout-editor-apply");
 const diagramPicker = document.getElementById("diagram-picker");
 const diagramPickerCloseButton = document.getElementById("diagram-picker-close");
-const diagramPickerWebList = document.getElementById("diagram-picker-web-list");
-const diagramPickerWebHint = document.getElementById("diagram-picker-web-hint");
-const diagramPickerWebPath = document.getElementById("diagram-picker-web-path");
+const diagramPickerSharedList = document.getElementById("diagram-picker-shared-list");
+const diagramPickerSharedHint = document.getElementById("diagram-picker-shared-hint");
+const diagramPickerSharedPath = document.getElementById("diagram-picker-shared-path");
+const sharedAuthPanel = document.getElementById("shared-auth-panel");
+const sharedAuthSignedOut = document.getElementById("shared-auth-signed-out");
+const sharedAuthSignedIn = document.getElementById("shared-auth-signed-in");
+const sharedAuthEmailInput = document.getElementById("shared-auth-email");
+const sharedAuthCodeInput = document.getElementById("shared-auth-code");
+const sharedAuthSendLinkButton = document.getElementById("shared-auth-send-link");
+const sharedAuthVerifyCodeButton = document.getElementById("shared-auth-verify-code");
+const sharedAuthSignOutButton = document.getElementById("shared-auth-sign-out");
+const sharedAuthUser = document.getElementById("shared-auth-user");
+const sharedDiagramNewButton = document.getElementById("shared-diagram-new");
+const sharedMyDiagrams = document.getElementById("shared-my-diagrams");
+const diagramPickerMyList = document.getElementById("diagram-picker-my-list");
 const diagramPickerLocalPickButton = document.getElementById("diagram-picker-local-pick");
 const diagramPickerLocalList = document.getElementById("diagram-picker-local-list");
 const diagramPickerLocalHint = document.getElementById("diagram-picker-local-hint");
@@ -56,6 +68,16 @@ const diagramPickerLayoutCollapsedButton = document.getElementById("diagram-pick
 const diagramPickerLayoutExpandedButton = document.getElementById("diagram-picker-layout-expanded");
 const diagramPickerSearchInput = document.getElementById("diagram-picker-search");
 const diagramPickerSortSelect = document.getElementById("diagram-picker-sort");
+const sharedDiagramEditorModal = document.getElementById("shared-diagram-editor-modal");
+const sharedDiagramEditorTitle = document.getElementById("shared-diagram-editor-title");
+const sharedDiagramEditorCloseButton = document.getElementById("shared-diagram-editor-close");
+const sharedDiagramSaveButton = document.getElementById("shared-diagram-save");
+const sharedDiagramDeleteButton = document.getElementById("shared-diagram-delete");
+const sharedDiagramTitleInput = document.getElementById("shared-diagram-title");
+const sharedDiagramFileNameInput = document.getElementById("shared-diagram-file-name");
+const sharedDiagramVisibilitySelect = document.getElementById("shared-diagram-visibility");
+const sharedDiagramFileInput = document.getElementById("shared-diagram-file-input");
+const sharedDiagramYamlText = document.getElementById("shared-diagram-yaml");
 const referencesPanel = document.getElementById("references-panel");
 const referencesList = document.getElementById("references-list");
 const referencesCloseButton = document.getElementById("references-close");
@@ -104,6 +126,12 @@ const DEFAULT_APP_CONFIG = {
     diagramsFolderDb: "level-diagram-db",
     diagramsFolderStore: "handles",
     diagramsFolderKey: "diagrams-folder",
+    sharedSessionTokenKey: "level-diagram-shared-session",
+    sharedEmailKey: "level-diagram-shared-email",
+  },
+  sharedApiBaseUrl: "",
+  shared: {
+    apiBaseUrl: "",
   },
   defaults: {
     expandedFine: [],
@@ -223,44 +251,11 @@ function createBrowserDiagramSourceInfo(overrides = {}) {
     expectedFolderName: BROWSER_DIAGRAMS_FOLDER_NAME,
     hostedCatalogAvailable: false,
     hostedManifestPath: HOSTED_DIAGRAM_MANIFEST_PATH,
+    sharedApiAvailable: false,
+    sharedApiBaseUrl: "",
     activeSource: "none",
     ...overrides,
   };
-}
-
-function inferExpectedBrowserDiagramsFolderPath() {
-  try {
-    const locationUrl = new URL(window.location.href);
-
-    if (locationUrl.protocol !== "file:") {
-      return `${BROWSER_DIAGRAMS_FOLDER_NAME}/`;
-    }
-
-    let decodedPath = decodeURIComponent(locationUrl.pathname || "");
-
-    if (/^\/[A-Za-z]:/.test(decodedPath)) {
-      decodedPath = decodedPath.slice(1);
-    }
-
-    decodedPath = decodedPath.replace(/\//g, "\\");
-
-    if (!decodedPath) {
-      return `${BROWSER_DIAGRAMS_FOLDER_NAME}\\`;
-    }
-
-    const parentPath = decodedPath.replace(/\\[^\\]*$/, "");
-    return `${parentPath}\\${BROWSER_DIAGRAMS_FOLDER_NAME}`;
-  } catch {
-    return `${BROWSER_DIAGRAMS_FOLDER_NAME}/`;
-  }
-}
-
-function shouldShowSuggestedLocalFolderPath() {
-  try {
-    return new URL(window.location.href).protocol === "file:";
-  } catch {
-    return false;
-  }
 }
 
 function findMatchingBibtexDelimiter(text, startIndex, openChar, closeChar) {
@@ -604,19 +599,566 @@ async function pickDiagramsFolder() {
   }
 }
 
-async function useHostedDiagrams() {
-  storeSelectedDiagramSource("hosted");
-
-  if (typeof setStatus === "function") {
-    setStatus(`Using bundled ${BROWSER_DIAGRAMS_FOLDER_NAME}/ files from this site. Reloading diagrams.`);
-  }
-
-  window.location.reload();
-}
-
 function canFetchHostedDiagramCatalog() {
   return typeof window.fetch === "function"
     && window.location.protocol !== "file:";
+}
+
+function getSharedApiBaseUrl() {
+  const rawBaseUrl = String(
+    APP_CONFIG.sharedApiBaseUrl
+      || APP_CONFIG.shared?.apiBaseUrl
+      || "",
+  ).trim();
+
+  if (!rawBaseUrl || typeof window.fetch !== "function") {
+    return "";
+  }
+
+  try {
+    return new URL(rawBaseUrl, window.location.href).toString().replace(/\/+$/, "");
+  } catch {
+    return "";
+  }
+}
+
+function isSharedDiagramApiConfigured() {
+  return Boolean(getSharedApiBaseUrl());
+}
+
+function getSharedStorageKey(name, fallback) {
+  return String(APP_CONFIG.storage?.[name] || fallback);
+}
+
+function readStoredSharedSessionToken() {
+  try {
+    return window.localStorage.getItem(getSharedStorageKey("sharedSessionTokenKey", "level-diagram-shared-session")) || null;
+  } catch {
+    return null;
+  }
+}
+
+function storeSharedSessionToken(token) {
+  sharedDiagramSessionToken = token || null;
+
+  try {
+    if (sharedDiagramSessionToken) {
+      window.localStorage.setItem(getSharedStorageKey("sharedSessionTokenKey", "level-diagram-shared-session"), sharedDiagramSessionToken);
+    } else {
+      window.localStorage.removeItem(getSharedStorageKey("sharedSessionTokenKey", "level-diagram-shared-session"));
+    }
+  } catch {
+    return;
+  }
+}
+
+function readStoredSharedEmail() {
+  try {
+    return window.localStorage.getItem(getSharedStorageKey("sharedEmailKey", "level-diagram-shared-email")) || "";
+  } catch {
+    return "";
+  }
+}
+
+function storeSharedEmail(email) {
+  const normalizedEmail = String(email || "").trim();
+
+  try {
+    if (normalizedEmail) {
+      window.localStorage.setItem(getSharedStorageKey("sharedEmailKey", "level-diagram-shared-email"), normalizedEmail);
+    }
+  } catch {
+    return;
+  }
+}
+
+function clearSharedSession() {
+  sharedDiagramUser = null;
+  storeSharedSessionToken(null);
+}
+
+function buildSharedApiUrl(endpoint) {
+  const baseUrl = getSharedApiBaseUrl();
+
+  if (!baseUrl) {
+    throw new Error("Shared diagram API is not configured.");
+  }
+
+  const normalizedEndpoint = String(endpoint || "").startsWith("/")
+    ? endpoint
+    : `/${endpoint}`;
+  return `${baseUrl}${normalizedEndpoint}`;
+}
+
+async function sharedApiFetch(endpoint, {
+  method = "GET",
+  body = null,
+  auth = false,
+} = {}) {
+  const headers = {};
+
+  if (body !== null) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  if (auth) {
+    if (!sharedDiagramSessionToken) {
+      throw new Error("Sign in to manage shared diagrams.");
+    }
+
+    headers.Authorization = `Bearer ${sharedDiagramSessionToken}`;
+  }
+
+  const response = await window.fetch(buildSharedApiUrl(endpoint), {
+    method,
+    headers,
+    body: body === null ? undefined : JSON.stringify(body),
+    cache: "no-store",
+  });
+  const contentType = response.headers.get("content-type") || "";
+  const payload = contentType.includes("application/json")
+    ? await response.json()
+    : { error: await response.text() };
+
+  if (!response.ok) {
+    const error = new Error(payload?.error || `Shared API request failed (${response.status}).`);
+    error.status = response.status;
+    throw error;
+  }
+
+  return payload;
+}
+
+function makeSharedAuthReturnUrl() {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("authToken");
+    return url.toString();
+  } catch {
+    return window.location.href;
+  }
+}
+
+function clearSharedAuthTokenFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+
+    if (!url.searchParams.has("authToken")) {
+      return;
+    }
+
+    url.searchParams.delete("authToken");
+    window.history?.replaceState?.(null, "", url.toString());
+  } catch {
+    return;
+  }
+}
+
+async function consumeSharedAuthTokenFromUrl() {
+  const authToken = String(readUrlQueryParam("authToken", { preservePlus: true }) || "").trim();
+
+  if (!authToken || !isSharedDiagramApiConfigured()) {
+    return;
+  }
+
+  try {
+    const result = await sharedApiFetch(`/api/auth/verify?token=${encodeURIComponent(authToken)}`);
+    storeSharedSessionToken(result.token);
+    sharedDiagramUser = result.user || null;
+    clearSharedAuthTokenFromUrl();
+
+    if (typeof setStatus === "function") {
+      setStatus("Signed in to shared diagrams.");
+    }
+  } catch (error) {
+    clearSharedAuthTokenFromUrl();
+    if (typeof setStatus === "function") {
+      setStatus(error.message || "Shared diagram sign-in failed.");
+    }
+  }
+}
+
+function normalizeSharedDiagramApiRecord(diagram, sourceIndex = 0, { owner = false } = {}) {
+  const yamlText = String(diagram?.yamlText || diagram?.yaml || "");
+  const sharedId = String(diagram?.id || "").trim();
+  const sourceKey = isDiagramConfigFileName(sharedId) ? sharedId : `${sharedId || `shared-${sourceIndex}`}.yaml`;
+  const displayFileName = String(diagram?.fileName || sourceKey).trim() || sourceKey;
+  const updatedAtMs = Date.parse(diagram?.updatedAt || diagram?.createdAt || "");
+  const entry = buildDiagramCatalogEntry(sourceKey, yamlText, {
+    lastModifiedMs: Number.isFinite(updatedAtMs) ? updatedAtMs : null,
+    sourceIndex,
+  });
+
+  return {
+    ...entry,
+    title: String(diagram?.title || entry.title || displayFileName),
+    sharedId,
+    displayFileName,
+    visibility: diagram?.visibility === "private" ? "private" : "public",
+    ownerUserId: diagram?.ownerUserId || "",
+    isOwner: Boolean(owner || diagram?.isOwner),
+    createdAt: diagram?.createdAt || "",
+    updatedAt: diagram?.updatedAt || "",
+  };
+}
+
+function mergeSharedDiagramEntries(publicEntries = [], myEntries = []) {
+  const merged = [];
+  const seen = new Set();
+
+  [...myEntries, ...publicEntries].forEach((entry) => {
+    const key = entry.sharedId || entry.fileName;
+
+    if (!key || seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    merged.push(entry);
+  });
+
+  return merged;
+}
+
+async function loadSharedCurrentUser() {
+  if (!sharedDiagramSessionToken || !isSharedDiagramApiConfigured()) {
+    sharedDiagramUser = null;
+    return null;
+  }
+
+  try {
+    const result = await sharedApiFetch("/api/me", { auth: true });
+    sharedDiagramUser = result.user || null;
+    return sharedDiagramUser;
+  } catch {
+    clearSharedSession();
+    return null;
+  }
+}
+
+async function loadSharedDiagramCatalog() {
+  const apiBaseUrl = getSharedApiBaseUrl();
+
+  if (!apiBaseUrl) {
+    return {
+      available: false,
+      apiBaseUrl: "",
+      entries: [],
+      myEntries: [],
+      error: "",
+    };
+  }
+
+  try {
+    await loadSharedCurrentUser();
+    const publicResult = await sharedApiFetch("/api/diagrams");
+    const publicEntries = (Array.isArray(publicResult.diagrams) ? publicResult.diagrams : [])
+      .map((diagram, sourceIndex) => normalizeSharedDiagramApiRecord(diagram, sourceIndex));
+    let myEntries = [];
+
+    if (sharedDiagramSessionToken) {
+      const myResult = await sharedApiFetch("/api/diagrams?mine=1", { auth: true });
+      myEntries = (Array.isArray(myResult.diagrams) ? myResult.diagrams : [])
+        .map((diagram, sourceIndex) => normalizeSharedDiagramApiRecord(diagram, sourceIndex, { owner: true }));
+    }
+
+    return {
+      available: true,
+      apiBaseUrl,
+      entries: publicEntries,
+      myEntries,
+      error: "",
+    };
+  } catch (error) {
+    return {
+      available: false,
+      apiBaseUrl,
+      entries: [],
+      myEntries: [],
+      error: error.message || "Shared diagrams could not be loaded.",
+    };
+  }
+}
+
+async function refreshSharedDiagramCatalog({ announce = false } = {}) {
+  const sharedCatalog = await loadSharedDiagramCatalog();
+  const sharedEntries = mergeSharedDiagramEntries(sharedCatalog.entries, sharedCatalog.myEntries);
+
+  diagramCatalog = {
+    ...diagramCatalog,
+    sharedEntries,
+    mySharedEntries: sharedCatalog.myEntries,
+    entries: browserDiagramSourceInfo.activeSource === "shared"
+      ? sharedEntries
+      : diagramCatalog.entries,
+  };
+  browserDiagramSourceInfo = createBrowserDiagramSourceInfo({
+    ...browserDiagramSourceInfo,
+    sharedApiAvailable: sharedCatalog.available,
+    sharedApiBaseUrl: sharedCatalog.apiBaseUrl,
+    sharedApiError: sharedCatalog.error,
+  });
+  renderDiagramPicker();
+
+  if (announce && typeof setStatus === "function") {
+    setStatus(sharedCatalog.available
+      ? "Shared diagrams refreshed."
+      : (sharedCatalog.error || "Shared diagrams are unavailable."));
+  }
+
+  return sharedCatalog;
+}
+
+async function requestSharedMagicLink() {
+  if (!isSharedDiagramApiConfigured()) {
+    setStatus("Shared diagram API is not configured for this copy yet.");
+    return;
+  }
+
+  const email = String(sharedAuthEmailInput?.value || "").trim();
+
+  if (!email) {
+    setStatus("Enter an email address for the magic link.");
+    sharedAuthEmailInput?.focus();
+    return;
+  }
+
+  try {
+    sharedAuthSendLinkButton.disabled = true;
+    const result = await sharedApiFetch("/api/auth/magic-link", {
+      method: "POST",
+      body: {
+        email,
+        returnUrl: makeSharedAuthReturnUrl(),
+      },
+    });
+    storeSharedEmail(email);
+    setStatus(result.emailConfigured === false
+      ? "Magic link was created, but the API email provider is not configured yet."
+      : `Magic link sent to ${email}. Local fallback code is in the same email.`);
+  } catch (error) {
+    setStatus(error.message || "Could not send a shared diagram magic link.");
+  } finally {
+    sharedAuthSendLinkButton.disabled = false;
+  }
+}
+
+async function verifySharedFallbackCode() {
+  if (!isSharedDiagramApiConfigured()) {
+    setStatus("Shared diagram API is not configured for this copy yet.");
+    return;
+  }
+
+  const email = String(sharedAuthEmailInput?.value || "").trim();
+  const code = String(sharedAuthCodeInput?.value || "").trim();
+
+  if (!email || !code) {
+    setStatus("Enter the email address and one-time code from the magic-link email.");
+    return;
+  }
+
+  try {
+    sharedAuthVerifyCodeButton.disabled = true;
+    const result = await sharedApiFetch("/api/auth/code", {
+      method: "POST",
+      body: { email, code },
+    });
+    storeSharedEmail(email);
+    storeSharedSessionToken(result.token);
+    sharedDiagramUser = result.user || null;
+    if (sharedAuthCodeInput) {
+      sharedAuthCodeInput.value = "";
+    }
+    await refreshSharedDiagramCatalog();
+    setStatus("Signed in to shared diagrams.");
+  } catch (error) {
+    setStatus(error.message || "The shared diagram login code could not be verified.");
+  } finally {
+    sharedAuthVerifyCodeButton.disabled = false;
+  }
+}
+
+async function signOutSharedDiagrams() {
+  clearSharedSession();
+  await refreshSharedDiagramCatalog();
+  setStatus("Signed out of shared diagrams.");
+}
+
+function validateSharedDiagramYamlText(text) {
+  const normalizedText = String(text || "").trim();
+
+  if (!normalizedText) {
+    return "Paste diagram YAML before saving.";
+  }
+
+  try {
+    const parsed = parseDiagramConfig(normalizedText);
+    const bibliographyText = extractInlineBibliographyText(parsed);
+    const normalized = normalizeConfig(parsed, bibliographyText ? parseBibtex(bibliographyText) : []);
+
+    if (!Array.isArray(normalized.states) || normalized.states.length === 0) {
+      return "Diagram YAML must define at least one state.";
+    }
+  } catch (error) {
+    return error.message || "Diagram YAML could not be parsed.";
+  }
+
+  return "";
+}
+
+function getSharedDiagramTitleFromYaml(text) {
+  try {
+    const parsed = parseDiagramConfig(text);
+    return String(parsed?.meta?.title || parsed?.meta?.id || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function openSharedDiagramEditor(entry = null) {
+  if (!sharedDiagramSessionToken) {
+    setStatus("Sign in before uploading or editing shared diagrams.");
+    sharedAuthEmailInput?.focus();
+    return;
+  }
+
+  sharedDiagramEditorState = entry?.sharedId
+    ? { mode: "edit", sharedId: entry.sharedId, entry }
+    : { mode: "new", sharedId: null, entry: null };
+
+  if (sharedDiagramEditorTitle) {
+    sharedDiagramEditorTitle.textContent = entry?.sharedId ? "Edit Shared Diagram" : "New Shared Diagram";
+  }
+  if (sharedDiagramTitleInput) {
+    sharedDiagramTitleInput.value = entry?.title || "";
+  }
+  if (sharedDiagramFileNameInput) {
+    sharedDiagramFileNameInput.value = entry?.displayFileName || "";
+  }
+  if (sharedDiagramVisibilitySelect) {
+    sharedDiagramVisibilitySelect.value = entry?.visibility === "private" ? "private" : "public";
+  }
+  if (sharedDiagramYamlText) {
+    sharedDiagramYamlText.value = entry?.text || "";
+  }
+  if (sharedDiagramFileInput) {
+    sharedDiagramFileInput.value = "";
+  }
+  if (sharedDiagramDeleteButton) {
+    sharedDiagramDeleteButton.hidden = !entry?.sharedId;
+  }
+  if (sharedDiagramEditorModal) {
+    sharedDiagramEditorModal.hidden = false;
+    requestAnimationFrame(() => sharedDiagramYamlText?.focus());
+  }
+}
+
+function closeSharedDiagramEditor() {
+  if (sharedDiagramEditorModal) {
+    sharedDiagramEditorModal.hidden = true;
+  }
+  sharedDiagramEditorState = null;
+}
+
+async function loadSharedDiagramYamlFile(file) {
+  if (!file || !sharedDiagramYamlText) {
+    return;
+  }
+
+  const text = await file.text();
+  sharedDiagramYamlText.value = text;
+
+  if (sharedDiagramFileNameInput && !sharedDiagramFileNameInput.value.trim()) {
+    sharedDiagramFileNameInput.value = file.name || "";
+  }
+  if (sharedDiagramTitleInput && !sharedDiagramTitleInput.value.trim()) {
+    sharedDiagramTitleInput.value = getSharedDiagramTitleFromYaml(text);
+  }
+}
+
+async function saveSharedDiagramEditor() {
+  if (!sharedDiagramSessionToken) {
+    setStatus("Sign in before saving shared diagrams.");
+    return;
+  }
+
+  const yamlText = String(sharedDiagramYamlText?.value || "").trim();
+  const validationError = validateSharedDiagramYamlText(yamlText);
+
+  if (validationError) {
+    setStatus(validationError);
+    return;
+  }
+
+  const payload = {
+    title: String(sharedDiagramTitleInput?.value || "").trim() || getSharedDiagramTitleFromYaml(yamlText) || "Untitled diagram",
+    fileName: String(sharedDiagramFileNameInput?.value || "").trim(),
+    visibility: sharedDiagramVisibilitySelect?.value === "private" ? "private" : "public",
+    yamlText,
+  };
+  const isEdit = sharedDiagramEditorState?.mode === "edit" && sharedDiagramEditorState.sharedId;
+
+  try {
+    sharedDiagramSaveButton.disabled = true;
+    const result = await sharedApiFetch(isEdit
+      ? `/api/diagrams/${encodeURIComponent(sharedDiagramEditorState.sharedId)}`
+      : "/api/diagrams", {
+        method: isEdit ? "PUT" : "POST",
+        auth: true,
+        body: payload,
+      });
+    closeSharedDiagramEditor();
+    await refreshSharedDiagramCatalog();
+
+    const savedEntry = mergeSharedDiagramEntries(diagramCatalog.sharedEntries, diagramCatalog.mySharedEntries)
+      .find((entry) => entry.sharedId === result.diagram?.id);
+    if (savedEntry) {
+      activateDiagramSelection("shared", savedEntry.fileName, {
+        layoutFlavor: diagramPickerLayoutFlavor,
+        historyMode: "push",
+      });
+    }
+    setStatus(isEdit ? "Shared diagram updated." : "Shared diagram uploaded.");
+  } catch (error) {
+    setStatus(error.message || "Shared diagram could not be saved.");
+  } finally {
+    sharedDiagramSaveButton.disabled = false;
+  }
+}
+
+async function deleteSharedDiagramEntry(entry = sharedDiagramEditorState?.entry) {
+  if (!entry?.sharedId) {
+    return;
+  }
+
+  const label = entry.displayFileName || entry.title || entry.sharedId;
+
+  if (!window.confirm(`Delete shared diagram "${label}"? This cannot be undone.`)) {
+    return;
+  }
+
+  try {
+    await sharedApiFetch(`/api/diagrams/${encodeURIComponent(entry.sharedId)}`, {
+      method: "DELETE",
+      auth: true,
+    });
+    closeSharedDiagramEditor();
+    await refreshSharedDiagramCatalog();
+
+    if (browserDiagramSourceInfo.activeSource === "shared" && selectedDiagramPath === entry.fileName) {
+      const fallbackSource = diagramCatalog.hostedEntries.length ? "hosted" : (diagramCatalog.folderEntries.length ? "folder" : "shared");
+      const fallbackEntry = getDiagramEntriesForSource(fallbackSource).find((candidate) => typeof candidate.text === "string");
+      if (fallbackEntry) {
+        activateDiagramSelection(fallbackSource, fallbackEntry.fileName, { layoutFlavor: "saved" });
+      } else {
+        renderHomePanel();
+      }
+    }
+
+    setStatus("Shared diagram deleted.");
+  } catch (error) {
+    setStatus(error.message || "Shared diagram could not be deleted.");
+  }
 }
 
 async function fetchTextResource(resourceUrl, { optional = false } = {}) {
@@ -1476,7 +2018,7 @@ function storeSelectedDiagramPath(path) {
 }
 
 function normalizeDiagramSelectionSource(source) {
-  return source === "folder" || source === "hosted" ? source : null;
+  return source === "folder" || source === "hosted" || source === "shared" ? source : null;
 }
 
 function isHomeRouteUrl() {
@@ -1568,7 +2110,7 @@ function syncUrlDiagramSelection(path, source, { historyMode = "replace" } = {})
       nextUrl.searchParams.delete("diagram");
     }
 
-    if (normalizedSource === "folder") {
+    if (normalizedSource && normalizedSource !== "hosted") {
       nextUrl.searchParams.set("source", normalizedSource);
     } else {
       nextUrl.searchParams.delete("source");
@@ -1598,13 +2140,14 @@ function diagramCatalogEntriesContainPath(entries, fileName) {
     .some((entry) => entry?.fileName === normalizedFileName);
 }
 
-function resolveSourceForUrlDiagramSelection({ hostedEntries = [], folderEntries = [] } = {}, selection = {}) {
+function resolveSourceForUrlDiagramSelection({ hostedEntries = [], folderEntries = [], sharedEntries = [] } = {}, selection = {}) {
   const normalizedSource = normalizeDiagramSelectionSource(selection?.source);
   const normalizedPath = String(selection?.path || "").trim();
 
   if (normalizedPath) {
     const hostedHasPath = diagramCatalogEntriesContainPath(hostedEntries, normalizedPath);
     const folderHasPath = diagramCatalogEntriesContainPath(folderEntries, normalizedPath);
+    const sharedHasPath = diagramCatalogEntriesContainPath(sharedEntries, normalizedPath);
 
     if (normalizedSource === "folder" && folderHasPath) {
       return "folder";
@@ -1614,12 +2157,20 @@ function resolveSourceForUrlDiagramSelection({ hostedEntries = [], folderEntries
       return "hosted";
     }
 
+    if (normalizedSource === "shared" && sharedHasPath) {
+      return "shared";
+    }
+
     if (hostedHasPath) {
       return "hosted";
     }
 
     if (folderHasPath) {
       return "folder";
+    }
+
+    if (sharedHasPath) {
+      return "shared";
     }
   }
 
@@ -1632,14 +2183,14 @@ function getStoredSelectedDiagramSource() {
 
   try {
     const value = window.localStorage.getItem(storageKey);
-    return value === "folder" || value === "hosted" ? value : null;
+    return normalizeDiagramSelectionSource(value);
   } catch {
     return null;
   }
 }
 
 function storeSelectedDiagramSource(source) {
-  const normalizedSource = source === "folder" || source === "hosted" ? source : null;
+  const normalizedSource = normalizeDiagramSelectionSource(source);
   const storageKey = APP_CONFIG.storage.selectedDiagramSourceKey
     || `${APP_CONFIG.storage.selectedDiagramKey}-source`;
 
@@ -1655,6 +2206,11 @@ function storeSelectedDiagramSource(source) {
 }
 
 async function loadDiagramCatalog() {
+  sharedDiagramSessionToken = readStoredSharedSessionToken();
+  if (sharedAuthEmailInput && !sharedAuthEmailInput.value) {
+    sharedAuthEmailInput.value = readStoredSharedEmail();
+  }
+
   const folderHandle = await getStoredDiagramsFolderHandle();
   const browserSourceInfo = createBrowserDiagramSourceInfo({
     hasStoredHandle: Boolean(folderHandle),
@@ -1664,6 +2220,11 @@ async function loadDiagramCatalog() {
   browserSourceInfo.permissionGranted = hasPermission;
   const hostedCatalog = await loadHostedDiagramCatalog();
   browserSourceInfo.hostedCatalogAvailable = hostedCatalog.available;
+  const sharedCatalog = await loadSharedDiagramCatalog();
+  const sharedEntries = mergeSharedDiagramEntries(sharedCatalog.entries, sharedCatalog.myEntries);
+  browserSourceInfo.sharedApiAvailable = sharedCatalog.available;
+  browserSourceInfo.sharedApiBaseUrl = sharedCatalog.apiBaseUrl;
+  browserSourceInfo.sharedApiError = sharedCatalog.error;
   const folderEntries = folderHandle && hasPermission
     ? await loadFolderDiagramCatalog(folderHandle)
     : [];
@@ -1673,6 +2234,7 @@ async function loadDiagramCatalog() {
   const urlPreferredSource = resolveSourceForUrlDiagramSelection({
     hostedEntries: hostedCatalog.entries,
     folderEntries,
+    sharedEntries,
   }, urlDiagramSelection);
   let activeSource = "none";
 
@@ -1680,6 +2242,8 @@ async function loadDiagramCatalog() {
     activeSource = "folder";
   } else if (urlPreferredSource === "hosted" && hostedCatalog.available) {
     activeSource = "hosted";
+  } else if (urlPreferredSource === "shared" && sharedCatalog.available) {
+    activeSource = "shared";
   } else if (shouldUseHomeDefault
     && hostedCatalog.available
     && diagramCatalogEntriesContainPath(hostedCatalog.entries, DEFAULT_HOME_DIAGRAM_FILE)) {
@@ -1688,10 +2252,14 @@ async function loadDiagramCatalog() {
     activeSource = "folder";
   } else if (preferredSource === "hosted" && hostedCatalog.available) {
     activeSource = "hosted";
+  } else if (preferredSource === "shared" && sharedCatalog.available && sharedEntries.length > 0) {
+    activeSource = "shared";
   } else if (folderHandle && hasPermission && folderEntries.length > 0) {
     activeSource = "folder";
   } else if (hostedCatalog.available) {
     activeSource = "hosted";
+  } else if (sharedCatalog.available && sharedEntries.length > 0) {
+    activeSource = "shared";
   } else if (folderHandle && hasPermission) {
     activeSource = "folder";
   }
@@ -1700,9 +2268,11 @@ async function loadDiagramCatalog() {
     folderHandle: folderHandle && hasPermission ? folderHandle : null,
     hostedEntries: hostedCatalog.entries,
     folderEntries,
+    sharedEntries,
+    mySharedEntries: sharedCatalog.myEntries,
     entries: activeSource === "folder"
       ? folderEntries
-      : (activeSource === "hosted" ? hostedCatalog.entries : []),
+      : (activeSource === "hosted" ? hostedCatalog.entries : (activeSource === "shared" ? sharedEntries : [])),
     browserSourceInfo: createBrowserDiagramSourceInfo({
       ...browserSourceInfo,
       activeSource,
@@ -1772,6 +2342,10 @@ function getDiagramEntriesForSource(source) {
     return Array.isArray(diagramCatalog.folderEntries) ? diagramCatalog.folderEntries : [];
   }
 
+  if (source === "shared") {
+    return Array.isArray(diagramCatalog.sharedEntries) ? diagramCatalog.sharedEntries : [];
+  }
+
   if (source === "hosted") {
     return Array.isArray(diagramCatalog.hostedEntries) ? diagramCatalog.hostedEntries : [];
   }
@@ -1780,7 +2354,7 @@ function getDiagramEntriesForSource(source) {
 }
 
 function activateDiagramSelection(source, preferredPath = null, { layoutFlavor = "saved", historyMode = "push" } = {}) {
-  const normalizedSource = source === "folder" ? "folder" : "hosted";
+  const normalizedSource = normalizeDiagramSelectionSource(source) || "hosted";
   const sourceEntries = getDiagramEntriesForSource(normalizedSource);
   const nextCatalog = {
     ...diagramCatalog,
@@ -1833,12 +2407,17 @@ let diagramCatalog = {
   folderHandle: null,
   hostedEntries: [],
   folderEntries: [],
+  sharedEntries: [],
+  mySharedEntries: [],
   entries: [],
 };
 let config = createEmptyConfig();
 let hasLoadedDiagramSource = false;
 let selectedDiagramPath = null;
 let browserDiagramSourceInfo = createBrowserDiagramSourceInfo();
+let sharedDiagramSessionToken = null;
+let sharedDiagramUser = null;
+let sharedDiagramEditorState = null;
 let hasInteractiveDiagram = false;
 let diagramPickerLayoutFlavor = "default";
 let diagramPickerPreviewActive = false;
@@ -2905,29 +3484,8 @@ function openDiagramPicker() {
   }
 }
 
-function getHostedDiagramPickerUiState() {
-  if (!browserDiagramSourceInfo.hostedCatalogAvailable) {
-    return {
-      hint: "This page did not provide a built-in diagram catalog.",
-      path: "",
-      emptyText: "No built-in diagrams are available from this site.",
-    };
-  }
-
-  return {
-    hint: browserDiagramSourceInfo.activeSource === "hosted"
-      ? "Currently using the built-in diagrams bundled with this site."
-      : "Built-in diagrams from this site are available here.",
-    path: `Bundled catalog: ${browserDiagramSourceInfo.hostedManifestPath}`,
-    emptyText: "No readable bundled .yaml diagrams were found on this site.",
-  };
-}
-
 function getLocalDiagramPickerUiState() {
   const folderName = browserDiagramSourceInfo.folderName || diagramsFolderHandle?.name || "";
-  const expectedFolderPath = shouldShowSuggestedLocalFolderPath()
-    ? inferExpectedBrowserDiagramsFolderPath()
-    : "";
   const usesExpectedFolderName = folderName.toLowerCase() === BROWSER_DIAGRAMS_FOLDER_NAME;
 
   if (browserDiagramSourceInfo.activeSource === "folder") {
@@ -2935,7 +3493,7 @@ function getLocalDiagramPickerUiState() {
       hint: usesExpectedFolderName
         ? `Using "${folderName}" for local diagram YAML files.`
         : `Using "${folderName}" for local diagram YAML files.`,
-      path: expectedFolderPath ? `Suggested local folder: ${expectedFolderPath}` : "",
+      path: "",
       emptyText: `No readable .yaml diagrams were found in "${folderName}".`,
     };
   }
@@ -2950,26 +3508,24 @@ function getLocalDiagramPickerUiState() {
 
   if (!browserDiagramSourceInfo.hasStoredHandle) {
     return {
-      hint: `Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder on your computer to browse local diagram YAML files in this browser.`,
-      path: expectedFolderPath ? `Suggested local folder: ${expectedFolderPath}` : "",
-      emptyText: "Choose a local folder to list local diagrams here.",
+      hint: "Choose a folder on this computer that contains diagram YAML files.",
+      path: "",
+      emptyText: "Local diagrams will appear here after you choose a folder.",
     };
   }
 
   if (!browserDiagramSourceInfo.permissionGranted) {
     return {
-      hint: `This browser no longer has access to the previously chosen folder${folderName ? ` "${folderName}"` : ""}. Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder again.`,
-      path: expectedFolderPath ? `Suggested local folder: ${expectedFolderPath}` : "",
-      emptyText: "Reconnect the local folder to browse its diagrams.",
+      hint: "Choose a folder on this computer that contains diagram YAML files.",
+      path: "",
+      emptyText: "Local diagrams will appear here after you choose a folder.",
     };
   }
 
   if (diagramCatalog.folderEntries.length === 0) {
     return {
-      hint: usesExpectedFolderName
-        ? `No readable .yaml diagrams were found in "${folderName}". Add diagram YAML files there or choose another folder.`
-        : `You selected "${folderName}". The usual folder for this app is "${BROWSER_DIAGRAMS_FOLDER_NAME}". If this is the wrong folder, choose it again.`,
-      path: expectedFolderPath ? `Suggested local folder: ${expectedFolderPath}` : "",
+      hint: `No readable .yaml diagrams were found in "${folderName}". Add diagram YAML files there or choose another folder.`,
+      path: "",
       emptyText: `No readable .yaml diagrams were found in "${folderName}".`,
     };
   }
@@ -2980,9 +3536,57 @@ function getLocalDiagramPickerUiState() {
         ? `Using "${folderName}" for diagram YAML files.`
         : `Using "${folderName}" for local diagram YAML files.`)
       : `Local diagrams from "${folderName}" are available here.`,
-    path: expectedFolderPath ? `Suggested local folder: ${expectedFolderPath}` : "",
+    path: "",
     emptyText: `No readable .yaml diagrams were found in "${folderName}".`,
   };
+}
+
+function getSharedDiagramPickerUiState() {
+  const apiBaseUrl = browserDiagramSourceInfo.sharedApiBaseUrl || getSharedApiBaseUrl();
+  const sharedUserLabel = getSharedUserDisplayLabel();
+
+  if (!apiBaseUrl) {
+    return {
+      hint: "Shared diagrams are not configured for this copy yet.",
+      path: "",
+      emptyText: "Shared diagrams are unavailable in this copy.",
+    };
+  }
+
+  if (!browserDiagramSourceInfo.sharedApiAvailable) {
+    return {
+      hint: browserDiagramSourceInfo.sharedApiError || "Shared diagrams are unavailable right now.",
+      path: "",
+      emptyText: "Shared diagrams could not be loaded.",
+    };
+  }
+
+  return {
+    hint: sharedDiagramUser
+      ? ""
+      : "Public shared diagrams are available below. Sign in by email to upload or manage your own diagrams.",
+    signedInUserLabel: sharedDiagramUser ? sharedUserLabel : "",
+    path: "",
+    emptyText: "No public shared diagrams are available yet.",
+  };
+}
+
+function getSharedUserDisplayLabel() {
+  return sharedDiagramUser?.email
+    || readStoredSharedEmail()
+    || sharedDiagramUser?.emailHint
+    || "shared diagram user";
+}
+
+function setSharedSignedInText(element, userLabel, suffix = ".") {
+  const strong = document.createElement("strong");
+  strong.className = "shared-user-email";
+  strong.textContent = userLabel;
+  element.replaceChildren(
+    document.createTextNode("Signed in as "),
+    strong,
+    document.createTextNode(suffix),
+  );
 }
 
 function syncDiagramSourceUi() {
@@ -3024,7 +3628,7 @@ function openDiagramSourceInNewTab(entry, source) {
   window.open(previewUrl, "_blank", "noopener,noreferrer");
 }
 
-function renderDiagramPickerList(listElement, entries, { source, emptyText }) {
+function renderDiagramPickerList(listElement, entries, { source, emptyText, ownerActions = false } = {}) {
   if (!listElement) {
     return;
   }
@@ -3044,6 +3648,7 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText }) {
     const button = document.createElement("button");
     const title = document.createElement("span");
     const fileLink = document.createElement("a");
+    const displayFileName = entry.displayFileName || entry.fileName;
     const selectDiagram = (event) => {
       event?.stopPropagation?.();
       activateDiagramSelection(source, entry.fileName, { layoutFlavor: diagramPickerLayoutFlavor });
@@ -3060,7 +3665,7 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText }) {
     fileLink.target = "_blank";
     fileLink.rel = "noopener noreferrer";
     setDashboardTextContent(title, entry.title);
-    fileLink.textContent = entry.fileName;
+    fileLink.textContent = displayFileName;
     button.append(title);
     button.addEventListener("click", selectDiagram);
     card.addEventListener("click", (event) => {
@@ -3076,6 +3681,33 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText }) {
       openDiagramSourceInNewTab(entry, source);
     });
     card.append(button, fileLink);
+
+    if (ownerActions && entry.isOwner) {
+      const actions = document.createElement("div");
+      const editButton = document.createElement("button");
+      const deleteButton = document.createElement("button");
+
+      actions.className = "diagram-picker-card-actions";
+      editButton.type = "button";
+      editButton.className = "diagram-picker-mini-action";
+      editButton.textContent = "Edit";
+      deleteButton.type = "button";
+      deleteButton.className = "diagram-picker-mini-action";
+      deleteButton.textContent = "Delete";
+      editButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openSharedDiagramEditor(entry);
+      });
+      deleteButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void deleteSharedDiagramEntry(entry);
+      });
+      actions.append(editButton, deleteButton);
+      card.append(actions);
+    }
+
     li.append(card);
     listElement.append(li);
   });
@@ -3089,26 +3721,21 @@ function renderDiagramPicker() {
   syncDiagramSourceUi();
   syncDiagramPickerBrowseControlsUi();
 
-  const hostedState = getHostedDiagramPickerUiState();
   const localState = getLocalDiagramPickerUiState();
-  const hostedEntries = filterAndSortDiagramCatalogEntries(diagramCatalog.hostedEntries || []);
+  const sharedState = getSharedDiagramPickerUiState();
   const localEntries = filterAndSortDiagramCatalogEntries(diagramCatalog.folderEntries || []);
+  const sharedEntries = filterAndSortDiagramCatalogEntries(diagramCatalog.sharedEntries || []);
+  const mySharedEntries = filterAndSortDiagramCatalogEntries(diagramCatalog.mySharedEntries || []);
   const normalizedSearchQuery = diagramPickerSearchQuery.trim();
-  const hostedEmptyText = normalizedSearchQuery
-    ? `No web repo diagrams matched "${normalizedSearchQuery}".`
-    : hostedState.emptyText;
   const localEmptyText = normalizedSearchQuery
-    ? `No local folder diagrams matched "${normalizedSearchQuery}".`
+    ? `No local diagrams matched "${normalizedSearchQuery}".`
     : localState.emptyText;
-
-  if (diagramPickerWebHint) {
-    diagramPickerWebHint.textContent = hostedState.hint;
-  }
-
-  if (diagramPickerWebPath) {
-    diagramPickerWebPath.textContent = hostedState.path || "";
-    diagramPickerWebPath.hidden = !hostedState.path;
-  }
+  const sharedEmptyText = normalizedSearchQuery
+    ? `No shared diagrams matched "${normalizedSearchQuery}".`
+    : sharedState.emptyText;
+  const mySharedEmptyText = normalizedSearchQuery
+    ? `No owned shared diagrams matched "${normalizedSearchQuery}".`
+    : "You have not uploaded any shared diagrams yet.";
 
   if (diagramPickerLocalHint) {
     diagramPickerLocalHint.textContent = localState.hint;
@@ -3123,9 +3750,68 @@ function renderDiagramPicker() {
     diagramPickerLocalPickButton.disabled = !browserDiagramSourceInfo.supported;
   }
 
-  renderDiagramPickerList(diagramPickerWebList, hostedEntries, {
-    source: "hosted",
-    emptyText: hostedEmptyText,
+  const sharedApiConfigured = isSharedDiagramApiConfigured();
+
+  if (diagramPickerSharedHint) {
+    if (sharedState.signedInUserLabel) {
+      setSharedSignedInText(
+        diagramPickerSharedHint,
+        sharedState.signedInUserLabel,
+        ". Public shared diagrams and your own diagrams are available below.",
+      );
+    } else {
+      diagramPickerSharedHint.textContent = sharedState.hint;
+    }
+  }
+
+  if (diagramPickerSharedPath) {
+    diagramPickerSharedPath.textContent = sharedState.path || "";
+    diagramPickerSharedPath.hidden = !sharedState.path;
+  }
+
+  if (sharedAuthPanel) {
+    sharedAuthPanel.hidden = !sharedApiConfigured;
+  }
+
+  if (sharedAuthSignedOut) {
+    sharedAuthSignedOut.hidden = !sharedApiConfigured || Boolean(sharedDiagramUser);
+  }
+
+  if (sharedAuthSignedIn) {
+    sharedAuthSignedIn.hidden = !sharedApiConfigured || !sharedDiagramUser;
+  }
+
+  if (sharedAuthUser) {
+    const sharedUserLabel = getSharedUserDisplayLabel();
+    if (sharedDiagramUser) {
+      setSharedSignedInText(sharedAuthUser, sharedUserLabel);
+    } else {
+      sharedAuthUser.textContent = "";
+    }
+  }
+
+  [sharedAuthEmailInput, sharedAuthCodeInput, sharedAuthSendLinkButton, sharedAuthVerifyCodeButton].forEach((element) => {
+    if (element) {
+      element.disabled = !sharedApiConfigured;
+    }
+  });
+
+  if (sharedDiagramNewButton) {
+    sharedDiagramNewButton.hidden = !sharedDiagramUser;
+  }
+
+  if (sharedMyDiagrams) {
+    sharedMyDiagrams.hidden = !sharedDiagramUser;
+  }
+
+  renderDiagramPickerList(diagramPickerSharedList, sharedEntries, {
+    source: "shared",
+    emptyText: sharedEmptyText,
+  });
+  renderDiagramPickerList(diagramPickerMyList, mySharedEntries, {
+    source: "shared",
+    emptyText: mySharedEmptyText,
+    ownerActions: true,
   });
   renderDiagramPickerList(diagramPickerLocalList, localEntries, {
     source: "folder",
@@ -3180,9 +3866,7 @@ function renderHomePanel() {
     speciesName.hidden = false;
     speciesName.textContent = diagramCatalog.entries.length > 0
       ? "Pick a diagram from the project list."
-      : (browserDiagramSourceInfo.hostedCatalogAvailable
-        ? `No readable built-in diagrams were found for this site. Choose a local "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder to continue.`
-        : `Pick the "${BROWSER_DIAGRAMS_FOLDER_NAME}" folder inside this app folder to begin.`);
+      : "Choose a shared diagram or pick a local folder that contains diagram YAML files.";
     renderSpeciesProperties({ notes: [] });
     syncDiagramUiAvailability();
     renderDiagramPicker();
@@ -3203,19 +3887,21 @@ function handleDiagramSelectionPopState() {
   const sourceFromUrl = resolveSourceForUrlDiagramSelection({
     hostedEntries: diagramCatalog.hostedEntries,
     folderEntries: diagramCatalog.folderEntries,
+    sharedEntries: diagramCatalog.sharedEntries,
   }, urlDiagramSelection);
 
   let nextSource = sourceFromUrl;
 
   if (!nextSource) {
-    nextSource = browserDiagramSourceInfo.activeSource === "folder" ? "folder" : "hosted";
+    nextSource = normalizeDiagramSelectionSource(browserDiagramSourceInfo.activeSource) || "hosted";
   }
 
   if (!getDiagramEntriesForSource(nextSource).length) {
-    nextSource = nextSource === "folder" ? "hosted" : "folder";
+    nextSource = ["hosted", "folder", "shared"]
+      .find((candidate) => getDiagramEntriesForSource(candidate).length) || null;
   }
 
-  if (!getDiagramEntriesForSource(nextSource).length) {
+  if (!nextSource || !getDiagramEntriesForSource(nextSource).length) {
     return;
   }
 
@@ -3226,6 +3912,7 @@ function handleDiagramSelectionPopState() {
 }
 
 async function bootstrapConfig() {
+  await consumeSharedAuthTokenFromUrl();
   diagramCatalog = await loadDiagramCatalog();
   diagramsFolderHandle = diagramCatalog.folderHandle;
   browserDiagramSourceInfo = diagramCatalog.browserSourceInfo || createBrowserDiagramSourceInfo();
