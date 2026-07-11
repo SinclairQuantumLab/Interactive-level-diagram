@@ -9,7 +9,7 @@
 meta:
   id: rb87-dline-steck
   title: Rubidium-87 D-Line Reference
-  description: "Rubidium-87 D-line reference diagram based on Steck data, including hyperfine strengths."
+  description: 'Implements Daniel Steck''s $^{87}\mathrm{Rb}$ D-line reference data.'
 
 species:
   species: Rb

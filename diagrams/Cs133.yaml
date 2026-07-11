@@ -4,7 +4,7 @@
 meta:
   id: cs133-neutral
   title: Cesium-133 Neutral Atom
-  description: "Cesium-133 neutral atom diagram with low-lying hyperfine structure and optical transitions."
+  description: 'Basic $^{133}\mathrm{Cs}$ diagram for typical usage in AMO physics.'
 
 species:
   species: Cs

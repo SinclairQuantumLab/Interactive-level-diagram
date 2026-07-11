@@ -4,7 +4,7 @@
 meta:
   id: ba137-ion
   title: Barium-137 Ion
-  description: "Barium-137 ion diagram with hyperfine structure and selected optical transitions."
+  description: 'Basic $^{137}\mathrm{Ba}^{+}$ diagram for typical usage in AMO physics.'
 
 species:
   species: Ba

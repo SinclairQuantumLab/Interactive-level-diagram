@@ -4,7 +4,7 @@
 meta:
   id: ca43-ion
   title: Calcium-43 Ion
-  description: "Calcium-43 ion diagram with hyperfine structure and clock-relevant transitions."
+  description: 'Basic $^{43}\mathrm{Ca}^{+}$ diagram for typical trapped-ion AMO usage.'
 
 species:
   species: Ca
