@@ -3573,7 +3573,7 @@ function setDashboardTextContent(element, text) {
         parts.push(escapeHtml(normalizedText.slice(lastIndex, match.index)));
       }
 
-      parts.push(window.katex.renderToString(match[0], {
+      parts.push(window.katex.renderToString(match[1], {
         throwOnError: false,
         displayMode: false,
       }));
