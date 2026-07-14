@@ -1023,10 +1023,10 @@ function syncSharedDiagramYamlMetadataPreview() {
   const metadata = getSharedDiagramMetadataFromYaml(yamlText);
 
   if (sharedDiagramYamlTitle) {
-    sharedDiagramYamlTitle.textContent = metadata.title || "Not set in YAML meta.title";
+    setDashboardTextContent(sharedDiagramYamlTitle, metadata.title || "Not set in YAML meta.title");
   }
   if (sharedDiagramYamlDescription) {
-    sharedDiagramYamlDescription.textContent = metadata.description || "Optional meta.description is not set";
+    setDashboardTextContent(sharedDiagramYamlDescription, metadata.description || "Optional meta.description is not set");
   }
 }
 
