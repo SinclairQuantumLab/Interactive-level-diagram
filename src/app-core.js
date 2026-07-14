@@ -1070,7 +1070,7 @@ function configureDiagramYamlEditorUi({
     sharedDiagramEditorFields.hidden = localMode;
   }
   if (sharedDiagramYamlMeta) {
-    sharedDiagramYamlMeta.hidden = localMode;
+    sharedDiagramYamlMeta.hidden = false;
   }
   if (sharedDiagramFileNameInput) {
     sharedDiagramFileNameInput.readOnly = localMode;
