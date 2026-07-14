@@ -785,11 +785,13 @@ function normalizeSharedDiagramApiRecord(diagram, sourceIndex = 0, { owner = fal
     lastModifiedMs: Number.isFinite(updatedAtMs) ? updatedAtMs : null,
     sourceIndex,
   });
+  const yamlTitle = entry.title && entry.title !== sourceKey ? entry.title : "";
+  const yamlDescription = entry.description || "";
 
   return {
     ...entry,
-    title: String(diagram?.title || entry.title || displayFileName),
-    description: String(diagram?.description || entry.description || ""),
+    title: String(yamlTitle || diagram?.title || displayFileName),
+    description: String(yamlDescription || diagram?.description || ""),
     sharedId,
     displayFileName,
     ownerUserId: diagram?.ownerUserId || "",
