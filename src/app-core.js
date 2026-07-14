@@ -76,8 +76,6 @@ const sharedDiagramSaveButton = document.getElementById("shared-diagram-save");
 const sharedDiagramDeleteButton = document.getElementById("shared-diagram-delete");
 const sharedDiagramEditorFields = document.getElementById("shared-diagram-editor-fields");
 const sharedDiagramFileNameInput = document.getElementById("shared-diagram-file-name");
-const sharedDiagramVisibilityField = document.getElementById("shared-diagram-visibility-field");
-const sharedDiagramVisibilitySelect = document.getElementById("shared-diagram-visibility");
 const sharedDiagramFileField = document.getElementById("shared-diagram-file-field");
 const sharedDiagramFileInput = document.getElementById("shared-diagram-file-input");
 const sharedDiagramYamlMeta = document.getElementById("shared-diagram-yaml-meta");
@@ -794,7 +792,6 @@ function normalizeSharedDiagramApiRecord(diagram, sourceIndex = 0, { owner = fal
     description: String(diagram?.description || entry.description || ""),
     sharedId,
     displayFileName,
-    visibility: diagram?.visibility === "private" ? "private" : "public",
     ownerUserId: diagram?.ownerUserId || "",
     isOwner: Boolean(owner || diagram?.isOwner),
     createdAt: diagram?.createdAt || "",
@@ -1040,6 +1037,341 @@ function getDashboardTooltipText(text) {
     .trim();
 }
 
+function getYamlTextForSaving(text) {
+  return `${String(text || "").trimEnd()}\n`;
+}
+
+function normalizeDiagramTitleKey(titleText) {
+  return String(titleText || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function findDiagramEntryByTitle(entries, titleText) {
+  const titleKey = normalizeDiagramTitleKey(titleText);
+
+  if (!titleKey) {
+    return null;
+  }
+
+  return (Array.isArray(entries) ? entries : [])
+    .find((entry) => normalizeDiagramTitleKey(entry.title) === titleKey) || null;
+}
+
+function normalizeDiagramDownloadFileName(fileName) {
+  const baseName = String(fileName || "diagram.yaml")
+    .split(/[\\/]/)
+    .pop()
+    .trim()
+    .replace(/[^A-Za-z0-9._+-]/g, "-") || "diagram.yaml";
+  return /\.ya?ml$/i.test(baseName) ? baseName : `${baseName}.yaml`;
+}
+
+function formatLocalTimezoneOffset(date) {
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const absoluteMinutes = Math.abs(offsetMinutes);
+  const hours = String(Math.floor(absoluteMinutes / 60)).padStart(2, "0");
+  const minutes = String(absoluteMinutes % 60).padStart(2, "0");
+  return `${sign}${hours}:${minutes}`;
+}
+
+function formatDetailedLocalTimestamp(timestampMs) {
+  if (!Number.isFinite(timestampMs)) {
+    return "Unknown local time";
+  }
+
+  const date = new Date(timestampMs);
+  const year = String(date.getFullYear()).padStart(4, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}${formatLocalTimezoneOffset(date)}`;
+}
+
+function formatRelativeTimestamp(timestampMs, nowMs = Date.now()) {
+  if (!Number.isFinite(timestampMs)) {
+    return "";
+  }
+
+  const elapsedSeconds = Math.max(0, Math.round((nowMs - timestampMs) / 1000));
+
+  if (elapsedSeconds < 60) {
+    return `${elapsedSeconds}s ago`;
+  }
+
+  const elapsedMinutes = Math.round(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes}min ago`;
+  }
+
+  const elapsedHours = Math.round(elapsedMinutes / 60);
+  if (elapsedHours < 24) {
+    return `${elapsedHours}h ago`;
+  }
+
+  const elapsedDays = Math.round(elapsedHours / 24);
+  if (elapsedDays < 30) {
+    return `${elapsedDays} day${elapsedDays === 1 ? "" : "s"} ago`;
+  }
+
+  const elapsedMonths = Math.round(elapsedDays / 30);
+  if (elapsedMonths < 12) {
+    return `${elapsedMonths}mo ago`;
+  }
+
+  const elapsedYears = Math.round(elapsedDays / 365);
+  return `${elapsedYears}y ago`;
+}
+
+function setDiagramUpdatedElement(element, entry) {
+  if (!element) {
+    return;
+  }
+
+  const timestampMs = getDiagramEntryTimestampMs(entry);
+
+  if (timestampMs === null) {
+    element.textContent = "";
+    element.title = "";
+    element.hidden = true;
+    return;
+  }
+
+  element.hidden = false;
+  element.textContent = `Updated ${formatRelativeTimestamp(timestampMs)}`;
+  element.title = formatDetailedLocalTimestamp(timestampMs);
+}
+
+function getDiagramEntryTimestampMs(entry) {
+  if (Number.isFinite(entry?.lastModifiedMs)) {
+    return entry.lastModifiedMs;
+  }
+
+  const parsedTimestamp = Date.parse(entry?.updatedAt || entry?.createdAt || "");
+  return Number.isFinite(parsedTimestamp) ? parsedTimestamp : null;
+}
+
+function formatOverwriteTimestamp(timestampMs) {
+  return Number.isFinite(timestampMs)
+    ? formatDetailedLocalTimestamp(timestampMs)
+    : "Unknown local time";
+}
+
+function confirmDiagramOverwrite({
+  title,
+  targetLabel = "diagram",
+  oldTimestampMs = null,
+  newTimestampMs = null,
+} = {}) {
+  return window.confirm([
+    `A ${targetLabel} titled "${title || "Untitled diagram"}" already exists.`,
+    `Old version: ${formatOverwriteTimestamp(oldTimestampMs)}`,
+    `New version: ${formatOverwriteTimestamp(newTimestampMs)}`,
+    "",
+    "Overwrite it?",
+  ].join("\n"));
+}
+
+async function ensureDiagramsFolderWritePermission(folderHandle) {
+  if (!folderHandle) {
+    return false;
+  }
+
+  const options = { mode: "readwrite" };
+
+  try {
+    if (typeof folderHandle.queryPermission === "function") {
+      const currentPermission = await folderHandle.queryPermission(options);
+      if (currentPermission === "granted") {
+        return true;
+      }
+    }
+
+    if (typeof folderHandle.requestPermission === "function") {
+      return await folderHandle.requestPermission(options) === "granted";
+    }
+  } catch {
+    return false;
+  }
+
+  return true;
+}
+
+async function writeYamlTextToFileHandle(fileHandle, yamlText) {
+  const writable = await fileHandle.createWritable();
+  await writable.write(getYamlTextForSaving(yamlText));
+  await writable.close();
+}
+
+async function refreshFolderDiagramCatalogFromHandle(folderHandle) {
+  const folderEntries = await loadFolderDiagramCatalog(folderHandle);
+  diagramCatalog = {
+    ...diagramCatalog,
+    folderHandle,
+    folderEntries,
+    entries: browserDiagramSourceInfo.activeSource === "folder" ? folderEntries : diagramCatalog.entries,
+  };
+  return folderEntries;
+}
+
+function downloadDiagramTextViaBrowser(entry) {
+  const yamlText = getYamlTextForSaving(entry?.rawText || entry?.text || "");
+  const fileName = normalizeDiagramDownloadFileName(entry?.displayFileName || entry?.fileName || `${entry?.title || "diagram"}.yaml`);
+  const blob = new Blob([yamlText], { type: "text/yaml;charset=utf-8" });
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = objectUrl;
+  link.download = fileName;
+  link.rel = "noopener";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
+function findOwnedSharedEntryByTitle(titleText, { excludeSharedId = "" } = {}) {
+  const titleKey = normalizeDiagramTitleKey(titleText);
+
+  if (!titleKey) {
+    return null;
+  }
+
+  return (diagramCatalog.mySharedEntries || []).find((entry) => (
+    normalizeDiagramTitleKey(entry.title) === titleKey
+    && entry.sharedId !== excludeSharedId
+  ))
+    || null;
+}
+
+function getDiagramTitleForOverwrite(yamlText, fallbackTitle = "") {
+  return getSharedDiagramMetadataFromYaml(yamlText).title || fallbackTitle || "Untitled diagram";
+}
+
+async function uploadLocalDiagramEntry(entry) {
+  if (!sharedDiagramSessionToken) {
+    setStatus("Sign in before uploading a local diagram.");
+    sharedAuthEmailInput?.focus();
+    return;
+  }
+
+  const yamlText = String(entry?.rawText || entry?.text || "").trim();
+  const validationError = validateSharedDiagramYamlText(yamlText);
+
+  if (validationError) {
+    setStatus(validationError);
+    return;
+  }
+
+  const uploadTitle = getDiagramTitleForOverwrite(yamlText, entry?.title);
+  const existingSharedEntry = findOwnedSharedEntryByTitle(uploadTitle);
+
+  if (
+    existingSharedEntry
+    && !confirmDiagramOverwrite({
+      title: uploadTitle,
+      targetLabel: "shared diagram",
+      oldTimestampMs: getDiagramEntryTimestampMs(existingSharedEntry),
+      newTimestampMs: getDiagramEntryTimestampMs(entry) ?? Date.now(),
+    })
+  ) {
+    setStatus("Local diagram upload canceled.");
+    return;
+  }
+
+  const payload = {
+    fileName: normalizeDiagramDownloadFileName(entry?.displayFileName || entry?.fileName || `${uploadTitle}.yaml`),
+    yamlText,
+  };
+
+  try {
+    const result = await sharedApiFetch(existingSharedEntry
+      ? `/api/diagrams/${encodeURIComponent(existingSharedEntry.sharedId)}`
+      : "/api/diagrams", {
+        method: existingSharedEntry ? "PUT" : "POST",
+        auth: true,
+        body: payload,
+      });
+
+    await refreshSharedDiagramCatalog();
+    const savedEntry = mergeSharedDiagramEntries(diagramCatalog.sharedEntries, diagramCatalog.mySharedEntries)
+      .find((candidate) => candidate.sharedId === result.diagram?.id);
+
+    if (savedEntry) {
+      activateDiagramSelection("shared", savedEntry.fileName, {
+        layoutFlavor: diagramPickerLayoutFlavor,
+        historyMode: "push",
+      });
+    }
+
+    setStatus(existingSharedEntry ? "Shared diagram overwritten." : "Local diagram uploaded to shared diagrams.");
+  } catch (error) {
+    setStatus(error.message || "Local diagram could not be uploaded.");
+  }
+}
+
+async function downloadSharedDiagramEntry(entry) {
+  const yamlText = String(entry?.rawText || entry?.text || "").trim();
+
+  if (!yamlText) {
+    setStatus("This shared diagram has no YAML text to download.");
+    return;
+  }
+
+  const folderHandle = diagramCatalog.folderHandle;
+
+  if (!folderHandle || typeof folderHandle.getFileHandle !== "function") {
+    downloadDiagramTextViaBrowser(entry);
+    setStatus("Shared diagram downloaded through the browser. Choose a local folder to save directly into Local Diagrams.");
+    return;
+  }
+
+  const downloadTitle = getDiagramTitleForOverwrite(yamlText, entry?.title);
+  const localEntries = Array.isArray(diagramCatalog.folderEntries) ? diagramCatalog.folderEntries : [];
+  const matchingTitleEntry = findDiagramEntryByTitle(localEntries, downloadTitle);
+  const targetFileName = normalizeDiagramDownloadFileName(entry?.displayFileName || entry?.fileName || `${downloadTitle}.yaml`);
+  const matchingFileEntry = localEntries.find((candidate) => (
+    String(candidate.fileName || "").toLowerCase() === targetFileName.toLowerCase()
+  ));
+  const overwriteEntry = matchingTitleEntry || matchingFileEntry || null;
+
+  if (
+    overwriteEntry
+    && !confirmDiagramOverwrite({
+      title: overwriteEntry.title || downloadTitle,
+      targetLabel: "local diagram",
+      oldTimestampMs: getDiagramEntryTimestampMs(overwriteEntry),
+      newTimestampMs: getDiagramEntryTimestampMs(entry) ?? Date.now(),
+    })
+  ) {
+    setStatus("Shared diagram download canceled.");
+    return;
+  }
+
+  try {
+    const canWriteFolder = await ensureDiagramsFolderWritePermission(folderHandle);
+
+    if (!canWriteFolder) {
+      downloadDiagramTextViaBrowser(entry);
+      setStatus("Local folder write access was not granted, so the browser download was used instead.");
+      return;
+    }
+
+    const fileHandle = overwriteEntry?.fileHandle
+      || await folderHandle.getFileHandle(targetFileName, { create: true });
+    await writeYamlTextToFileHandle(fileHandle, yamlText);
+    await refreshFolderDiagramCatalogFromHandle(folderHandle);
+    renderDiagramPicker();
+    setStatus(overwriteEntry ? "Local diagram overwritten." : "Shared diagram saved to Local Diagrams.");
+  } catch (error) {
+    setStatus(error.message || "Shared diagram could not be saved locally.");
+  }
+}
+
 function configureDiagramYamlEditorUi({
   title,
   copy,
@@ -1059,9 +1391,6 @@ function configureDiagramYamlEditorUi({
   }
   if (sharedDiagramDeleteButton) {
     sharedDiagramDeleteButton.hidden = !showDelete;
-  }
-  if (sharedDiagramVisibilityField) {
-    sharedDiagramVisibilityField.hidden = localMode;
   }
   if (sharedDiagramFileField) {
     sharedDiagramFileField.hidden = localMode;
@@ -1106,9 +1435,6 @@ function openSharedDiagramEditor(entry = null) {
   });
   if (sharedDiagramFileNameInput) {
     sharedDiagramFileNameInput.value = entry?.displayFileName || "";
-  }
-  if (sharedDiagramVisibilitySelect) {
-    sharedDiagramVisibilitySelect.value = entry?.visibility === "private" ? "private" : "public";
   }
   if (sharedDiagramYamlText) {
     sharedDiagramYamlText.value = entry?.text || "";
@@ -1269,17 +1595,15 @@ async function saveLocalDiagramEditor() {
       return;
     }
 
-    const writable = await entry.fileHandle.createWritable();
-    await writable.write(`${yamlText}\n`);
-    await writable.close();
+    await writeYamlTextToFileHandle(entry.fileHandle, yamlText);
 
     const updatedEntry = {
-      ...buildDiagramCatalogEntry(entry.fileName, `${yamlText}\n`, {
+      ...buildDiagramCatalogEntry(entry.fileName, getYamlTextForSaving(yamlText), {
         lastModifiedMs: Date.now(),
         sourceIndex: entry.sourceIndex,
       }),
       fileHandle: entry.fileHandle,
-      rawText: `${yamlText}\n`,
+      rawText: getYamlTextForSaving(yamlText),
     };
     replaceLocalDiagramEntry(updatedEntry);
     closeSharedDiagramEditor();
@@ -1324,19 +1648,39 @@ async function saveSharedDiagramEditor() {
 
   const payload = {
     fileName: String(sharedDiagramFileNameInput?.value || "").trim(),
-    visibility: sharedDiagramVisibilitySelect?.value === "private" ? "private" : "public",
     yamlText,
   };
   const isEdit = sharedDiagramEditorState?.mode === "edit" && sharedDiagramEditorState.sharedId;
+  const uploadTitle = getDiagramTitleForOverwrite(yamlText, sharedDiagramEditorState?.entry?.title);
+  const overwriteEntry = isEdit
+    ? null
+    : findOwnedSharedEntryByTitle(uploadTitle);
+
+  if (
+    overwriteEntry
+    && !confirmDiagramOverwrite({
+      title: uploadTitle,
+      targetLabel: "shared diagram",
+      oldTimestampMs: getDiagramEntryTimestampMs(overwriteEntry),
+      newTimestampMs: Date.now(),
+    })
+  ) {
+    setStatus("Shared diagram upload canceled.");
+    return;
+  }
+  const targetSharedId = isEdit
+    ? sharedDiagramEditorState.sharedId
+    : overwriteEntry?.sharedId;
+  const shouldUpdateExisting = Boolean(targetSharedId);
 
   try {
     if (sharedDiagramSaveButton) {
       sharedDiagramSaveButton.disabled = true;
     }
-    const result = await sharedApiFetch(isEdit
-      ? `/api/diagrams/${encodeURIComponent(sharedDiagramEditorState.sharedId)}`
+    const result = await sharedApiFetch(shouldUpdateExisting
+      ? `/api/diagrams/${encodeURIComponent(targetSharedId)}`
       : "/api/diagrams", {
-        method: isEdit ? "PUT" : "POST",
+        method: shouldUpdateExisting ? "PUT" : "POST",
         auth: true,
         body: payload,
       });
@@ -1351,7 +1695,7 @@ async function saveSharedDiagramEditor() {
         historyMode: "push",
       });
     }
-    setStatus(isEdit ? "Shared diagram updated." : "Shared diagram uploaded.");
+    setStatus(shouldUpdateExisting ? "Shared diagram updated." : "Shared diagram uploaded.");
   } catch (error) {
     setStatus(error.message || "Shared diagram could not be saved.");
   } finally {
@@ -3750,7 +4094,13 @@ function shouldPromptForDiagramsFolderFromPrimaryButton() {
   return false;
 }
 
-function renderDiagramPickerList(listElement, entries, { source, emptyText, ownerActions = false, localActions = false } = {}) {
+function renderDiagramPickerList(listElement, entries, {
+  source,
+  emptyText,
+  ownerActions = false,
+  localActions = false,
+  sharedActions = false,
+} = {}) {
   if (!listElement) {
     return;
   }
@@ -3770,6 +4120,7 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
     const button = document.createElement("button");
     const title = document.createElement("span");
     const description = document.createElement("span");
+    const updated = document.createElement("span");
     const actions = document.createElement("div");
     const selectDiagram = (event) => {
       event?.stopPropagation?.();
@@ -3783,14 +4134,19 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
     card.classList.toggle("is-active", browserDiagramSourceInfo.activeSource === source && entry.fileName === selectedDiagramPath);
     title.className = "diagram-picker-title";
     description.className = "diagram-picker-description";
+    updated.className = "diagram-picker-updated";
     actions.className = "diagram-picker-card-actions";
     setDashboardTextContent(title, entry.title);
     setDashboardTextContent(description, entry.description || "");
+    setDiagramUpdatedElement(updated, entry);
     title.title = getDashboardTooltipText(entry.title);
     description.title = getDashboardTooltipText(entry.description || "");
     button.append(title);
     if (entry.description) {
       button.append(description);
+    }
+    if (!updated.hidden) {
+      button.append(updated);
     }
     button.addEventListener("click", selectDiagram);
     card.addEventListener("click", (event) => {
@@ -3800,6 +4156,22 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
 
       selectDiagram(event);
     });
+
+    if (sharedActions && entry.sharedId) {
+      const downloadButton = document.createElement("button");
+
+      downloadButton.type = "button";
+      downloadButton.className = "diagram-picker-mini-action diagram-picker-icon-action";
+      downloadButton.textContent = "\u2193";
+      downloadButton.title = "Download to Local Diagrams";
+      downloadButton.setAttribute("aria-label", `Download ${entry.title || entry.displayFileName || entry.fileName}`);
+      downloadButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void downloadSharedDiagramEntry(entry);
+      });
+      actions.append(downloadButton);
+    }
 
     if (ownerActions && entry.isOwner) {
       const editButton = document.createElement("button");
@@ -3825,17 +4197,28 @@ function renderDiagramPickerList(listElement, entries, { source, emptyText, owne
     }
 
     if (localActions && entry.fileHandle) {
+      const uploadButton = document.createElement("button");
       const editButton = document.createElement("button");
 
+      uploadButton.type = "button";
+      uploadButton.className = "diagram-picker-mini-action diagram-picker-icon-action";
+      uploadButton.textContent = "\u2191";
+      uploadButton.title = "Upload to Shared Diagrams";
+      uploadButton.setAttribute("aria-label", `Upload ${entry.title || entry.fileName}`);
       editButton.type = "button";
       editButton.className = "diagram-picker-mini-action";
       editButton.textContent = "Edit";
+      uploadButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void uploadLocalDiagramEntry(entry);
+      });
       editButton.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
         openLocalDiagramEditor(entry);
       });
-      actions.append(editButton);
+      actions.append(uploadButton, editButton);
     }
 
     card.append(button);
@@ -3934,11 +4317,13 @@ function renderDiagramPicker() {
   renderDiagramPickerList(diagramPickerSharedList, sharedEntries, {
     source: "shared",
     emptyText: sharedEmptyText,
+    sharedActions: true,
   });
   renderDiagramPickerList(diagramPickerMyList, mySharedEntries, {
     source: "shared",
     emptyText: mySharedEmptyText,
     ownerActions: true,
+    sharedActions: true,
   });
   renderDiagramPickerList(diagramPickerLocalList, localEntries, {
     source: "folder",
