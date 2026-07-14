@@ -1030,6 +1030,18 @@ function syncSharedDiagramYamlMetadataPreview() {
   }
 }
 
+function resetSharedDiagramYamlEditorScroll() {
+  if (sharedDiagramYamlText) {
+    sharedDiagramYamlText.scrollTop = 0;
+    sharedDiagramYamlText.scrollLeft = 0;
+    sharedDiagramYamlText.setSelectionRange(0, 0);
+  }
+  if (sharedDiagramYamlHighlight) {
+    sharedDiagramYamlHighlight.scrollTop = 0;
+    sharedDiagramYamlHighlight.scrollLeft = 0;
+  }
+}
+
 function getDashboardTooltipText(text) {
   return String(text || "")
     .replace(/\\cite\{[^}]+\}/g, "")
@@ -1438,6 +1450,7 @@ function openSharedDiagramEditor(entry = null) {
   }
   if (sharedDiagramYamlText) {
     sharedDiagramYamlText.value = entry?.text || "";
+    resetSharedDiagramYamlEditorScroll();
   }
   if (sharedDiagramFileInput) {
     sharedDiagramFileInput.value = "";
@@ -1448,7 +1461,13 @@ function openSharedDiagramEditor(entry = null) {
   }
   if (sharedDiagramEditorModal) {
     sharedDiagramEditorModal.hidden = false;
-    requestAnimationFrame(() => sharedDiagramYamlText?.focus());
+    requestAnimationFrame(() => {
+      sharedDiagramYamlText?.focus();
+      resetSharedDiagramYamlEditorScroll();
+      if (typeof syncSharedDiagramYamlHighlight === "function") {
+        syncSharedDiagramYamlHighlight();
+      }
+    });
   }
 }
 
@@ -1475,6 +1494,7 @@ function openLocalDiagramEditor(entry) {
   }
   if (sharedDiagramYamlText) {
     sharedDiagramYamlText.value = entry.rawText || entry.text || "";
+    resetSharedDiagramYamlEditorScroll();
   }
   if (sharedDiagramFileInput) {
     sharedDiagramFileInput.value = "";
@@ -1485,7 +1505,13 @@ function openLocalDiagramEditor(entry) {
   }
   if (sharedDiagramEditorModal) {
     sharedDiagramEditorModal.hidden = false;
-    requestAnimationFrame(() => sharedDiagramYamlText?.focus());
+    requestAnimationFrame(() => {
+      sharedDiagramYamlText?.focus();
+      resetSharedDiagramYamlEditorScroll();
+      if (typeof syncSharedDiagramYamlHighlight === "function") {
+        syncSharedDiagramYamlHighlight();
+      }
+    });
   }
 }
 
@@ -1516,6 +1542,7 @@ async function loadSharedDiagramYamlFile(file) {
   }
   const text = await file.text();
   sharedDiagramYamlText.value = text;
+  resetSharedDiagramYamlEditorScroll();
 
   if (sharedDiagramFileNameInput) {
     sharedDiagramFileNameInput.value = file.name || "";
