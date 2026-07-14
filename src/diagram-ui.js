@@ -1426,7 +1426,7 @@ function syncControlUI() {
   bFieldGaussMinInput.disabled = !hasInteractiveDiagram;
   bFieldGaussMaxInput.disabled = !hasInteractiveDiagram;
   bFieldToggleButton.disabled = !hasInteractiveDiagram;
-  bFieldValue.textContent = currentBFieldEnabled ? formatGauss(currentBFieldGauss, 3) : "Off";
+  bFieldValue.textContent = currentBFieldEnabled ? "On" : "Off";
   bFieldGaussValue.textContent = currentBFieldEnabled ? formatGauss(currentBFieldGauss, 3) : "Off";
   bFieldScaleValue.textContent = `${formatFieldScale(currentBFieldVisualScale, 2)}x`;
   bFieldToggleButton?.setAttribute("aria-expanded", currentBFieldEnabled ? "true" : "false");
