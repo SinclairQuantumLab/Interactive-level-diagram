@@ -3564,7 +3564,18 @@ helpToggleButton.addEventListener("click", (event) => {
 });
 
 document.addEventListener("click", (event) => {
-  if (diagramPicker && !diagramPicker.hidden && !diagramPicker.contains(event.target) && !chooseDiagramToggleButton?.contains(event.target)) {
+  const clickedEditorModal = Boolean(
+    layoutEditorModal?.contains(event.target)
+    || sharedDiagramEditorModal?.contains(event.target)
+  );
+
+  if (
+    diagramPicker
+    && !diagramPicker.hidden
+    && !diagramPicker.contains(event.target)
+    && !chooseDiagramToggleButton?.contains(event.target)
+    && !clickedEditorModal
+  ) {
     closeDiagramPicker();
   }
 
@@ -3658,6 +3669,16 @@ document.addEventListener("keydown", (event) => {
   }
 
   if (event.key !== "Escape") {
+    return;
+  }
+
+  if (sharedDiagramEditorModal && !sharedDiagramEditorModal.hidden) {
+    closeSharedDiagramEditor();
+    return;
+  }
+
+  if (layoutEditorModal && !layoutEditorModal.hidden) {
+    closeLayoutEditor();
     return;
   }
 
