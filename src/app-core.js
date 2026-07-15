@@ -795,6 +795,8 @@ function normalizeSharedDiagramApiRecord(diagram, sourceIndex = 0, { owner = fal
     sharedId,
     displayFileName,
     ownerUserId: diagram?.ownerUserId || "",
+    ownerEmail: String(diagram?.ownerEmail || ""),
+    ownerEmailHint: String(diagram?.ownerEmailHint || ""),
     isOwner: Boolean(owner || diagram?.isOwner),
     createdAt: diagram?.createdAt || "",
     updatedAt: diagram?.updatedAt || "",
@@ -1146,14 +1148,27 @@ function formatRelativeTimestamp(timestampMs, nowMs = Date.now()) {
   return `${elapsedYears}y ago`;
 }
 
+function getDiagramOwnerDisplayLabel(entry) {
+  return String(entry?.ownerEmail || entry?.ownerEmailHint || "").trim();
+}
+
 function setDiagramUpdatedElement(element, entry) {
   if (!element) {
     return;
   }
 
   const timestampMs = getDiagramEntryTimestampMs(entry);
+  const ownerLabel = getDiagramOwnerDisplayLabel(entry);
+  const parts = [];
 
-  if (timestampMs === null) {
+  if (ownerLabel) {
+    parts.push(ownerLabel);
+  }
+  if (timestampMs !== null) {
+    parts.push(`Updated ${formatRelativeTimestamp(timestampMs)}`);
+  }
+
+  if (parts.length === 0) {
     element.textContent = "";
     element.title = "";
     element.hidden = true;
@@ -1161,8 +1176,11 @@ function setDiagramUpdatedElement(element, entry) {
   }
 
   element.hidden = false;
-  element.textContent = `Updated ${formatRelativeTimestamp(timestampMs)}`;
-  element.title = formatDetailedLocalTimestamp(timestampMs);
+  element.textContent = parts.join(" · ");
+  element.title = [
+    ownerLabel ? `Uploaded by ${ownerLabel}` : "",
+    timestampMs !== null ? `Updated ${formatDetailedLocalTimestamp(timestampMs)}` : "",
+  ].filter(Boolean).join("\n");
 }
 
 function getDiagramEntryTimestampMs(entry) {
@@ -4237,8 +4255,14 @@ function renderDiagramPickerList(listElement, entries, {
       uploadButton.type = "button";
       uploadButton.className = "diagram-picker-mini-action diagram-picker-icon-action";
       uploadButton.textContent = "\u2191";
-      uploadButton.title = "Upload to Shared Diagrams";
-      uploadButton.setAttribute("aria-label", `Upload ${entry.title || entry.fileName}`);
+      const canUploadLocalDiagram = Boolean(sharedDiagramUser && isSharedDiagramApiConfigured());
+      uploadButton.disabled = !canUploadLocalDiagram;
+      uploadButton.title = canUploadLocalDiagram
+        ? "Upload to Shared Diagrams"
+        : "Sign in to upload local diagrams.";
+      uploadButton.setAttribute("aria-label", canUploadLocalDiagram
+        ? `Upload ${entry.title || entry.fileName}`
+        : `Sign in to upload ${entry.title || entry.fileName}`);
       editButton.type = "button";
       editButton.className = "diagram-picker-mini-action";
       editButton.textContent = "Edit";

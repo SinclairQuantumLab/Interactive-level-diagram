@@ -1020,6 +1020,16 @@ h1 {
   color: var(--accent);
 }
 
+.diagram-picker-mini-action:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.diagram-picker-mini-action:disabled:hover {
+  color: var(--text-muted);
+}
+
 @media (max-width: 760px) {
   .shared-auth-state {
     grid-template-columns: 1fr;
