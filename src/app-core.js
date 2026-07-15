@@ -856,9 +856,14 @@ async function loadSharedDiagramCatalog() {
     let myEntries = [];
 
     if (sharedDiagramSessionToken) {
-      const myResult = await sharedApiFetch("/api/diagrams?mine=1", { auth: true });
-      myEntries = (Array.isArray(myResult.diagrams) ? myResult.diagrams : [])
-        .map((diagram, sourceIndex) => normalizeSharedDiagramApiRecord(diagram, sourceIndex, { owner: true }));
+      try {
+        const myResult = await sharedApiFetch("/api/diagrams?mine=1", { auth: true });
+        myEntries = (Array.isArray(myResult.diagrams) ? myResult.diagrams : [])
+          .map((diagram, sourceIndex) => normalizeSharedDiagramApiRecord(diagram, sourceIndex, { owner: true }));
+      } catch {
+        clearSharedSession();
+        sharedDiagramUser = null;
+      }
     }
 
     return {
@@ -4091,7 +4096,7 @@ function getSharedDiagramPickerUiState() {
   return {
     hint: sharedDiagramUser
       ? ""
-      : "Public shared diagrams are available below. Sign in by email to upload or manage your own diagrams.",
+      : "Public shared diagrams are listed below. Sign in only to upload or manage your own diagrams.",
     path: "",
     emptyText: "No public shared diagrams are available yet.",
   };
