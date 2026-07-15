@@ -3620,15 +3620,17 @@ function handleDiagramPickerDrag(event) {
   const viewportPadding = 24;
   const panelWidth = diagramPicker.offsetWidth || 620;
   const panelHeight = diagramPicker.offsetHeight || 420;
+  const maxLeft = Math.max(viewportPadding, activeDiagramPickerDrag.shellWidth - panelWidth - viewportPadding);
+  const maxTop = Math.max(viewportPadding, activeDiagramPickerDrag.shellHeight - panelHeight - viewportPadding);
   const nextLeft = clamp(
     activeDiagramPickerDrag.originLeft + (event.clientX - activeDiagramPickerDrag.originClientX),
     viewportPadding,
-    activeDiagramPickerDrag.shellWidth - panelWidth - viewportPadding,
+    maxLeft,
   );
   const nextTop = clamp(
     activeDiagramPickerDrag.originTop + (event.clientY - activeDiagramPickerDrag.originClientY),
     viewportPadding,
-    activeDiagramPickerDrag.shellHeight - panelHeight - viewportPadding,
+    maxTop,
   );
 
   diagramPicker.style.left = `${nextLeft}px`;
