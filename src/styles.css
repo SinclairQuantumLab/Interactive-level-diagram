@@ -699,10 +699,10 @@ h1 {
   display: grid;
   gap: 10px;
   width: min(620px, calc(100vw - 48px));
+  height: min(72vh, 720px);
   min-width: min(360px, calc(100vw - 48px));
   max-width: calc(100vw - 48px);
   min-height: 260px;
-  max-height: min(72vh, 720px);
   overflow: auto;
   resize: both;
   padding: 10px 12px;
@@ -2636,10 +2636,10 @@ h1 {
 
   .diagram-picker {
     width: auto;
+    height: min(56vh, 520px);
     min-width: 0;
     max-width: none;
     min-height: 220px;
-    max-height: min(56vh, 520px);
     resize: vertical;
   }
 
