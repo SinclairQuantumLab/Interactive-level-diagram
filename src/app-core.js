@@ -1290,8 +1290,8 @@ function getDiagramTitleForOverwrite(yamlText, fallbackTitle = "") {
 }
 
 async function uploadLocalDiagramEntry(entry) {
-  if (!sharedDiagramSessionToken) {
-    setStatus("Sign in before uploading a local diagram.");
+  if (!canManageSharedDiagrams()) {
+    setStatus("Sign in again before uploading a local diagram, so the shared catalog can show your email.");
     sharedAuthEmailInput?.focus();
     return;
   }
@@ -4127,6 +4127,14 @@ function getSharedUserDisplayLabel() {
     || "shared diagram user";
 }
 
+function canManageSharedDiagrams() {
+  return Boolean(
+    sharedDiagramSessionToken
+    && sharedDiagramUser?.email
+    && isSharedDiagramApiConfigured()
+  );
+}
+
 function setSharedSignedInText(element, userLabel, suffix = ".") {
   const strong = document.createElement("strong");
   strong.className = "shared-user-email";
@@ -4255,7 +4263,7 @@ function renderDiagramPickerList(listElement, entries, {
       uploadButton.type = "button";
       uploadButton.className = "diagram-picker-mini-action diagram-picker-icon-action";
       uploadButton.textContent = "\u2191";
-      const canUploadLocalDiagram = Boolean(sharedDiagramUser && isSharedDiagramApiConfigured());
+      const canUploadLocalDiagram = canManageSharedDiagrams();
       uploadButton.disabled = !canUploadLocalDiagram;
       uploadButton.title = canUploadLocalDiagram
         ? "Upload to Shared Diagrams"
@@ -4365,7 +4373,7 @@ function renderDiagramPicker() {
   });
 
   if (sharedDiagramNewButton) {
-    sharedDiagramNewButton.hidden = !sharedDiagramUser;
+    sharedDiagramNewButton.hidden = !canManageSharedDiagrams();
   }
 
   if (sharedMyDiagrams) {
