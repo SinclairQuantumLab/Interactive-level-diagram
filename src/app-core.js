@@ -191,6 +191,7 @@ const DEFAULT_APP_CONFIG = {
 const BROWSER_DIAGRAMS_FOLDER_NAME = "diagrams";
 const DIAGRAMS_FOLDER_PICKER_ID = "interactive-level-diagram-folder";
 const DEFAULT_HOME_DIAGRAM_FILE = "Rb87.yaml";
+const DEFAULT_HOME_DIAGRAM_TITLE = "Rubidium-87 Neutral Atom";
 
 function isPlainConfigObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
@@ -2708,15 +2709,39 @@ function syncUrlDiagramSelection(path, source, { historyMode = "replace" } = {})
   }
 }
 
-function diagramCatalogEntriesContainPath(entries, fileName) {
+function diagramCatalogEntryMatchesPath(entry, fileName) {
   const normalizedFileName = String(fileName || "").trim();
 
-  if (!normalizedFileName) {
+  if (!entry || !normalizedFileName) {
     return false;
   }
 
+  return [
+    entry.fileName,
+    entry.displayFileName,
+    entry.sharedId,
+    entry.sharedId ? `${entry.sharedId}.yaml` : "",
+  ].some((candidate) => String(candidate || "").trim() === normalizedFileName);
+}
+
+function findDiagramCatalogEntryByPath(entries, fileName) {
   return (Array.isArray(entries) ? entries : [])
-    .some((entry) => entry?.fileName === normalizedFileName);
+    .find((entry) => diagramCatalogEntryMatchesPath(entry, fileName)) || null;
+}
+
+function diagramCatalogEntriesContainPath(entries, fileName) {
+  return Boolean(findDiagramCatalogEntryByPath(entries, fileName));
+}
+
+function findDefaultHomeDiagramEntry(entries) {
+  const defaultFileEntry = findDiagramCatalogEntryByPath(entries, DEFAULT_HOME_DIAGRAM_FILE);
+
+  if (defaultFileEntry) {
+    return defaultFileEntry;
+  }
+
+  return (Array.isArray(entries) ? entries : [])
+    .find((entry) => String(entry?.title || "").trim() === DEFAULT_HOME_DIAGRAM_TITLE) || null;
 }
 
 function resolveSourceForUrlDiagramSelection({ folderEntries = [], sharedEntries = [] } = {}, selection = {}) {
@@ -2840,22 +2865,27 @@ function resolveSelectedDiagramPath(diagramCatalog, preferredPath = null) {
   const urlDiagramSelection = readUrlDiagramSelection();
   const urlPath = urlDiagramSelection.path;
   const storedPath = getStoredSelectedDiagramPath();
+  const preferredEntry = findDiagramCatalogEntryByPath(diagramCatalog.entries, normalizedPreferredPath);
+  const urlEntry = findDiagramCatalogEntryByPath(diagramCatalog.entries, urlPath);
+  const defaultHomeEntry = shouldUseDefaultHomeDiagramSelection()
+    ? findDefaultHomeDiagramEntry(diagramCatalog.entries)
+    : null;
+  const storedEntry = findDiagramCatalogEntryByPath(diagramCatalog.entries, storedPath);
 
-  if (normalizedPreferredPath && diagramCatalog.entries.some((entry) => entry.fileName === normalizedPreferredPath)) {
-    return normalizedPreferredPath;
+  if (preferredEntry) {
+    return preferredEntry.fileName;
   }
 
-  if (urlPath && diagramCatalog.entries.some((entry) => entry.fileName === urlPath)) {
-    return urlPath;
+  if (urlEntry) {
+    return urlEntry.fileName;
   }
 
-  if (shouldUseDefaultHomeDiagramSelection()
-    && diagramCatalog.entries.some((entry) => entry.fileName === DEFAULT_HOME_DIAGRAM_FILE)) {
-    return DEFAULT_HOME_DIAGRAM_FILE;
+  if (defaultHomeEntry) {
+    return defaultHomeEntry.fileName;
   }
 
-  if (storedPath && diagramCatalog.entries.some((entry) => entry.fileName === storedPath)) {
-    return storedPath;
+  if (storedEntry) {
+    return storedEntry.fileName;
   }
 
   return diagramCatalog.entries.find((entry) => typeof entry.text === "string")?.fileName
