@@ -1362,8 +1362,7 @@ async function downloadSharedDiagramEntry(entry) {
   const folderHandle = diagramCatalog.folderHandle;
 
   if (!folderHandle || typeof folderHandle.getFileHandle !== "function") {
-    downloadDiagramTextViaBrowser(entry);
-    setStatus("Shared diagram downloaded through the browser. Choose a local folder to save directly into Local Diagrams.");
+    setStatus("Choose a local folder before saving shared diagrams into Local Diagrams.");
     return;
   }
 
@@ -4135,6 +4134,13 @@ function canManageSharedDiagrams() {
   );
 }
 
+function canDownloadSharedDiagramsToLocalFolder() {
+  return Boolean(
+    diagramCatalog.folderHandle
+    && typeof diagramCatalog.folderHandle.getFileHandle === "function"
+  );
+}
+
 function setSharedSignedInText(element, userLabel, suffix = ".") {
   const strong = document.createElement("strong");
   strong.className = "shared-user-email";
@@ -4219,12 +4225,18 @@ function renderDiagramPickerList(listElement, entries, {
 
     if (sharedActions && entry.sharedId) {
       const downloadButton = document.createElement("button");
+      const canDownloadToLocalFolder = canDownloadSharedDiagramsToLocalFolder();
 
       downloadButton.type = "button";
       downloadButton.className = "diagram-picker-mini-action diagram-picker-icon-action";
       downloadButton.textContent = "\u2193";
-      downloadButton.title = "Download to Local Diagrams";
-      downloadButton.setAttribute("aria-label", `Download ${entry.title || entry.displayFileName || entry.fileName}`);
+      downloadButton.disabled = !canDownloadToLocalFolder;
+      downloadButton.title = canDownloadToLocalFolder
+        ? "Download to Local Diagrams"
+        : "Choose a local folder to download shared diagrams.";
+      downloadButton.setAttribute("aria-label", canDownloadToLocalFolder
+        ? `Download ${entry.title || entry.displayFileName || entry.fileName}`
+        : `Choose a local folder to download ${entry.title || entry.displayFileName || entry.fileName}`);
       downloadButton.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
