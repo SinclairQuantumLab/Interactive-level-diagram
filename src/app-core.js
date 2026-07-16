@@ -2880,12 +2880,12 @@ function resolveSelectedDiagramPath(diagramCatalog, preferredPath = null) {
     return urlEntry.fileName;
   }
 
-  if (defaultHomeEntry) {
-    return defaultHomeEntry.fileName;
-  }
-
   if (storedEntry) {
     return storedEntry.fileName;
+  }
+
+  if (defaultHomeEntry) {
+    return defaultHomeEntry.fileName;
   }
 
   return diagramCatalog.entries.find((entry) => typeof entry.text === "string")?.fileName
