@@ -13,6 +13,9 @@ deploy-pages:
     - mkdir -p public
     - cp index.html public/
     - cp LICENSE public/LICENSE
+    - cp README.md public/README.md
+    - cp CONTRIBUTING.md public/CONTRIBUTING.md
+    - cp download-manifest.json public/download-manifest.json
     - cp -r assets public/assets
     - cp -r src public/src
     - cp -r diagrams public/diagrams

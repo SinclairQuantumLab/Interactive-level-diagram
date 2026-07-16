@@ -65,6 +65,15 @@
             </div>
           </section>
 
+          <section class="control-group" aria-label="Local app download controls">
+            <h2 class="control-group-title">Download Local Copy</h2>
+            <div class="control-row">
+              <button id="download-app-only" type="button">Without Diagrams</button>
+              <button id="download-app-with-diagrams" type="button">With Diagrams</button>
+            </div>
+            <p class="control-group-hint">Save this same static webapp as a zip file for local use.</p>
+          </section>
+
           <section class="control-group" aria-label="Layout and view controls">
             <h2 class="control-group-title">Layout &amp; View</h2>
             <div class="control-row">
@@ -156,6 +165,7 @@
       <ul class="help-list">
         <li>`Shared Diagrams` is the online catalog. You can browse public diagrams and sign in by email to manage your own YAML uploads.</li>
         <li>`Local Diagrams` reads YAML files from a folder on this computer. If you clone or download this repo, `webapp/diagrams` is just another local folder you can choose.</li>
+        <li>`Download Local Copy` saves this static webapp as a zip file, either with or without the bundled example diagrams.</li>
         <li>The selected diagram and current layout are remembered. Reloading re-reads the YAML from the active source.</li>
         <li>Click a fine-state bar to expand or collapse hyperfine structure.</li>
         <li>Click a hyperfine bar to expand or collapse Zeeman sublevels.</li>
@@ -422,6 +432,7 @@ layout:
   <script src="src/app-core.js"></script>
   <script src="src/diagram-model.js"></script>
   <script src="src/diagram-ui.js"></script>
+  <script src="src/app-download.js"></script>
   <script src="src/diagram-render.js"></script>
 </body>
 </html>
