@@ -140,6 +140,21 @@ body {
   margin-top: 12px;
 }
 
+.local-download-section .control-row {
+  gap: 7px;
+}
+
+#download-local-app {
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  line-height: 1.1;
+}
+
+.local-download-section .download-diagrams-toggle {
+  min-height: 29px;
+  font-size: 0.76rem;
+}
+
 .hero-header {
   display: flex;
   align-items: start;
