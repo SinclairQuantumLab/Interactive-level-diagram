@@ -11,8 +11,8 @@
 +--------------------------------------------------------------------+
 */
 
-const downloadAppOnlyButton = document.getElementById("download-app-only");
-const downloadAppWithDiagramsButton = document.getElementById("download-app-with-diagrams");
+const downloadLocalAppButton = document.getElementById("download-local-app");
+const downloadLocalAppWithDiagramsToggle = document.getElementById("download-local-app-with-diagrams");
 
 const LOCAL_APP_DOWNLOAD_MANIFEST_PATH = "download-manifest.json";
 const LOCAL_APP_DOWNLOAD_ROOT_FOLDER = "interactive-level-diagram";
@@ -279,12 +279,13 @@ function triggerLocalAppBlobDownload(blob, fileName) {
 
 function setLocalAppDownloadBusy(isBusy) {
   localAppDownloadBusy = isBusy;
-  [downloadAppOnlyButton, downloadAppWithDiagramsButton].forEach((button) => {
-    if (button) {
-      button.disabled = isBusy;
-      button.setAttribute("aria-busy", isBusy ? "true" : "false");
-    }
-  });
+  if (downloadLocalAppButton) {
+    downloadLocalAppButton.disabled = isBusy;
+    downloadLocalAppButton.setAttribute("aria-busy", isBusy ? "true" : "false");
+  }
+  if (downloadLocalAppWithDiagramsToggle) {
+    downloadLocalAppWithDiagramsToggle.disabled = isBusy;
+  }
 }
 
 async function downloadLocalAppPackage({ includeDiagrams = false } = {}) {
@@ -314,10 +315,8 @@ async function downloadLocalAppPackage({ includeDiagrams = false } = {}) {
   }
 }
 
-downloadAppOnlyButton?.addEventListener("click", () => {
-  void downloadLocalAppPackage({ includeDiagrams: false });
-});
-
-downloadAppWithDiagramsButton?.addEventListener("click", () => {
-  void downloadLocalAppPackage({ includeDiagrams: true });
+downloadLocalAppButton?.addEventListener("click", () => {
+  void downloadLocalAppPackage({
+    includeDiagrams: Boolean(downloadLocalAppWithDiagramsToggle?.checked),
+  });
 });
