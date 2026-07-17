@@ -16,6 +16,7 @@ const downloadLocalAppWithDiagramsToggle = document.getElementById("download-loc
 
 const LOCAL_APP_DOWNLOAD_MANIFEST_PATH = "download-manifest.json";
 const LOCAL_APP_DOWNLOAD_ROOT_FOLDER = "interactive-level-diagram";
+const LOCAL_APP_DOWNLOAD_EMPTY_DIRECTORIES = ["diagrams"];
 const LOCAL_APP_DOWNLOAD_MAX_FILE_BYTES = 25 * 1024 * 1024;
 const LOCAL_APP_DOWNLOAD_MAX_TOTAL_BYTES = 120 * 1024 * 1024;
 
@@ -107,7 +108,7 @@ function createStoredZipBlob(entries) {
 
   entries.forEach((entry) => {
     const nameBytes = encoder.encode(entry.path);
-    const dataBytes = entry.bytes;
+    const dataBytes = entry.bytes || new Uint8Array();
     const crc32 = calculateLocalAppDownloadCrc32(dataBytes);
     const localOffset = offset;
 
@@ -149,7 +150,7 @@ function createStoredZipBlob(entries) {
     writeZipUint16(centralView, 32, 0);
     writeZipUint16(centralView, 34, 0);
     writeZipUint16(centralView, 36, 0);
-    writeZipUint32(centralView, 38, 0);
+    writeZipUint32(centralView, 38, entry.directory ? 0x10 : 0);
     writeZipUint32(centralView, 42, localOffset);
     centralParts.push(centralHeader, nameBytes);
   });
@@ -232,10 +233,21 @@ async function fetchLocalAppDownloadFile(fileSpec) {
   };
 }
 
+function getLocalAppDownloadDirectoryEntries() {
+  return LOCAL_APP_DOWNLOAD_EMPTY_DIRECTORIES
+    .map((path) => normalizeLocalAppDownloadPath(path))
+    .filter(Boolean)
+    .map((path) => ({
+      path: `${LOCAL_APP_DOWNLOAD_ROOT_FOLDER}/${path}/`,
+      bytes: new Uint8Array(),
+      directory: true,
+    }));
+}
+
 async function buildLocalAppDownloadEntries({ includeDiagrams = false } = {}) {
   const manifest = await loadLocalAppDownloadManifest();
   const fileSpecs = getLocalAppDownloadFileSpecs(manifest, { includeDiagrams });
-  const entries = [];
+  const entries = getLocalAppDownloadDirectoryEntries();
   let totalBytes = 0;
 
   for (const fileSpec of fileSpecs) {
@@ -307,7 +319,8 @@ async function downloadLocalAppPackage({ includeDiagrams = false } = {}) {
     const entries = await buildLocalAppDownloadEntries({ includeDiagrams });
     const zipBlob = createStoredZipBlob(entries);
     triggerLocalAppBlobDownload(zipBlob, getLocalAppDownloadFileName({ includeDiagrams }));
-    setLocalAppDownloadStatus(`Downloaded local app package with ${entries.length} file${entries.length === 1 ? "" : "s"}.`);
+    const fileCount = entries.filter((entry) => !entry.directory).length;
+    setLocalAppDownloadStatus(`Downloaded local app package with ${fileCount} file${fileCount === 1 ? "" : "s"}.`);
   } catch (error) {
     setLocalAppDownloadStatus(error.message || "Local app package could not be created.");
   } finally {
