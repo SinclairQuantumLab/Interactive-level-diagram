@@ -77,8 +77,8 @@ body {
   left: 24px;
   z-index: 10;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto auto;
-  gap: 8px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 12px;
   max-width: min(430px, calc(100vw - 48px));
   max-height: calc(100svh - 48px);
   overflow: hidden;
@@ -118,47 +118,13 @@ body {
   color: var(--accent);
 }
 
-.panel-download-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--panel-border);
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  line-height: 1.2;
-}
-
-.panel-download-actions button {
-  appearance: none;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.16em;
-  cursor: pointer;
-}
-
-.panel-download-actions button:hover {
-  color: var(--accent);
-}
-
-.panel-download-actions button:disabled {
-  cursor: wait;
-  opacity: 0.55;
-}
-
 .download-diagrams-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  color: inherit;
+  gap: 6px;
+  min-height: 38px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
   cursor: pointer;
   user-select: none;
 }
@@ -168,6 +134,10 @@ body {
   height: 0.82rem;
   margin: 0;
   accent-color: var(--accent);
+}
+
+.local-download-section {
+  margin-top: 12px;
 }
 
 .hero-header {
